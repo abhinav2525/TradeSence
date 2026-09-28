@@ -154,10 +154,16 @@ import { unzipSync } from "fflate";
 
 export type FetchResult =
   | { status: "ok"; format: BhavFormat; rows: BhavRow[] }
-  | { status: "holiday" };
+  | { status: "holiday" }
+  | { status: "error"; message: string };
 
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
+export type DownloadResult =
+  | { kind: "ok"; bytes: Uint8Array }
+  | { kind: "notfound" }
+  | { kind: "failed"; message: string };
 
 function udiffUrl(y: string, m: string, d: string): string {
   return `https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_${y}${m}${d}_F_0000.csv.zip`;
@@ -168,11 +174,55 @@ function legacyUrl(y: string, m: string, d: string): string {
   return `https://nsearchives.nseindia.com/content/historical/EQUITIES/${y}/${mon}/cm${d}${mon}${y}bhav.csv.zip`;
 }
 
-/** Only a 200 counts. NSE answers holidays with a 404 that still has a body. */
-async function download(url: string): Promise<Uint8Array | null> {
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "*/*" } });
-  if (res.status !== 200) return null;
-  return new Uint8Array(await res.arrayBuffer());
+/**
+ * Downloads one file, separating three outcomes that must not be conflated:
+ *
+ *  - `ok`       HTTP 200.
+ *  - `notfound` HTTP 404 — on this archive that means a market holiday. NSE
+ *               still returns a ~3.4 KB body, so only the status is trustworthy.
+ *  - `failed`   the request never produced an answer (timeout, DNS, refused
+ *               connection) or the server 5xx'd.
+ *
+ * Collapsing `failed` into `notfound` would record a real trading day as a
+ * holiday and never look at it again; letting it throw aborts an hours-long
+ * backfill on one blip. So transient failures are retried with linear backoff
+ * and, if they persist, reported — never guessed at.
+ */
+export async function download(
+  url: string,
+  opts: { retries?: number; timeoutMs?: number; backoffMs?: number } = {},
+): Promise<DownloadResult> {
+  const retries = opts.retries ?? 3;
+  const timeoutMs = opts.timeoutMs ?? 30_000;
+  const backoffMs = opts.backoffMs ?? 1_000;
+
+  let lastMessage = "unknown error";
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT, Accept: "*/*" },
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+
+      if (res.status === 200) {
+        return { kind: "ok", bytes: new Uint8Array(await res.arrayBuffer()) };
+      }
+      // 404 is a definite answer: the file is not there. Do not retry it.
+      if (res.status === 404) return { kind: "notfound" };
+
+      // 5xx and friends are worth another go.
+      lastMessage = `HTTP ${res.status}`;
+    } catch (e) {
+      lastMessage = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    }
+
+    if (attempt < retries) {
+      await new Promise((r) => setTimeout(r, backoffMs * (attempt + 1)));
+    }
+  }
+
+  return { kind: "failed", message: lastMessage };
 }
 
 function unzipCsv(buf: Uint8Array): string {
@@ -183,22 +233,32 @@ function unzipCsv(buf: Uint8Array): string {
 }
 
 /**
- * Downloads one trading day. Tries the format the date suggests, then the other
- * one — so a slightly wrong cutover costs an extra request rather than silently
- * reporting a trading day as a holiday. Only when both 404 is it a holiday.
+ * Downloads one trading day.
+ *
+ * Tries the format the date suggests, then the other — so a slightly wrong
+ * cutover costs an extra request rather than silently reporting a trading day
+ * as a holiday. Only when both are a definite 404 is it a holiday; if either
+ * attempt failed outright we report an error so the day gets retried later.
  */
 export async function fetchBhavcopy(dateIso: string): Promise<FetchResult> {
   const [y, m, d] = dateIso.split("-") as [string, string, string];
   const primary = bhavcopyUrl(dateIso).format;
   const order: BhavFormat[] = primary === "udiff" ? ["udiff", "legacy"] : ["legacy", "udiff"];
 
+  const failures: string[] = [];
+
   for (const format of order) {
     const url = format === "udiff" ? udiffUrl(y, m, d) : legacyUrl(y, m, d);
-    const buf = await download(url);
-    if (!buf) continue;
-    const csv = unzipCsv(buf);
-    const rows = format === "udiff" ? parseUdiff(csv) : parseLegacy(csv);
-    return { status: "ok", format, rows };
+    const res = await download(url);
+
+    if (res.kind === "ok") {
+      const csv = unzipCsv(res.bytes);
+      const rows = format === "udiff" ? parseUdiff(csv) : parseLegacy(csv);
+      return { status: "ok", format, rows };
+    }
+    if (res.kind === "failed") failures.push(`${format}: ${res.message}`);
   }
+
+  if (failures.length > 0) return { status: "error", message: failures.join("; ") };
   return { status: "holiday" };
 }

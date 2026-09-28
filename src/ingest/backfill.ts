@@ -33,17 +33,19 @@ export type BackfillProgress = {
 /**
  * Ingests a date range oldest-first, pausing between requests.
  *
- * Already-logged days short-circuit inside `ingestDay`, so an interrupted run
- * resumes simply by being started again.
+ * Settled days (ok/holiday) short-circuit inside `ingestDay`, so an interrupted
+ * run resumes simply by being started again. Days that errored are NOT settled
+ * and get another attempt, so a transient network failure never leaves a
+ * permanent hole.
  */
 export async function backfill(
   startIso: string,
   endIso: string,
   opts: { delayMs?: number; onProgress?: (p: BackfillProgress) => void } = {},
-): Promise<{ ok: number; holiday: number; skipped: number }> {
+): Promise<{ ok: number; holiday: number; skipped: number; error: number }> {
   const delayMs = opts.delayMs ?? 1000;
   const days = weekdaysBetween(startIso, endIso);
-  const tally = { ok: 0, holiday: 0, skipped: 0 };
+  const tally = { ok: 0, holiday: 0, skipped: 0, error: 0 };
 
   for (let i = 0; i < days.length; i++) {
     const date = days[i]!;

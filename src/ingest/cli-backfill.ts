@@ -12,7 +12,7 @@ const t0 = Date.now();
 const tally = await backfill(start, end, {
   delayMs: Number(process.env.INGEST_DELAY_MS ?? 700),
   onProgress: ({ date, result, done, total }) => {
-    if (done % 25 === 0 || result.status === "ok") {
+    if (done % 25 === 0 || result.status === "ok" || result.status === "error") {
       const mins = ((Date.now() - t0) / 60000).toFixed(1);
       console.log(`[${done}/${total}] ${date} ${result.status} (${mins}m elapsed)`);
     }

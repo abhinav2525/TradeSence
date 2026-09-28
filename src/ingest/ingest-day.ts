@@ -5,19 +5,29 @@ import { fetchBhavcopy, type BhavFormat, type BhavRow } from "./bhavcopy";
 export type IngestResult =
   | { status: "ok"; rowCount: number; format: BhavFormat }
   | { status: "holiday" }
-  | { status: "skipped" };
+  | { status: "skipped" }
+  | { status: "error"; message: string };
 
 const SOURCE = "bhavcopy";
 
 /** Postgres caps bind parameters at 65535; 10 columns means 1000 rows is safe. */
 const CHUNK = 1000;
 
-async function alreadyLogged(dateIso: string): Promise<boolean> {
+/**
+ * Statuses that mean "this day is settled, do not fetch it again".
+ *
+ * Deliberately excludes "error": a day that failed on a transient network
+ * problem must be retried by the next run, otherwise one blip becomes a
+ * permanent hole in the series.
+ */
+const SETTLED = new Set(["ok", "holiday"]);
+
+async function isSettled(dateIso: string): Promise<boolean> {
   const rows = await db
-    .select({ tradeDate: schema.ingestLog.tradeDate })
+    .select({ status: schema.ingestLog.status })
     .from(schema.ingestLog)
     .where(and(eq(schema.ingestLog.tradeDate, dateIso), eq(schema.ingestLog.source, SOURCE)));
-  return rows.length > 0;
+  return rows.length > 0 && SETTLED.has(rows[0]!.status);
 }
 
 async function writeLog(
@@ -60,16 +70,26 @@ async function upsertPrices(rows: BhavRow[]) {
 /**
  * Ingests one trading day.
  *
- * Idempotent twice over: it short-circuits if the day is already logged, and
+ * Idempotent twice over: it short-circuits if the day is already settled, and
  * the underlying write is an upsert, so a forced re-run changes nothing.
+ *
+ * Prices are written before the log, deliberately and without a transaction.
+ * If the process dies between the two, the day has no log row, so the next run
+ * re-fetches and re-upserts it — harmless. The reverse order could record a day
+ * as "ok" with no prices behind it, which nothing would ever correct.
  */
 export async function ingestDay(
   dateIso: string,
   opts: { force?: boolean } = {},
 ): Promise<IngestResult> {
-  if (!opts.force && (await alreadyLogged(dateIso))) return { status: "skipped" };
+  if (!opts.force && (await isSettled(dateIso))) return { status: "skipped" };
 
   const res = await fetchBhavcopy(dateIso);
+
+  if (res.status === "error") {
+    await writeLog(dateIso, "error", null, null);
+    return { status: "error", message: res.message };
+  }
   if (res.status === "holiday") {
     await writeLog(dateIso, "holiday", null, 0);
     return { status: "holiday" };
