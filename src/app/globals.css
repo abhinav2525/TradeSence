@@ -1,0 +1,109 @@
+/* Tokens from the validated reference palette. Dark values are declared under
+   both the OS media query and the data-theme scope so a theme toggle wins. */
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --series-1: #2a78d6; /* single-series line, and the "above" pole */
+  --pole-neg: #e34948; /* the "below" pole of the diverging pair */
+  --neutral-mid: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --series-1: #3987e5;
+    --pole-neg: #e66767;
+    --neutral-mid: #383835;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --plane: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --pole-neg: #e66767;
+  --neutral-mid: #383835;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 64px; }
+
+h1 { font-size: 20px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
+.sub { color: var(--text-secondary); margin: 0 0 24px; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab {
+  padding: 7px 14px; border-radius: 999px; text-decoration: none;
+  border: 1px solid var(--border); color: var(--text-secondary);
+  background: var(--surface-1); font-size: 13px; white-space: nowrap;
+}
+.tab[aria-current="page"] {
+  background: var(--text-primary); color: var(--surface-1);
+  border-color: var(--text-primary); font-weight: 600;
+}
+
+.card {
+  background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px; margin-bottom: 20px;
+}
+
+.hero { display: flex; gap: 40px; align-items: baseline; flex-wrap: wrap; }
+.hero-num { font-size: 44px; font-weight: 680; letter-spacing: -0.02em; line-height: 1.1; }
+.hero-label { color: var(--text-secondary); font-size: 13px; }
+.hero-split { color: var(--text-secondary); font-size: 13px; }
+
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th {
+  text-align: left; font-weight: 550; font-size: 11px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-muted);
+  padding: 0 0 8px; border-bottom: 1px solid var(--grid);
+}
+td { padding: 6px 0; border-bottom: 1px solid var(--grid); }
+td.num, th.num { text-align: right; }
+tr:last-child td { border-bottom: none; }
+
+.sym { font-weight: 550; }
+.pos { color: var(--series-1); }
+.neg { color: var(--pole-neg); }
+.near td { background: var(--neutral-mid); }
+
+.h2 { font-size: 14px; font-weight: 620; margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+.swatch { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.count { color: var(--text-secondary); font-size: 12px; margin: 0 0 12px; }
+.note { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+.empty { color: var(--text-muted); padding: 24px 0; }
