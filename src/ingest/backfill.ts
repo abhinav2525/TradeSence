@@ -41,15 +41,30 @@ export type BackfillProgress = {
 export async function backfill(
   startIso: string,
   endIso: string,
-  opts: { delayMs?: number; onProgress?: (p: BackfillProgress) => void } = {},
+  opts: {
+    delayMs?: number;
+    onProgress?: (p: BackfillProgress) => void;
+    /** Injectable for tests; defaults to the real ingest. */
+    ingest?: (date: string) => Promise<IngestResult>;
+  } = {},
 ): Promise<{ ok: number; holiday: number; skipped: number; error: number }> {
   const delayMs = opts.delayMs ?? 1000;
+  const ingest = opts.ingest ?? ingestDay;
   const days = weekdaysBetween(startIso, endIso);
   const tally = { ok: 0, holiday: 0, skipped: 0, error: 0 };
 
   for (let i = 0; i < days.length; i++) {
     const date = days[i]!;
-    const result = await ingestDay(date);
+
+    // Nothing a single day can do may end the run. The first crash here was a
+    // fetch timeout; the second was a Postgres error thrown from the insert —
+    // both classes have to degrade into an error row that gets retried.
+    let result: IngestResult;
+    try {
+      result = await ingest(date);
+    } catch (e) {
+      result = { status: "error", message: e instanceof Error ? e.message : String(e) };
+    }
     tally[result.status] += 1;
     opts.onProgress?.({ date, result, done: i + 1, total: days.length });
 

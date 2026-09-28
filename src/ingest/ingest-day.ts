@@ -10,24 +10,54 @@ export type IngestResult =
 
 const SOURCE = "bhavcopy";
 
+/**
+ * Confirms the file is for the day we asked for.
+ *
+ * `daily_prices` is keyed on the date inside the file while `ingest_log` is
+ * keyed on the date we requested. If those ever diverge, the log would mark a
+ * day settled while its prices landed elsewhere — an invisible one-day hole.
+ * NSE's 52-week file already has exactly this off-by-one, so it is not
+ * hypothetical for the archive as a whole.
+ */
+export function assertDateMatches(dateIso: string, rows: BhavRow[]): boolean {
+  return rows.every((r) => r.tradeDate === dateIso);
+}
+
 /** Postgres caps bind parameters at 65535; 10 columns means 1000 rows is safe. */
 const CHUNK = 1000;
 
 /**
- * Statuses that mean "this day is settled, do not fetch it again".
+ * How long after a session a recorded "holiday" stops being a guess.
  *
- * Deliberately excludes "error": a day that failed on a transient network
- * problem must be retried by the next run, otherwise one blip becomes a
- * permanent hole in the series.
+ * NSE answers a not-yet-published file with the same 404 it uses for a real
+ * holiday, so the two are indistinguishable at fetch time. A holiday recorded
+ * shortly after the close may simply mean the file was late; treating it as
+ * final would leave a permanent hole that nothing ever corrects. After a couple
+ * of days a 404 genuinely does mean there was no session.
  */
-const SETTLED = new Set(["ok", "holiday"]);
+const HOLIDAY_GRACE_MS = 2 * 24 * 60 * 60 * 1000;
 
-async function isSettled(dateIso: string): Promise<boolean> {
+/**
+ * Whether a day needs no further fetching.
+ *
+ * - `ok`      always settled.
+ * - `holiday` settled only once the grace period has passed (see above).
+ * - `error`   never settled — a transient failure must be retried, or one blip
+ *             becomes permanent missing data.
+ */
+export async function isSettled(dateIso: string): Promise<boolean> {
   const rows = await db
-    .select({ status: schema.ingestLog.status })
+    .select({ status: schema.ingestLog.status, fetchedAt: schema.ingestLog.fetchedAt })
     .from(schema.ingestLog)
     .where(and(eq(schema.ingestLog.tradeDate, dateIso), eq(schema.ingestLog.source, SOURCE)));
-  return rows.length > 0 && SETTLED.has(rows[0]!.status);
+
+  const row = rows[0];
+  if (!row) return false;
+  if (row.status === "ok") return true;
+  if (row.status !== "holiday") return false;
+
+  const sessionEnd = new Date(`${dateIso}T00:00:00Z`).getTime();
+  return row.fetchedAt.getTime() - sessionEnd >= HOLIDAY_GRACE_MS;
 }
 
 async function writeLog(
@@ -93,6 +123,15 @@ export async function ingestDay(
   if (res.status === "holiday") {
     await writeLog(dateIso, "holiday", null, 0);
     return { status: "holiday" };
+  }
+
+  if (!assertDateMatches(dateIso, res.rows)) {
+    const seen = [...new Set(res.rows.map((r) => r.tradeDate))].slice(0, 3).join(", ");
+    await writeLog(dateIso, "error", null, null);
+    return {
+      status: "error",
+      message: `Requested ${dateIso} but the file reports ${seen || "no dates"}`,
+    };
   }
 
   await upsertPrices(res.rows);

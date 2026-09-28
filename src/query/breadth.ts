@@ -52,9 +52,9 @@ export async function breadthSeries(
     date: string; above: number; below: number; total: number;
   }>(sql`
     select i.trade_date                                        as date,
-           count(*) filter (where i.close >  i.${col})::int     as above,
-           count(*) filter (where i.close <= i.${col})::int     as below,
-           count(*)::int                                        as total
+           count(distinct i.symbol) filter (where i.close >  i.${col})::int as above,
+           count(distinct i.symbol) filter (where i.close <= i.${col})::int as below,
+           count(distinct i.symbol)::int                                    as total
     from daily_indicators i
     join index_members m
       on m.symbol = i.symbol
@@ -87,9 +87,14 @@ export async function latestBreakdown(
     with latest as (
       select max(i.trade_date) as d
       from daily_indicators i
+      join index_members m
+        on m.symbol = i.symbol
+       and m.index_name = ${indexName}
+       and i.trade_date >= m.added_on
+       and (m.removed_on is null or i.trade_date < m.removed_on)
       where i.${col} is not null
     )
-    select i.trade_date, i.symbol, i.close, i.${col} as ma
+    select distinct on (i.symbol) i.trade_date, i.symbol, i.close, i.${col} as ma
     from daily_indicators i
     join latest l on i.trade_date = l.d
     join index_members m
@@ -98,6 +103,7 @@ export async function latestBreakdown(
      and i.trade_date >= m.added_on
      and (m.removed_on is null or i.trade_date < m.removed_on)
     where i.${col} is not null
+    order by i.symbol
   `);
 
   if (rows.length === 0) return { date: null, above: [], below: [] };

@@ -36,7 +36,16 @@ function splitLines(csv: string): string[] {
 
 function num(raw: string | undefined): number {
   const v = Number((raw ?? "").trim());
-  return Number.isFinite(v) ? v : 0;
+  return Number.isFinite(v) ? v : NaN;
+}
+
+/**
+ * A close of zero is not a price. NSE occasionally ships blank or "-" fields,
+ * and coercing those to 0 would depress that symbol's 200-day average for the
+ * next 200 sessions with nothing to signal it. Such rows are dropped instead.
+ */
+function hasUsablePrices(close: number): boolean {
+  return Number.isFinite(close) && close > 0;
 }
 
 /**
@@ -59,7 +68,8 @@ export function parseUdiff(csv: string): BhavRow[] {
   const lines = splitLines(csv);
   const cols = requireHeader(
     lines[0] ?? "",
-    ["TradDt", "TckrSymb", "SctySrs", "ClsPric", "TtlTradgVol"],
+    ["TradDt", "TckrSymb", "SctySrs", "OpnPric", "HghPric", "LwPric", "ClsPric",
+     "PrvsClsgPric", "TtlTradgVol", "TtlTrfVal"],
     "udiff",
   );
   const at = (name: string) => cols.indexOf(name);
@@ -73,14 +83,16 @@ export function parseUdiff(csv: string): BhavRow[] {
     const f = line.split(",");
     const series = (f[iSrs] ?? "").trim();
     if (!KEEP_SERIES.has(series)) continue;
+    const close = num(f[iClose]);
+    if (!hasUsablePrices(close)) continue;
     rows.push({
-      tradeDate: (f[iDate] ?? "").trim(),
+      tradeDate: requireIsoDate((f[iDate] ?? "").trim()),
       symbol: (f[iSym] ?? "").trim(),
       series,
       open: num(f[iOpen]),
       high: num(f[iHigh]),
       low: num(f[iLow]),
-      close: num(f[iClose]),
+      close,
       prevClose: num(f[iPrev]),
       volume: num(f[iVol]),
       turnover: num(f[iVal]),
@@ -89,19 +101,38 @@ export function parseUdiff(csv: string): BhavRow[] {
   return rows;
 }
 
-/** Converts NSE's legacy `02-JAN-2023` timestamp to `2023-01-02`. */
+/** Guards against a half-parsed date reaching Postgres as e.g. year 20 AD. */
+function requireIsoDate(value: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`Not an ISO date: ${JSON.stringify(value)}`);
+  }
+  return value;
+}
+
+/**
+ * Converts NSE's legacy timestamp to ISO.
+ *
+ * Both `02-JAN-2023` and `13-JUL-20` occur in the archive — the two-digit form
+ * showed up on 2020-07-13 and previously produced "20-07-13", i.e. year 20 AD,
+ * which Postgres rejected mid-backfill. All data here is post-2000.
+ */
 function legacyDateToIso(raw: string): string {
   const [d, mon, y] = raw.trim().split("-");
   const m = MONTHS.indexOf((mon ?? "").toUpperCase());
   if (m < 0) throw new Error(`Unparseable legacy date: ${raw}`);
-  return `${y}-${String(m + 1).padStart(2, "0")}-${(d ?? "").padStart(2, "0")}`;
+
+  const year = (y ?? "").length === 2 ? `20${y}` : y;
+  return requireIsoDate(
+    `${year}-${String(m + 1).padStart(2, "0")}-${(d ?? "").padStart(2, "0")}`,
+  );
 }
 
 export function parseLegacy(csv: string): BhavRow[] {
   const lines = splitLines(csv);
   const cols = requireHeader(
     lines[0] ?? "",
-    ["SYMBOL", "SERIES", "CLOSE", "TOTTRDQTY", "TIMESTAMP"],
+    ["SYMBOL", "SERIES", "OPEN", "HIGH", "LOW", "CLOSE", "PREVCLOSE",
+     "TOTTRDQTY", "TOTTRDVAL", "TIMESTAMP"],
     "legacy",
   );
   const at = (name: string) => cols.indexOf(name);
@@ -115,6 +146,8 @@ export function parseLegacy(csv: string): BhavRow[] {
     const f = line.split(",");
     const series = (f[iSrs] ?? "").trim();
     if (!KEEP_SERIES.has(series)) continue;
+    const close = num(f[iClose]);
+    if (!hasUsablePrices(close)) continue;
     rows.push({
       tradeDate: legacyDateToIso(f[iTs] ?? ""),
       symbol: (f[iSym] ?? "").trim(),
@@ -122,7 +155,7 @@ export function parseLegacy(csv: string): BhavRow[] {
       open: num(f[iOpen]),
       high: num(f[iHigh]),
       low: num(f[iLow]),
-      close: num(f[iClose]),
+      close,
       prevClose: num(f[iPrev]),
       volume: num(f[iVol]),
       turnover: num(f[iVal]),
@@ -237,10 +270,19 @@ function unzipCsv(buf: Uint8Array): string {
  *
  * Tries the format the date suggests, then the other — so a slightly wrong
  * cutover costs an extra request rather than silently reporting a trading day
- * as a holiday. Only when both are a definite 404 is it a holiday; if either
- * attempt failed outright we report an error so the day gets retried later.
+ * as a holiday. Only when both are a definite 404 is it a holiday.
+ *
+ * Decoding is inside the same guard as the fetch: a truncated archive, an
+ * unrecognised header, or an unparseable date must end the *day* as an error
+ * that gets retried — never the whole backfill with a stack trace.
+ *
+ * `deps` exists so tests can feed a corrupt payload without a fake HTTP server.
  */
-export async function fetchBhavcopy(dateIso: string): Promise<FetchResult> {
+export async function fetchBhavcopy(
+  dateIso: string,
+  deps: { download?: typeof download } = {},
+): Promise<FetchResult> {
+  const get = deps.download ?? download;
   const [y, m, d] = dateIso.split("-") as [string, string, string];
   const primary = bhavcopyUrl(dateIso).format;
   const order: BhavFormat[] = primary === "udiff" ? ["udiff", "legacy"] : ["legacy", "udiff"];
@@ -249,12 +291,17 @@ export async function fetchBhavcopy(dateIso: string): Promise<FetchResult> {
 
   for (const format of order) {
     const url = format === "udiff" ? udiffUrl(y, m, d) : legacyUrl(y, m, d);
-    const res = await download(url);
+    const res = await get(url);
 
     if (res.kind === "ok") {
-      const csv = unzipCsv(res.bytes);
-      const rows = format === "udiff" ? parseUdiff(csv) : parseLegacy(csv);
-      return { status: "ok", format, rows };
+      try {
+        const csv = unzipCsv(res.bytes);
+        const rows = format === "udiff" ? parseUdiff(csv) : parseLegacy(csv);
+        return { status: "ok", format, rows };
+      } catch (e) {
+        failures.push(`${format}: ${e instanceof Error ? e.message : String(e)}`);
+        continue;
+      }
     }
     if (res.kind === "failed") failures.push(`${format}: ${res.message}`);
   }

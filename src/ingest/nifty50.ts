@@ -1,3 +1,4 @@
+import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 
 const NIFTY50_LIST_URL =
@@ -35,6 +36,15 @@ export async function fetchNifty50Symbols(): Promise<string[]> {
  */
 export async function seedNifty50(addedOn: string): Promise<number> {
   const symbols = await fetchNifty50Symbols();
+
+  // Replace the open intervals rather than adding to them. The primary key
+  // includes added_on, so a second seed with a different date would otherwise
+  // insert a parallel open interval per symbol and every breadth count would
+  // double.
+  await db
+    .delete(schema.indexMembers)
+    .where(and(eq(schema.indexMembers.indexName, INDEX_NAME), isNull(schema.indexMembers.removedOn)));
+
   await db
     .insert(schema.indexMembers)
     .values(symbols.map((symbol) => ({ indexName: INDEX_NAME, symbol, addedOn, removedOn: null })))
