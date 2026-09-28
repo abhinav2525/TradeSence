@@ -14,7 +14,8 @@
     "ingest:day": "bun run src/ingest/cli-day.ts",
     "ingest:backfill": "bun run src/ingest/cli-backfill.ts",
     "ingest:nifty50": "bun run src/ingest/cli-nifty50.ts",
-    "indicators": "bun run src/indicators/cli.ts"
+    "indicators": "bun run src/indicators/cli.ts",
+    "ingest:nightly": "bun run src/ingest/cli-nightly.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",
