@@ -145,3 +145,60 @@ export function bhavcopyUrl(dateIso: string): { url: string; format: BhavFormat 
     format: "legacy",
   };
 }
+
+// ---------------------------------------------------------------------------
+// Fetching
+// ---------------------------------------------------------------------------
+
+import { unzipSync } from "fflate";
+
+export type FetchResult =
+  | { status: "ok"; format: BhavFormat; rows: BhavRow[] }
+  | { status: "holiday" };
+
+const USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
+function udiffUrl(y: string, m: string, d: string): string {
+  return `https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_${y}${m}${d}_F_0000.csv.zip`;
+}
+
+function legacyUrl(y: string, m: string, d: string): string {
+  const mon = MONTHS[Number(m) - 1]!;
+  return `https://nsearchives.nseindia.com/content/historical/EQUITIES/${y}/${mon}/cm${d}${mon}${y}bhav.csv.zip`;
+}
+
+/** Only a 200 counts. NSE answers holidays with a 404 that still has a body. */
+async function download(url: string): Promise<Uint8Array | null> {
+  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "*/*" } });
+  if (res.status !== 200) return null;
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+function unzipCsv(buf: Uint8Array): string {
+  const files = unzipSync(buf);
+  const name = Object.keys(files).find((n) => n.toLowerCase().endsWith(".csv"));
+  if (!name) throw new Error(`Archive contained no CSV (entries: ${Object.keys(files).join(", ")})`);
+  return new TextDecoder().decode(files[name]!);
+}
+
+/**
+ * Downloads one trading day. Tries the format the date suggests, then the other
+ * one — so a slightly wrong cutover costs an extra request rather than silently
+ * reporting a trading day as a holiday. Only when both 404 is it a holiday.
+ */
+export async function fetchBhavcopy(dateIso: string): Promise<FetchResult> {
+  const [y, m, d] = dateIso.split("-") as [string, string, string];
+  const primary = bhavcopyUrl(dateIso).format;
+  const order: BhavFormat[] = primary === "udiff" ? ["udiff", "legacy"] : ["legacy", "udiff"];
+
+  for (const format of order) {
+    const url = format === "udiff" ? udiffUrl(y, m, d) : legacyUrl(y, m, d);
+    const buf = await download(url);
+    if (!buf) continue;
+    const csv = unzipCsv(buf);
+    const rows = format === "udiff" ? parseUdiff(csv) : parseLegacy(csv);
+    return { status: "ok", format, rows };
+  }
+  return { status: "holiday" };
+}
