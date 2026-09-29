@@ -32,8 +32,12 @@ export type MemberRow = {
 };
 
 function column(ma: MaKind) {
-  // Values come from a fixed map, never from user input.
-  return sql.raw(MA_COLUMNS[ma]);
+  // Values come from a fixed map, never from user input. The explicit check
+  // matters because TypeScript's types are erased and this is the one place in
+  // the codebase that builds raw SQL.
+  const col = MA_COLUMNS[ma];
+  if (!col) throw new Error(`Unknown moving average: ${ma}`);
+  return sql.raw(col);
 }
 
 /**
@@ -75,38 +79,84 @@ export async function breadthSeries(
   }));
 }
 
-/** The most recent session, split into the two lists the page shows. */
-export async function latestBreakdown(
+/**
+ * Turns a requested date into an actual trading session.
+ *
+ * Weekends, exchange holidays and future dates all snap *backwards* to the most
+ * recent session at or before the request, which is what someone typing a date
+ * into a box expects. A date earlier than all the data has nothing to snap to
+ * and returns null.
+ */
+export async function resolveSession(
   ma: MaKind,
-  indexName = "NIFTY50",
-): Promise<{ date: string | null; above: MemberRow[]; below: MemberRow[] }> {
+  dateIso?: string,
+): Promise<string | null> {
   const col = column(ma);
-  const rows = await db.execute<{
-    trade_date: string; symbol: string; close: number; ma: number;
-  }>(sql`
-    with latest as (
-      select max(i.trade_date) as d
-      from daily_indicators i
-      join index_members m
-        on m.symbol = i.symbol
-       and m.index_name = ${indexName}
-       and i.trade_date >= m.added_on
-       and (m.removed_on is null or i.trade_date < m.removed_on)
-      where i.${col} is not null
-    )
-    select distinct on (i.symbol) i.trade_date, i.symbol, i.close, i.${col} as ma
+  const rows = await db.execute<{ d: string | null }>(sql`
+    select max(i.trade_date)::text as d
     from daily_indicators i
-    join latest l on i.trade_date = l.d
+    where i.${col} is not null
+      ${dateIso ? sql`and i.trade_date <= ${dateIso}` : sql``}
+  `);
+  return rows[0]?.d ?? null;
+}
+
+/** The trading sessions immediately before and after a given one. */
+export async function adjacentSessions(
+  ma: MaKind,
+  dateIso: string,
+): Promise<{ prev: string | null; next: string | null }> {
+  const col = column(ma);
+  const rows = await db.execute<{ prev: string | null; next: string | null }>(sql`
+    select
+      (select max(trade_date)::text from daily_indicators
+        where ${col} is not null and trade_date < ${dateIso}) as prev,
+      (select min(trade_date)::text from daily_indicators
+        where ${col} is not null and trade_date > ${dateIso}) as next
+  `);
+  return { prev: rows[0]?.prev ?? null, next: rows[0]?.next ?? null };
+}
+
+export type Breakdown = {
+  /** The session actually shown. */
+  date: string | null;
+  /** What the caller asked for, which may not have been a trading day. */
+  requested: string | null;
+  /** True when the request was moved back to an earlier session. */
+  snapped: boolean;
+  above: MemberRow[];
+  below: MemberRow[];
+};
+
+/**
+ * One session, split into the two lists the page shows.
+ *
+ * Omitting the date gives the newest session, which is what the dashboard
+ * showed before dates were selectable — so existing callers are unaffected.
+ */
+export async function breakdownOn(
+  ma: MaKind,
+  dateIso?: string,
+  indexName = "NIFTY50",
+): Promise<Breakdown> {
+  const col = column(ma);
+  const session = await resolveSession(ma, dateIso);
+
+  if (!session) {
+    return { date: null, requested: dateIso ?? null, snapped: false, above: [], below: [] };
+  }
+
+  const rows = await db.execute<{ symbol: string; close: number; ma: number }>(sql`
+    select distinct on (i.symbol) i.symbol, i.close, i.${col} as ma
+    from daily_indicators i
     join index_members m
       on m.symbol = i.symbol
      and m.index_name = ${indexName}
      and i.trade_date >= m.added_on
      and (m.removed_on is null or i.trade_date < m.removed_on)
-    where i.${col} is not null
+    where i.trade_date = ${session} and i.${col} is not null
     order by i.symbol
   `);
-
-  if (rows.length === 0) return { date: null, above: [], below: [] };
 
   const mapped: MemberRow[] = rows.map((r) => {
     const close = Number(r.close);
@@ -115,9 +165,16 @@ export async function latestBreakdown(
   });
 
   return {
-    date: rows[0]!.trade_date,
+    date: session,
+    requested: dateIso ?? null,
+    snapped: dateIso !== undefined && dateIso !== session,
     // strongest first above the line, weakest first below it
     above: mapped.filter((r) => r.pctFromMa > 0).sort((a, b) => b.pctFromMa - a.pctFromMa),
     below: mapped.filter((r) => r.pctFromMa <= 0).sort((a, b) => a.pctFromMa - b.pctFromMa),
   };
+}
+
+/** Back-compatible alias: the newest session. */
+export async function latestBreakdown(ma: MaKind, indexName = "NIFTY50") {
+  return breakdownOn(ma, undefined, indexName);
 }
