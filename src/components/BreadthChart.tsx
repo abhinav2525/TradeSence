@@ -5,7 +5,7 @@ import {
 } from "recharts";
 import type { BreadthPoint } from "../query/breadth";
 
-type Props = { data: BreadthPoint[]; label: string };
+type Props = { data: BreadthPoint[]; label: string; selectedDate?: string | null };
 
 function TooltipBody({ active, payload }: any) {
   if (!active || !payload?.length) return null;
@@ -36,7 +36,7 @@ function TooltipBody({ active, payload }: any) {
  * line is the only other mark: it is the line that separates a market where
  * most names participate from one carried by a few.
  */
-export default function BreadthChart({ data, label }: Props) {
+export default function BreadthChart({ data, label, selectedDate }: Props) {
   return (
     <div style={{ width: "100%", height: 300 }}>
       <ResponsiveContainer>
@@ -48,6 +48,7 @@ export default function BreadthChart({ data, label }: Props) {
             tickLine={false}
             axisLine={{ stroke: "var(--axis)" }}
             minTickGap={64}
+            interval={Math.max(1, Math.ceil(data.length / 12))}
             tickFormatter={(d: string) => d.slice(0, 7)}
           />
           <YAxis
@@ -64,6 +65,20 @@ export default function BreadthChart({ data, label }: Props) {
             strokeDasharray="3 3"
             label={{ value: "50%", position: "right", fill: "var(--text-muted)", fontSize: 11 }}
           />
+          {selectedDate && (
+            <ReferenceLine
+              x={selectedDate}
+              stroke="var(--text-primary)"
+              strokeWidth={1}
+              strokeDasharray="2 2"
+              label={{
+                value: "selected",
+                position: "top",
+                fill: "var(--text-secondary)",
+                fontSize: 10,
+              }}
+            />
+          )}
           <Tooltip content={<TooltipBody />} cursor={{ stroke: "var(--axis)", strokeWidth: 1 }} />
           <Line
             type="monotone"
