@@ -19,7 +19,7 @@ export default function MaTabs({ base, ma, date }: Props) {
           className={cn(
             "flex items-baseline gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors",
             k === ma
-              ? "border-primary/40 bg-primary/10 text-foreground"
+              ? "border-foreground/25 bg-accent text-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground",
           )}
         >

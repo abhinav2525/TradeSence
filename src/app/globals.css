@@ -12,59 +12,64 @@
  * separation and 3:1 contrast against their own surface.
  */
 :root {
-  --background: #fafafc;
-  --foreground: #0b0e1a;
+  --background: #ffffff;
+  --foreground: #09090b;
   --card: #ffffff;
-  --card-foreground: #0b0e1a;
+  --card-foreground: #09090b;
   --popover: #ffffff;
-  --popover-foreground: #0b0e1a;
-  --primary: #0891b2;
-  --primary-foreground: #ffffff;
-  --secondary: #eef1f7;
-  --secondary-foreground: #0b0e1a;
-  --muted: #f1f3f8;
-  --muted-foreground: #5a657e;
-  --accent: #eef1f7;
-  --accent-foreground: #0b0e1a;
+  --popover-foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
   --destructive: #d1495b;
-  --destructive-foreground: #ffffff;
-  --border: #e2e6ef;
-  --input: #e2e6ef;
-  --ring: #0891b2;
+  --destructive-foreground: #fafafa;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
 
-  /* data roles */
+  /* Data roles. Chrome is neutral; colour is reserved for measurements. */
   --signal-up: #0891b2;
   --signal-down: #d1495b;
-  --grid-line: #e7eaf2;
+  --grid-line: #ececef;
   --chart-1: #0891b2;
 
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: #0b0e1a;
-  --foreground: #e8ecf8;
-  --card: #141a2e;
-  --card-foreground: #e8ecf8;
-  --popover: #141a2e;
-  --popover-foreground: #e8ecf8;
-  --primary: #0fa3c7;
-  --primary-foreground: #04131a;
-  --secondary: #1b2340;
-  --secondary-foreground: #e8ecf8;
-  --muted: #1b2340;
-  --muted-foreground: #8b98b8;
-  --accent: #1b2340;
-  --accent-foreground: #e8ecf8;
+  /* Five neutral steps, shadcn-style: page, panel, raised, line, ink.
+     Nothing is pure #000 - a true black makes borders disappear and gives the
+     panels nothing to sit against. */
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #111113;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #1c1c1f;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c1f;
+  --muted-foreground: #8f8f99;
+  --accent: #232327;
+  --accent-foreground: #fafafa;
   --destructive: #db5147;
-  --destructive-foreground: #1a0705;
-  --border: #233052;
-  --input: #233052;
-  --ring: #0fa3c7;
+  --destructive-foreground: #fafafa;
+  --border: #26262a;
+  --input: #26262a;
+  --ring: #52525b;
 
+  /* Validated against #09090B: lightness band, chroma floor, CVD separation
+     (worst dE 18.2 deutan) and 3:1 contrast all pass. */
   --signal-up: #0fa3c7;
   --signal-down: #db5147;
-  --grid-line: #1c2442;
+  --grid-line: #1e1e22;
   --chart-1: #0fa3c7;
 }
 

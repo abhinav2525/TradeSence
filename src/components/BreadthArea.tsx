@@ -52,7 +52,7 @@ export default function BreadthArea({ data, selectedDate }: Props) {
             className={cn(
               "rounded px-2 py-0.5 font-mono text-[11px] transition-colors",
               range === r.key
-                ? "bg-primary/15 text-foreground"
+                ? "bg-accent text-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
