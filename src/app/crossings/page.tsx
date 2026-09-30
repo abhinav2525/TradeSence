@@ -1,12 +1,12 @@
-import Link from "next/link";
-import SiteNav from "../../components/SiteNav";
-import CrossingsTable from "../../components/CrossingsTable";
-import { crossingStats } from "../../query/crossings";
-import { MA_LABELS, type MaKind } from "../../query/breadth";
+import SiteNav from "@/components/SiteNav";
+import MaTabs from "@/components/MaTabs";
+import Readout from "@/components/Readout";
+import CrossingsTable from "@/components/CrossingsTable";
+import Hotkeys from "@/components/Hotkeys";
+import { crossingStats } from "@/query/crossings";
+import { MA_LABELS, resolveSession, type MaKind } from "@/query/breadth";
 
 export const dynamic = "force-dynamic";
-
-const TABS: MaKind[] = ["sma200", "ema200", "sma50"];
 
 function isMaKind(v: string | undefined): v is MaKind {
   return v === "sma200" || v === "ema200" || v === "sma50";
@@ -20,54 +20,76 @@ export default async function CrossingsPage({
   const { ma: raw } = await searchParams;
   const ma: MaKind = isMaKind(raw) ? raw : "sma200";
   const label = MA_LABELS[ma];
-  const rows = await crossingStats(ma);
+
+  const [rows, asOf] = await Promise.all([crossingStats(ma), resolveSession(ma)]);
 
   const total = rows.reduce((n, r) => n + r.crossings, 0);
-  const calmest = [...rows].reverse()[0];
+  const busiest = rows[0];
+  const calmest = rows.at(-1);
+  const median = rows.length
+    ? [...rows].map((r) => r.crossings).sort((a, b) => a - b)[Math.floor(rows.length / 2)]!
+    : 0;
 
   return (
-    <main className="wrap">
-      <SiteNav current="crossings" ma={ma} />
-      <h1>How often each stock crosses its average</h1>
-      <p className="sub">
-        Not how strong a stock is — how <em>reliable</em> the signal is for it. A name that
-        crosses constantly generates signals worth distrusting.
-      </p>
+    <main className="mx-auto max-w-6xl px-4 pb-20 pt-8">
+      <SiteNav current="crossings" ma={ma} asOf={asOf} />
+      <Hotkeys ma={ma} page="crossings" />
 
-      <nav className="tabs" aria-label="Moving average">
-        {TABS.map((k) => (
-          <Link key={k} href={`/crossings?ma=${k}`} className="tab"
-                aria-current={k === ma ? "page" : undefined}>
-            {MA_LABELS[k]}
-          </Link>
-        ))}
-      </nav>
-
-      {rows.length > 0 && (
-        <div className="card">
-          <div className="hero">
-            <div>
-              <div className="hero-num">{rows[0]!.crossings}</div>
-              <div className="hero-label">
-                crossings by {rows[0]!.symbol} — the busiest, vs {label}
-              </div>
-            </div>
-            <div className="hero-split">
-              <strong>{total}</strong> crossings across {rows.length} constituents
-              <br />
-              calmest: <strong>{calmest?.symbol}</strong> with {calmest?.crossings}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="card">
-        <CrossingsTable rows={rows} maLabel={label} />
-        <p className="note">
-          A crossing is counted only between consecutive sessions that both have a value,
-          so neither the start of the averaging window nor a gap in the data can fake one.
+      <div className="mb-5">
+        <h1 className="text-lg font-medium">How often each stock crosses its average</h1>
+        <p className="mt-1 max-w-[68ch] text-sm text-muted-foreground">
+          This measures whipsaw, not strength. A name that crosses every few weeks produces
+          signals worth distrusting; one that crosses twice a decade is saying something when
+          it does.
         </p>
       </div>
+
+      <div className="mb-5">
+        <MaTabs base="/crossings" ma={ma} />
+      </div>
+
+      {busiest && (
+        <Readout
+          cells={[
+            {
+              value: String(busiest.crossings),
+              label: `crossings by ${busiest.symbol}, the busiest`,
+              fill: 1,
+              tone: "down",
+              hint: busiest.avgDaysPerRun ? `one every ${busiest.avgDaysPerRun.toFixed(0)}d` : undefined,
+            },
+            {
+              value: String(median),
+              label: "median across the index",
+              fill: busiest.crossings ? median / busiest.crossings : 0,
+              tone: "neutral",
+            },
+            {
+              value: String(calmest?.crossings ?? 0),
+              label: `crossings by ${calmest?.symbol ?? "—"}, the calmest`,
+              fill: busiest.crossings ? (calmest?.crossings ?? 0) / busiest.crossings : 0,
+              tone: "up",
+            },
+            {
+              value: String(total),
+              label: `crossings in total, across ${rows.length} constituents`,
+              tone: "neutral",
+            },
+          ]}
+        />
+      )}
+
+      <section className="mt-5 rounded-lg border bg-card">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
+          <h2 className="text-sm font-medium">Ranked by crossings, vs the {label}</h2>
+          <p className="font-mono text-xs text-muted-foreground">ten years</p>
+        </div>
+        <CrossingsTable rows={rows} maLabel={label} />
+        <p className="border-t px-4 py-2.5 text-xs text-muted-foreground">
+          A crossing counts only between consecutive sessions that both have an average, so
+          neither the start of the averaging window nor a gap in the data can fake one.
+        </p>
+      </section>
     </main>
   );
 }

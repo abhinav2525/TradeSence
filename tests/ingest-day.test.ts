@@ -17,6 +17,7 @@ describe("ingestDay", () => {
   test("stores a trading day's prices and logs it as ok", async () => {
     const result = await ingestDay(TRADING_DAY);
     expect(result.status).toBe("ok");
+    if (result.status !== "ok") return;
     expect(result.rowCount).toBeGreaterThan(1000);
 
     const rows = await db

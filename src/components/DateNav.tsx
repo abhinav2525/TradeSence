@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Props = {
   ma: string;
@@ -11,17 +14,49 @@ type Props = {
   max: string | null;
 };
 
-/**
- * A plain GET form, so the page stays a server component — no client state,
- * no date-picker dependency, and the selected day lives in the URL where it
- * can be bookmarked and shared.
- */
 export default function DateNav({ ma, date, requested, snapped, prev, next, min, max }: Props) {
+  const step = (target: string | null, dir: "prev" | "next") => {
+    const Icon = dir === "prev" ? ChevronLeft : ChevronRight;
+    const label = dir === "prev" ? "Previous session" : "Next session";
+    if (!target) {
+      return (
+        <span
+          aria-disabled="true"
+          title={dir === "prev" ? "Start of history" : "Latest session"}
+          className="inline-flex size-8 items-center justify-center rounded-md border text-muted-foreground/40"
+        >
+          <Icon className="size-4" />
+        </span>
+      );
+    }
+    return (
+      <Link
+        href={`/?ma=${ma}&date=${target}`}
+        prefetch
+        rel={dir}
+        aria-label={label}
+        title={`${label} — ${target}`}
+        className="inline-flex size-8 items-center justify-center rounded-md border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <Icon className="size-4" />
+      </Link>
+    );
+  };
+
   return (
-    <div className="datenav">
-      <form method="get" action="/">
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-1">
+        {step(prev, "prev")}
+        {step(next, "next")}
+      </div>
+
+      {/* a plain GET form keeps this page a server component and puts the
+          selected session in the URL, so a view can be bookmarked */}
+      <form method="get" action="/" className="flex items-center gap-2">
         <input type="hidden" name="ma" value={ma} />
-        <label htmlFor="date">Session</label>
+        <label htmlFor="date" className="sr-only">
+          Session date
+        </label>
         <input
           type="date"
           id="date"
@@ -29,26 +64,21 @@ export default function DateNav({ ma, date, requested, snapped, prev, next, min,
           defaultValue={date ?? undefined}
           min={min ?? undefined}
           max={max ?? undefined}
+          className="h-8 rounded-md border bg-card px-2 font-mono text-xs text-foreground"
         />
-        <button type="submit">Go</button>
+        <Button type="submit" variant="secondary" size="sm" className="h-8 text-xs">
+          Show session
+        </Button>
       </form>
 
-      <div className="stepper">
-        {prev ? (
-          <Link className="step" href={`/?ma=${ma}&date=${prev}`} rel="prev">← {prev}</Link>
-        ) : (
-          <span className="step disabled">← start of history</span>
-        )}
-        {next ? (
-          <Link className="step" href={`/?ma=${ma}&date=${next}`} rel="next">{next} →</Link>
-        ) : (
-          <span className="step disabled">latest session →</span>
-        )}
-      </div>
+      <p className="font-mono text-[11px] text-muted-foreground">
+        <kbd className="rounded border px-1">←</kbd>{" "}
+        <kbd className="rounded border px-1">→</kbd> to step
+      </p>
 
       {snapped && requested && (
-        <p className="snapped" role="status">
-          {requested} was not a trading session — showing {date} instead.
+        <p role="status" className={cn("w-full text-xs text-muted-foreground")}>
+          {requested} was not a trading session. Showing {date}.
         </p>
       )}
     </div>
