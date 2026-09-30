@@ -3,6 +3,7 @@ import MaTabs from "@/components/MaTabs";
 import DateNav from "@/components/DateNav";
 import Readout from "@/components/Readout";
 import BreadthArea, { type AreaPoint } from "@/components/BreadthArea";
+import BreadthGauge from "@/components/BreadthGauge";
 import MemberTable from "@/components/MemberTable";
 import Hotkeys from "@/components/Hotkeys";
 import {
@@ -78,35 +79,34 @@ export default async function Page({
         </div>
       ) : (
         <>
-          <div className="shrink-0">
-          <Readout
-            cells={[
-              {
-                value: `${point.pctAbove.toFixed(0)}%`,
-                label: `above their ${label}`,
-                fill: point.pctAbove / 100,
-                tone: point.pctAbove >= 50 ? "up" : "down",
-              },
-              {
-                value: `${percentile.toFixed(1)}`,
-                label: "percentile over ten years",
-                fill: percentile / 100,
-                tone: percentile <= 20 ? "down" : percentile >= 80 ? "up" : "neutral",
-                hint: percentile <= 10 ? "rare" : percentile >= 90 ? "rare" : "ordinary",
-              },
-              {
-                value: `${point.above}/${point.total}`,
-                label: "constituents above the line",
-                tone: "neutral",
-              },
-              {
-                value: delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta.toFixed(0)}`,
-                label: "change over five sessions",
-                tone: delta === null ? "neutral" : delta > 0 ? "up" : "down",
-                hint: delta === null ? undefined : delta > 0 ? "improving" : "deteriorating",
-              },
-            ]}
-          />
+          <div className="grid shrink-0 gap-5 lg:grid-cols-[210px_1fr]">
+            <div className="flex items-center justify-center rounded-lg border bg-card py-3">
+              <BreadthGauge pct={point.pctAbove} percentile={percentile} />
+            </div>
+            <Readout
+              cols={3}
+              cells={[
+                {
+                  value: `${percentile.toFixed(1)}`,
+                  label: "percentile over ten years",
+                  fill: percentile / 100,
+                  tone: percentile <= 20 ? "down" : percentile >= 80 ? "up" : "neutral",
+                  hint: percentile <= 10 || percentile >= 90 ? "rare" : "ordinary",
+                },
+                {
+                  value: `${point.above}/${point.total}`,
+                  label: "constituents above the line",
+                  tone: "neutral",
+                  hint: `${label}`,
+                },
+                {
+                  value: delta === null ? "—" : `${delta > 0 ? "+" : ""}${delta.toFixed(0)}`,
+                  label: "change over five sessions",
+                  tone: delta === null ? "neutral" : delta > 0 ? "up" : "down",
+                  hint: delta === null ? undefined : delta > 0 ? "improving" : "deteriorating",
+                },
+              ]}
+            />
           </div>
 
           <section className="mt-5 shrink-0 rounded-lg border bg-card">

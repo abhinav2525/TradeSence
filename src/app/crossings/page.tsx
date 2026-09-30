@@ -2,6 +2,7 @@ import SiteNav from "@/components/SiteNav";
 import MaTabs from "@/components/MaTabs";
 import Readout from "@/components/Readout";
 import CrossingsTable from "@/components/CrossingsTable";
+import CrossingsBars from "@/components/CrossingsBars";
 import Hotkeys from "@/components/Hotkeys";
 import { crossingStats } from "@/query/crossings";
 import { MA_LABELS, resolveSession, type MaKind } from "@/query/breadth";
@@ -80,6 +81,22 @@ export default async function CrossingsPage({
         />
         </div>
       )}
+
+      <section className="mt-5 shrink-0 rounded-lg border bg-card">
+        <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
+          <h2 className="text-sm font-medium">The twelve busiest</h2>
+          <p className="font-mono text-xs text-muted-foreground">crossings vs the {label}</p>
+        </div>
+        <div className="px-2 pb-3 pt-4">
+          <CrossingsBars
+            data={rows.slice(0, 12).map((r) => ({
+              symbol: r.symbol,
+              crossings: r.crossings,
+              avgRun: r.avgDaysPerRun,
+            }))}
+          />
+        </div>
+      </section>
 
       <section className="mt-5 flex min-h-0 flex-col rounded-lg border bg-card lg:flex-1">
         <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">

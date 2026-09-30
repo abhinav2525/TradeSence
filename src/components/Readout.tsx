@@ -14,9 +14,14 @@ type Cell = {
  * alone is not decidable — you need to know how rare it is and which way it is
  * moving before it means anything.
  */
-export default function Readout({ cells }: { cells: Cell[] }) {
+export default function Readout({ cells, cols = 4 }: { cells: Cell[]; cols?: 3 | 4 }) {
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border sm:grid-cols-4">
+    <div
+      className={cn(
+        "grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border",
+        cols === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4",
+      )}
+    >
       {cells.map((c) => (
         <div key={c.label} className="bg-card px-4 py-3.5">
           <div
