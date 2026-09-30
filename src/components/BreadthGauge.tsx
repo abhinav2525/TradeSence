@@ -26,7 +26,7 @@ export default function BreadthGauge({ pct, percentile }: Props) {
 
   return (
     <div className="relative">
-      <ChartContainer config={config} className="mx-auto aspect-square h-[148px]">
+      <ChartContainer config={config} className="mx-auto aspect-square h-[132px]">
         <RadialBarChart
           data={[{ name: "pct", pct, fill: tone }]}
           startAngle={210}
@@ -46,7 +46,7 @@ export default function BreadthGauge({ pct, percentile }: Props) {
       </ChartContainer>
 
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-mono text-3xl leading-none tracking-tight">{pct.toFixed(0)}%</span>
+        <span className="font-mono text-[28px] leading-none tracking-tight">{pct.toFixed(0)}%</span>
         <span className="mt-1 text-[11px] text-muted-foreground">participating</span>
         <span className="mt-0.5 font-mono text-[10px] text-muted-foreground">
           {percentile.toFixed(0)}th pctile

@@ -32,20 +32,18 @@ export default async function CrossingsPage({
     : 0;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-8 lg:h-full lg:pb-6">
+    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-6 lg:h-full lg:overflow-y-auto lg:pb-5">
       <SiteNav current="crossings" ma={ma} asOf={asOf} />
       <Hotkeys ma={ma} page="crossings" />
 
-      <div className="mb-5 shrink-0">
-        <h1 className="text-lg font-medium">How often each stock crosses its average</h1>
-        <p className="mt-1 max-w-[68ch] text-sm text-muted-foreground">
-          This measures whipsaw, not strength. A name that crosses every few weeks produces
-          signals worth distrusting; one that crosses twice a decade is saying something when
-          it does.
-        </p>
-      </div>
-
-      <div className="mb-5 shrink-0">
+      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-base font-medium">How often each stock crosses its average</h1>
+          <p className="mt-0.5 max-w-[70ch] text-xs text-muted-foreground">
+            Whipsaw, not strength. A name that crosses every few weeks produces signals worth
+            distrusting; one that crosses twice a decade means something when it does.
+          </p>
+        </div>
         <MaTabs base="/crossings" ma={ma} />
       </div>
 
@@ -82,33 +80,38 @@ export default async function CrossingsPage({
         </div>
       )}
 
-      <section className="mt-5 shrink-0 rounded-lg border bg-card">
-        <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-          <h2 className="text-sm font-medium">The twelve busiest</h2>
-          <p className="font-mono text-xs text-muted-foreground">crossings vs the {label}</p>
-        </div>
-        <div className="px-2 pb-3 pt-4">
-          <CrossingsBars
-            data={rows.slice(0, 12).map((r) => ({
-              symbol: r.symbol,
-              crossings: r.crossings,
-              avgRun: r.avgDaysPerRun,
-            }))}
-          />
-        </div>
-      </section>
+      {/* Side by side on a wide screen: stacking a 260px chart above the table
+          starved it of height. Below xl they stack and the page scrolls. */}
+      <div className="mt-4 grid gap-4 xl:min-h-[300px] xl:flex-1 xl:grid-cols-[minmax(0,380px)_1fr]">
+        <section className="self-start rounded-lg border bg-card">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-2.5">
+            <h2 className="text-sm font-medium">The twelve busiest</h2>
+            <p className="font-mono text-xs text-muted-foreground">vs the {label}</p>
+          </div>
+          <div className="px-2 pb-3 pt-3">
+            <CrossingsBars
+              data={rows.slice(0, 12).map((r) => ({
+                symbol: r.symbol,
+                crossings: r.crossings,
+                avgRun: r.avgDaysPerRun,
+              }))}
+            />
+          </div>
+        </section>
 
-      <section className="mt-5 flex min-h-0 flex-col rounded-lg border bg-card lg:flex-1">
-        <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-          <h2 className="text-sm font-medium">Ranked by crossings, vs the {label}</h2>
-          <p className="font-mono text-xs text-muted-foreground">ten years</p>
-        </div>
-        <CrossingsTable rows={rows} maLabel={label} />
-        <p className="shrink-0 border-t px-4 py-2.5 text-xs text-muted-foreground">
-          A crossing counts only between consecutive sessions that both have an average, so
-          neither the start of the averaging window nor a gap in the data can fake one.
-        </p>
-      </section>
+        <section className="flex min-h-[280px] flex-col rounded-lg border bg-card xl:min-h-0">
+          <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-2.5">
+            <h2 className="text-sm font-medium">All {rows.length} constituents</h2>
+            <p className="font-mono text-xs text-muted-foreground">ten years</p>
+          </div>
+          <CrossingsTable rows={rows} maLabel={label} />
+          <p className="shrink-0 border-t px-4 py-2 text-xs text-muted-foreground">
+            A crossing counts only between consecutive sessions that both have an average, so
+            neither the start of the averaging window nor a gap in the data can fake one.
+          </p>
+        </section>
+      </div>
+
     </main>
   );
 }

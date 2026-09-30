@@ -13,7 +13,7 @@ export default function MemberTable({ title, rows, tone, maLabel }: Props) {
   const toneClass = tone === "up" ? "text-signal-up" : "text-signal-down";
 
   return (
-    <section className="flex min-h-0 flex-col rounded-lg border bg-card">
+    <section className="flex min-h-[240px] flex-col rounded-lg border bg-card lg:min-h-0">
       <div className="flex shrink-0 items-baseline justify-between border-b px-4 py-3">
         <h2 className="flex items-baseline gap-2 text-sm font-medium">
           <span

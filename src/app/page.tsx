@@ -53,11 +53,11 @@ export default async function Page({
   const delta = point && prior ? point.pctAbove - prior.pctAbove : null;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-8 lg:h-full lg:pb-6">
+    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-6 lg:h-full lg:overflow-y-auto lg:pb-5">
       <SiteNav current="breadth" ma={ma} asOf={view.date} />
       <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="breadth" />
 
-      <div className="mb-5 flex shrink-0 flex-wrap items-center justify-between gap-4">
+      <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
         <MaTabs base="/" ma={ma} date={wanted} />
         <DateNav
           ma={ma}
@@ -79,8 +79,8 @@ export default async function Page({
         </div>
       ) : (
         <>
-          <div className="grid shrink-0 gap-5 lg:grid-cols-[210px_1fr]">
-            <div className="flex items-center justify-center rounded-lg border bg-card py-3">
+          <div className="grid shrink-0 gap-4 lg:grid-cols-[190px_1fr]">
+            <div className="flex items-center justify-center rounded-lg border bg-card py-2">
               <BreadthGauge pct={point.pctAbove} percentile={percentile} />
             </div>
             <Readout
@@ -109,7 +109,7 @@ export default async function Page({
             />
           </div>
 
-          <section className="mt-5 shrink-0 rounded-lg border bg-card">
+          <section className="mt-4 shrink-0 rounded-lg border bg-card">
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
               <h2 className="text-sm font-medium">Ten years of breadth</h2>
               <p className="font-mono text-xs text-muted-foreground">
@@ -126,7 +126,9 @@ export default async function Page({
 
           {/* takes whatever height is left; min-h-0 is what lets the children
               scroll instead of stretching the page */}
-          <div className="mt-5 grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-2">
+          {/* the browse region: takes what is left, never collapses below a
+              readable number of rows */}
+          <div className="mt-4 grid gap-4 lg:min-h-[280px] lg:flex-1 lg:grid-cols-2">
             <MemberTable title="Above" rows={view.above} tone="up" maLabel={label} />
             <MemberTable title="Below" rows={view.below} tone="down" maLabel={label} />
           </div>
