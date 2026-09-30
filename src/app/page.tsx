@@ -52,11 +52,11 @@ export default async function Page({
   const delta = point && prior ? point.pctAbove - prior.pctAbove : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-20 pt-8">
+    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-8 lg:h-full lg:pb-6">
       <SiteNav current="breadth" ma={ma} asOf={view.date} />
       <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="breadth" />
 
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-5 flex shrink-0 flex-wrap items-center justify-between gap-4">
         <MaTabs base="/" ma={ma} date={wanted} />
         <DateNav
           ma={ma}
@@ -71,13 +71,14 @@ export default async function Page({
       </div>
 
       {!point ? (
-        <div className="rounded-lg border bg-card px-4 py-10 text-sm text-muted-foreground">
+        <div className="shrink-0 rounded-lg border bg-card px-4 py-10 text-sm text-muted-foreground">
           Nothing loaded for that session. Run{" "}
           <code className="font-mono text-xs">bun run ingest:backfill</code> then{" "}
           <code className="font-mono text-xs">bun run indicators</code>.
         </div>
       ) : (
         <>
+          <div className="shrink-0">
           <Readout
             cells={[
               {
@@ -106,8 +107,9 @@ export default async function Page({
               },
             ]}
           />
+          </div>
 
-          <section className="mt-5 rounded-lg border bg-card">
+          <section className="mt-5 shrink-0 rounded-lg border bg-card">
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
               <h2 className="text-sm font-medium">Ten years of breadth</h2>
               <p className="font-mono text-xs text-muted-foreground">
@@ -122,7 +124,9 @@ export default async function Page({
             </p>
           </section>
 
-          <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          {/* takes whatever height is left; min-h-0 is what lets the children
+              scroll instead of stretching the page */}
+          <div className="mt-5 grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-2">
             <MemberTable title="Above" rows={view.above} tone="up" maLabel={label} />
             <MemberTable title="Below" rows={view.below} tone="down" maLabel={label} />
           </div>

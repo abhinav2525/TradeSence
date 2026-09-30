@@ -13,8 +13,8 @@ export default function MemberTable({ title, rows, tone, maLabel }: Props) {
   const toneClass = tone === "up" ? "text-signal-up" : "text-signal-down";
 
   return (
-    <section className="rounded-lg border bg-card">
-      <div className="flex items-baseline justify-between border-b px-4 py-3">
+    <section className="flex min-h-0 flex-col rounded-lg border bg-card">
+      <div className="flex shrink-0 items-baseline justify-between border-b px-4 py-3">
         <h2 className="flex items-baseline gap-2 text-sm font-medium">
           <span
             aria-hidden="true"
@@ -30,8 +30,9 @@ export default function MemberTable({ title, rows, tone, maLabel }: Props) {
           No constituents on this side of the line.
         </p>
       ) : (
-        <Table>
-          <TableHeader>
+        <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
+          {/* sticky so the column names survive scrolling */}
+          <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
               <TableHead className="h-9 text-xs font-normal text-muted-foreground">Symbol</TableHead>
               <TableHead className="h-9 text-right text-xs font-normal text-muted-foreground">Close</TableHead>

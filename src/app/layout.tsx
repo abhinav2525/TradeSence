@@ -29,7 +29,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`dark ${plexSans.variable} ${plexMono.variable}`}>
-      <body>{children}</body>
+      {/* On a large screen the app is a fixed readout: the page itself does not
+          scroll, its panels do. On small screens that would trap content, so
+          normal document scrolling is kept below lg. */}
+      <body className="lg:h-dvh lg:overflow-hidden">{children}</body>
     </html>
   );
 }

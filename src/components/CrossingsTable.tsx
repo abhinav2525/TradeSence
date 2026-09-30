@@ -13,8 +13,9 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
   const busiest = rows[0]!.crossings || 1;
 
   return (
-    <Table>
-      <TableHeader>
+    <Table containerClassName="min-h-0 flex-1 overflow-y-auto">
+      {/* sticky so the column names survive scrolling */}
+      <TableHeader className="sticky top-0 z-10 bg-card">
         <TableRow className="hover:bg-transparent">
           <TableHead className="h-9 text-xs font-normal text-muted-foreground">Symbol</TableHead>
           <TableHead className="h-9 text-right text-xs font-normal text-muted-foreground">Crossings</TableHead>

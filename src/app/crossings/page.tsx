@@ -31,11 +31,11 @@ export default async function CrossingsPage({
     : 0;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 pb-20 pt-8">
+    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-8 lg:h-full lg:pb-6">
       <SiteNav current="crossings" ma={ma} asOf={asOf} />
       <Hotkeys ma={ma} page="crossings" />
 
-      <div className="mb-5">
+      <div className="mb-5 shrink-0">
         <h1 className="text-lg font-medium">How often each stock crosses its average</h1>
         <p className="mt-1 max-w-[68ch] text-sm text-muted-foreground">
           This measures whipsaw, not strength. A name that crosses every few weeks produces
@@ -44,11 +44,12 @@ export default async function CrossingsPage({
         </p>
       </div>
 
-      <div className="mb-5">
+      <div className="mb-5 shrink-0">
         <MaTabs base="/crossings" ma={ma} />
       </div>
 
       {busiest && (
+        <div className="shrink-0">
         <Readout
           cells={[
             {
@@ -77,15 +78,16 @@ export default async function CrossingsPage({
             },
           ]}
         />
+        </div>
       )}
 
-      <section className="mt-5 rounded-lg border bg-card">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
+      <section className="mt-5 flex min-h-0 flex-col rounded-lg border bg-card lg:flex-1">
+        <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
           <h2 className="text-sm font-medium">Ranked by crossings, vs the {label}</h2>
           <p className="font-mono text-xs text-muted-foreground">ten years</p>
         </div>
         <CrossingsTable rows={rows} maLabel={label} />
-        <p className="border-t px-4 py-2.5 text-xs text-muted-foreground">
+        <p className="shrink-0 border-t px-4 py-2.5 text-xs text-muted-foreground">
           A crossing counts only between consecutive sessions that both have an average, so
           neither the start of the averaging window nor a gap in the data can fake one.
         </p>
