@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PREPAINT_SCRIPT } from "@/lib/prepaint";
 
 /*
  * Geist carries the whole interface, numbers included; its tabular figures
@@ -24,12 +25,10 @@ export const metadata: Metadata = {
 };
 
 /*
- * Dark is the default and is what the server renders. A stored "light" choice
- * is applied by this script while the HTML is still parsing, before the first
- * paint, so a light-mode reader never sees a dark flash. suppressHydrationWarning
- * on <html> lets React accept the class the script changed.
+ * Dark is the default and is what the server renders. PREPAINT_SCRIPT applies a
+ * stored light theme and marks motion before the first paint;
+ * suppressHydrationWarning on <html> lets React accept what it changed.
  */
-const THEME_SCRIPT = `(function(){try{if(localStorage.getItem("theme")==="light")document.documentElement.classList.remove("dark")}catch(e){}})()`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: PREPAINT_SCRIPT }} />
       </head>
       <body>{children}</body>
     </html>

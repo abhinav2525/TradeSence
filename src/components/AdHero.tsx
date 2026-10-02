@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { formatDate, formatDayMonth, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
+import CountUp from "@/components/CountUp";
 
 export type NetBar = { date: string; advancing: number; declining: number; net: number };
 
@@ -42,7 +43,7 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
     <Card className={cn("flex flex-col gap-6 p-5 sm:p-6 md:flex-row", className)}>
       <div className="flex flex-col md:w-[44%]">
         <p className="text-eyebrow uppercase text-muted-foreground"><Term id="net-advances" today={`${signed(net)} (${advancing} rose, ${declining} fell)`}>Net advances</Term></p>
-        <p className="mt-4 text-display tabular-nums text-foreground">{signed(net)}</p>
+        <p className="mt-4 text-display tabular-nums text-foreground"><CountUp text={signed(net)} /></p>
         <p className="mt-3 text-[13px] leading-5 text-foreground-2">
           {advancing} {plural(advancing, "constituent", "constituents")} rose, {declining} fell
           {unchanged > 0 ? ` and ${unchanged} closed unchanged` : ""} on{" "}

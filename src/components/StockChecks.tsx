@@ -7,6 +7,7 @@ import type { StockReport } from "@/query/stock-report";
 import { LIGHTS_DISCLAIMER } from "@/lib/report-card";
 import Term from "@/components/Term";
 import type { TermId } from "@/lib/glossary";
+import CountUp from "@/components/CountUp";
 
 const pct = (v: number, digits = 1) => `${signed(v, digits)}%`;
 const abs0 = (v: number) => Math.abs(v).toFixed(0);
@@ -123,7 +124,7 @@ export default function StockChecks({ checks, className }: { checks: Check[]; cl
             </p>
             <LightDot light={c.light} />
           </div>
-          <p className="mt-3 text-metric tabular-nums text-foreground">{c.figure}</p>
+          <p className="mt-3 text-metric tabular-nums text-foreground"><CountUp text={c.figure} /></p>
           <p className="mt-auto pt-2.5 text-[12px] leading-4 text-foreground-2">{c.sentence}</p>
         </Card>
       ))}

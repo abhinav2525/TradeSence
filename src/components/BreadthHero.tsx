@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { formatDate, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
+import CountUp from "@/components/CountUp";
 
 export type Bin = { from: number; to: number; count: number };
 
@@ -38,7 +39,7 @@ export default function BreadthHero({
       <div className="flex flex-col md:w-[44%]">
         <p className="text-eyebrow uppercase text-muted-foreground"><Term id="breadth" today={`${pct.toFixed(0)}%`}>Above the {maLabel}</Term></p>
         <p className="mt-4 text-display text-foreground">
-          {pct.toFixed(0)}
+          <CountUp text={pct.toFixed(0)} />
           <span className="ml-1 text-[0.45em] font-medium tracking-normal text-muted-foreground">%</span>
         </p>
         <p className="mt-3 text-[13px] leading-5 text-foreground-2">

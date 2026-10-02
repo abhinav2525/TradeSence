@@ -4,6 +4,7 @@ import Term from "@/components/Term";
 import type { TermId } from "@/lib/glossary";
 import { tileToday } from "@/lib/tile-today";
 import { cn } from "@/lib/utils";
+import CountUp from "@/components/CountUp";
 
 type Tone = "up" | "down" | "neutral";
 
@@ -69,7 +70,7 @@ function StatTile({ label, term, today, value, unit, sub, direction, badge, fill
         )}
       >
         {direction && <Arrow className="size-5 self-center" aria-hidden="true" />}
-        <span className="text-metric">{value}</span>
+        <CountUp className="text-metric" text={value} />
         {unit && <span className="text-[13px] font-medium opacity-70">{unit}</span>}
       </div>
 

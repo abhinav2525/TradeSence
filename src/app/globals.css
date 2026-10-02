@@ -220,3 +220,11 @@
   --motion-slow: 600ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+/* Count-up figures start hidden only when the pre-paint script marked motion;
+   CountUp reveals them as it starts counting. Failsafe: shown after 1.5s anyway. */
+html[data-motion] .countup:not([data-counted]) > [aria-hidden] {
+  opacity: 0;
+  animation: countup-failsafe 0s 1.5s forwards;
+}
+@keyframes countup-failsafe { to { opacity: 1; } }
