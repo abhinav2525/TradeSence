@@ -9,7 +9,7 @@ import { db } from "../db";
 import { symbolLineage } from "../ingest/symbol-changes";
 import {
   DRAWDOWN_MIN, HORIZONS, THRESHOLDS, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
-  drawdownSeries, horizonStats, liquidityLight, percentRank, periodReturn, ratioLight,
+  drawdownSeries, horizonStats, liquidityLight, periodReturn, rankAmongPeers, ratioLight,
   strengthLight, trendLight, worstDrawdown,
   type Drawdown, type HorizonKey, type HorizonStats, type Light,
 } from "../indicators/risk";
@@ -31,7 +31,7 @@ export type StockReport = {
   membership: { addedOn: string; removedOn: string | null }[];
   close: number;
   trend: { light: Light | null; sma50: number | null; sma200: number | null; side200: "above" | "below" | null; sessions200: number };
-  strength: { light: Light | null; percentile: number | null; ret3m: number | null; ret6m: number | null; ret12m: number | null; nifty6m: number | null };
+  strength: { light: Light | null; percentile: number | null; peers: number; ret3m: number | null; ret6m: number | null; ret12m: number | null; nifty6m: number | null };
   bumpiness: { light: Light | null; dailyVol: number | null; niftyVol: number | null; ratio: number | null };
   worstFall: { light: Light | null; stock: Drawdown | null; nifty: Drawdown | null; ratio: number | null; currentPct: number | null };
   liquidity: { light: Light | null; medianCrore: number | null };
@@ -115,10 +115,11 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
     list.push({ date: p.d, changePct: num(p.change_pct) });
     bySym.set(p.symbol, list);
   }
-  const peerReturns = [...bySym.values()]
-    .map((pts) => periodReturn(adjustedLine(pts), 126))
-    .filter((v): v is number => v !== null);
-  const percentile = ret6m === null || peerReturns.length === 0 ? null : percentRank(ret6m, peerReturns);
+  const peerReturns = [...bySym.entries()]
+    .map(([sym, pts]) => ({ symbol: sym, value: periodReturn(adjustedLine(pts), 126) }))
+    .filter((p): p is { symbol: string; value: number } => p.value !== null);
+  const rank = ret6m === null ? null : rankAmongPeers(symbol, ret6m, peerReturns);
+  const percentile = rank?.pct ?? null;
 
   // Bumpiness: last 250 sessions, stock vs NIFTY over the same span
   const dailyVol = dailyVolatility(moves.map((m) => m.changePct));
@@ -175,7 +176,7 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
       firstDate: firstDate!, lastDate: all.at(-1)!.d, membership, close,
       trend: { light: trendLight(close, sma50, sma200), sma50, sma200, side200, sessions200 },
       strength: {
-        light: percentile === null ? null : strengthLight(percentile), percentile,
+        light: percentile === null ? null : strengthLight(percentile), percentile, peers: rank?.of ?? 0,
         ret3m: periodReturn(line, 63), ret6m, ret12m: periodReturn(line, 250), nifty6m,
       },
       bumpiness: { light: volRatio === null ? null : ratioLight(volRatio), dailyVol, niftyVol, ratio: volRatio },

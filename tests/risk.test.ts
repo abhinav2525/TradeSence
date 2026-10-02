@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { adjustedLine, drawdownSeries, worstDrawdown, currentDrawdownPct, closesToMoves } from "../src/indicators/risk";
 import {
-  horizonStats, periodReturn, dailyVolatility, percentRank,
+  horizonStats, periodReturn, dailyVolatility, percentRank, rankAmongPeers,
   trendLight, strengthLight, ratioLight, liquidityLight, HORIZONS,
 } from "../src/indicators/risk";
 
@@ -114,4 +114,36 @@ describe("lights", () => {
   test("liquidity boundaries in ₹ crore", () => {
     expect([100, 99.9, 10, 9.9].map(liquidityLight)).toEqual(["green", "amber", "amber", "red"]);
   });
+});
+
+describe("rankAmongPeers (decision 0013)", () => {
+  const peers = [
+    { symbol: "A", value: 1 }, { symbol: "B", value: 2 }, { symbol: "C", value: 3 }, { symbol: "D", value: 4 }, { symbol: "E", value: 5 },
+  ];
+  test("ranks against the OTHER members, found by symbol, not by value", () => {
+    // C's own entry carries rounding noise (a second code path): it must still be excluded
+    const noisy = peers.map((p) => (p.symbol === "C" ? { ...p, value: 3 + 1e-13 } : p));
+    expect(rankAmongPeers("C", 3, noisy)).toEqual({ pct: 50, of: 4 });
+  });
+  test("the weakest is stronger than 0%, the strongest than 100% (of the others)", () => {
+    expect(rankAmongPeers("A", 1, peers)).toEqual({ pct: 0, of: 4 });
+    expect(rankAmongPeers("E", 5, peers)).toEqual({ pct: 100, of: 4 });
+  });
+  test("rounding noise between two different stocks never counts as 'stronger'", () => {
+    const tie = [{ symbol: "X", value: 2 + 1e-12 }, { symbol: "Y", value: 1 }];
+    expect(rankAmongPeers("S", 2, tie)).toEqual({ pct: 50, of: 2 });
+  });
+  test("no other members: no rank", () => {
+    expect(rankAmongPeers("A", 1, [{ symbol: "A", value: 1 }])).toBeNull();
+  });
+});
+
+test("a stretch that ends at exactly its starting price is not 'lower', despite rounding noise (0013)", () => {
+  // the same price reached through two chains of moves: 100 vs 99.99999999999999
+  const levels = [100, 101, 100 - 1e-14, 102, 100 - 1e-14, 99, 100 - 1e-14, 100, 100 - 1e-14];
+  const line = levels.map((level, i) => ({ date: `2020-01-0${i + 1}`, level, segment: 0 }));
+  const h = horizonStats(line, 2)!;
+  // windows: 100→100⁻, 101→102, 100⁻→100⁻, 102→99, 100⁻→100⁻, 99→100⁻, 100⁻→100⁻ : only 102→99 fell
+  expect(h.windows).toBe(7);
+  expect(h.shareNegative).toBeCloseTo(100 / 7, 9);
 });

@@ -113,7 +113,7 @@ async function build(id: TermId): Promise<string | null> {
           return r.trend.sma50 === null || r.trend.sma200 === null ? null
             : `${SHOWCASE} on ${on}: close ₹${formatPrice(r.close)}, 50-day ₹${formatPrice(r.trend.sma50)}, 200-day ₹${formatPrice(r.trend.sma200)}.`;
         case "relative-strength": return r.strength.percentile === null || r.strength.ret6m === null ? null
-          : `${SHOWCASE}'s 6-month return to ${on} was ${pct(r.strength.ret6m)}, stronger than ${r.strength.percentile.toFixed(0)}% of the members.`;
+          : `${SHOWCASE}'s 6-month return to ${on} was ${pct(r.strength.ret6m)}, stronger than ${r.strength.percentile.toFixed(0)}% of the other ${r.strength.peers} members.`;
         case "volatility": return r.bumpiness.ratio === null || r.bumpiness.dailyVol === null ? null
           : `${SHOWCASE} moves about ±${r.bumpiness.dailyVol.toFixed(1)}% on a typical day: ${r.bumpiness.ratio.toFixed(1)}× the NIFTY 50.`;
         case "drawdown": return !r.worstFall.stock || r.worstFall.stock.depthPct === 0 ? null

@@ -130,6 +130,18 @@ describe("stockReport", () => {
     expect(r.report.lastDate).toBe(d(399)); // for the date picker's upper bound
     expect(r.report.worstFall.stock!.depthPct).toBeCloseTo(0, 9);
   });
+  test("Strength ranks the stock against the other members only (0013: the weakest reads 0%, never counted against itself)", async () => {
+    await db.insert(schema.indexMembers).values(["LOW", "MID", "HIGH"].map((symbol) => ({ indexName: "NIFTY50", symbol, addedOn: "2020-01-01", removedOn: null })));
+    // 0.0917 is chosen so the long and short chains round differently; the bug lost LOW itself
+    await seed("LOW", 400, () => -0.0917);
+    await seed("MID", 400, () => 0.01);
+    await seed("HIGH", 400, () => 0.2);
+    await seedIndex(400);
+    const at = async (s: string) => { const r = await stockReport(s); if (r.kind !== "ok") throw new Error(r.kind); return r.report.strength; };
+    expect(await at("LOW")).toMatchObject({ percentile: 0, peers: 2, light: "red" });
+    expect(await at("MID")).toMatchObject({ percentile: 50, peers: 2 });
+    expect(await at("HIGH")).toMatchObject({ percentile: 100, peers: 2, light: "green" });
+  });
 });
 
 test("supportedStocks lists current members first", async () => {
@@ -139,4 +151,5 @@ test("supportedStocks lists current members first", async () => {
     { indexName: "NIFTY50", symbol: "OLD", addedOn: "2020-01-01", removedOn: "2021-01-01" },
   ]);
   expect(await supportedStocks()).toEqual([{ symbol: "ZED", current: true }, { symbol: "OLD", current: false }]);
+
 });

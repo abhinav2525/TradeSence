@@ -135,7 +135,8 @@ export function horizonStats(line: LinePoint[], sessions: number): HorizonStats 
     median: quantile(sorted, 0.5),
     worst: worst.r,
     worstStart: worst.start,
-    shareNegative: (rets.filter((x) => x.r < 0).length / rets.length) * 100,
+    // a stretch back at exactly its starting price did not end lower (decision 0013)
+    shareNegative: (rets.filter((x) => x.r < -NOISE_PCT).length / rets.length) * 100,
     bins: binsOf(sorted),
   };
 }
@@ -164,6 +165,30 @@ export function dailyVolatility(moves: (number | null)[]): number | null {
 /** % of `all` at or below `value`. */
 export function percentRank(value: number, all: number[]): number {
   return all.length === 0 ? 0 : (all.filter((x) => x <= value).length / all.length) * 100;
+}
+
+/**
+ * % points. A gap smaller than this is the same number computed two ways
+ * (floating-point noise is ~1e-13 here), never a real difference between two
+ * stocks or a real loss (decision 0013). Use it wherever returns are compared.
+ */
+export const NOISE_PCT = 1e-9;
+
+/**
+ * % of the OTHER members whose value is below this stock's, by more than noise.
+ * The stock is removed by symbol, never by comparing its value with itself:
+ * the same return computed over two spans differs in the 14th decimal, which
+ * dropped half the stocks from their own ranking (decision 0013).
+ */
+export function rankAmongPeers(
+  symbol: string,
+  value: number,
+  peers: { symbol: string; value: number }[],
+): { pct: number; of: number } | null {
+  const others = peers.filter((p) => p.symbol !== symbol);
+  if (others.length === 0) return null;
+  const below = others.filter((p) => p.value < value - NOISE_PCT).length;
+  return { pct: (below / others.length) * 100, of: others.length };
 }
 
 export type Light = "green" | "amber" | "red";

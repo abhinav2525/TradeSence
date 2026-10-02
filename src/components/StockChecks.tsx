@@ -31,7 +31,7 @@ export function checksOf(r: StockReport): Check[] {
   const strengthSentence =
     s.percentile === null || s.ret6m === null || s.nifty6m === null
       ? "Not enough history for a 6-month comparison yet."
-      : `6-month return ${pct(s.ret6m)} vs the NIFTY 50's ${pct(s.nifty6m)}: stronger than ${s.percentile.toFixed(0)}% of the members on this day.`;
+      : `6-month return ${pct(s.ret6m)} vs the NIFTY 50's ${pct(s.nifty6m)}: stronger than ${s.percentile.toFixed(0)}% of the other ${s.peers} members on this day.`;
 
   const b = r.bumpiness;
   const bumpSentence =

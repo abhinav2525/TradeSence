@@ -58,6 +58,7 @@ bun run research:forward-returns               # breadth -> later NIFTY return s
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
+bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run ingest:nightly                         # cron entry point
 ```
 
@@ -181,6 +182,13 @@ style, so `bunx shadcn add` writes `h-[--cell-size]`, which Tailwind v4 silently
 Rewrite every `[--var]` to `(--var)` in what it generates, and answer **no** when it asks to
 overwrite `button.tsx` (customised for the design system).
 ([0010](docs/decisions/0010-shadcn-date-picker.md))
+
+**Never compare two computed returns for exact equality.** The same return computed over
+two spans differs in the 14th decimal, which dropped half the stocks from their own
+ranking and counted flat months as losses. Remove a stock from its peers by symbol, and
+compare with `NOISE_PCT` (`src/indicators/risk.ts`)
+([0013](docs/decisions/0013-independent-audit-and-rounding.md)). A new Report Card number
+goes into `src/audit/report-card.ts` in the same change.
 
 **Header validation must list every column the parser reads.** `at()` returns `-1` for a
 missing column and `f[-1]` is `undefined`; the old code turned that into `0` and would

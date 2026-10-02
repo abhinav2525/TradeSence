@@ -297,7 +297,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     short: "How a stock's return compares with the NIFTY 50 and with the other members. The Report Card ranks its 6-month return against the members on that day.",
     read: "Top third: green. Bottom third: red. Strong stocks often stay strong for a while, but not always.",
     what: "Strength relative to the market is one of the most studied patterns in investing: winners have tended to keep winning for some months. It's a tendency, not a rule.",
-    calc: { plain: "The stock's 6-month return (126 sessions), ranked as a percentile among the members' 6-month returns." },
+    calc: { plain: "The stock's 6-month return (126 sessions), ranked against the other members' 6-month returns: the share of them it beat." },
     example: "A 6-month return of +18% when the NIFTY 50 rose 0.4% may rank around the 90th percentile.",
     mistakes: ["Picking the weakest stock because it \"looks cheap\". Falling stocks often keep falling."],
     related: ["trend-check", "nifty50"],

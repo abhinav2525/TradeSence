@@ -50,6 +50,7 @@ Order agreed: beginner Report Card first (being designed now), then these.
 ### Notifications — a
 - [ ] **Nightly digest** (old item 6): after the nightly run, send a summary of breadth
   changes, new crossings and signals.
+- [ ] Run `bun run audit:report-card` after the nightly ingest; deliver its `✗` lines with the warnings below.
 - [ ] **Deliver the nightly `WARNING` lines** (unparsed corporate action, unexplained
   jump, NIFTY 50 changed, feed not updated). Today they only go to
   `~/Library/Logs/tradesence-nightly.log` and nobody sees them (docs/pipelines.md §6).
@@ -68,8 +69,6 @@ Order agreed: beginner Report Card first (being designed now), then these.
 - [ ] Learn pages keep the reader's average (`ma`) instead of resetting to the 200 SMA.
 
 ## Report Card polish (deferred from the decision 0011 review) — n
-- [ ] Strength can read "stronger than 100% of the members": `percentRank` counts the
-  stock itself. Rank among peers only, or say "Nth of M".
 - [ ] The membership line ignores the chosen date: ETERNAL read in 2023 says "In the
   NIFTY 50 since 28 Mar 2025". Phrase it relative to the session shown.
 - [ ] The horizon resets when stepping sessions after switching it in the calculator
@@ -140,3 +139,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] shadcn date picker: 0010
 - [x] Stock Report Card + Risk Calculator: 0011
 - [x] Every term explained: ⓘ popovers + `/learn` pages: 0012
+- [x] Independent Report Card audit; Strength rank and flat-month rounding fixed: 0013
