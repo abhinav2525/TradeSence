@@ -61,6 +61,10 @@ export const dailyIndicators = pgTable(
     sma50: doublePrecision("sma_50"),
     sma200: doublePrecision("sma_200"),
     ema200: doublePrecision("ema_200"),
+    // % move from the previous session, on the split/demerger-adjusted series
+    // joined across renames; null on a segment's first day. bhavcopy's
+    // prev_close can't be used: it isn't adjusted on an ex-date.
+    changePct: doublePrecision("change_pct"),
   },
   (t) => [primaryKey({ columns: [t.tradeDate, t.symbol] })],
 );

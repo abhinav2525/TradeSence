@@ -284,3 +284,65 @@ describe("computeIndicators across a split", () => {
     ]);
   }, 30000);
 });
+
+describe("computeIndicators: the day's move (change_pct)", () => {
+  // Feeds Advance/Decline. bhavcopy's prev_close is NOT adjusted on an ex-date
+  // (decision 0002), so the move must come from the adjusted, stitched series.
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+    await db.delete(schema.symbolChanges);
+  });
+
+  const member = (symbol: string) => db.insert(schema.indexMembers).values({
+    indexName: "NIFTY50", symbol, addedOn: "2020-01-01", removedOn: null,
+  });
+  const moves = async (symbol: string) =>
+    (await db.select().from(schema.dailyIndicators).where(eq(schema.dailyIndicators.symbol, symbol)))
+      .sort((a, b) => (a.tradeDate < b.tradeDate ? -1 : 1))
+      .map((r) => r.changePct);
+
+  test("is the % change from the previous session, null on the first", async () => {
+    await db.insert(schema.dailyPrices).values(synthetic("RAMP", 3)); // 100, 101, 102
+    await member("RAMP");
+    await computeIndicators();
+    const m = await moves("RAMP");
+    expect(m[0]).toBeNull();
+    expect(m[1]!).toBeCloseTo(1, 9);
+    expect(m[2]!).toBeCloseTo((102 / 101 - 1) * 100, 9);
+  });
+
+  test("a 1:5 split is not an 80% fall", async () => {
+    const rows = synthetic("SPLITCO", 4).map((r, i) => ({ ...r, close: i < 2 ? 500 : 100, open: i < 2 ? 500 : 100 }));
+    await db.insert(schema.dailyPrices).values(rows);
+    await member("SPLITCO");
+    await db.insert(schema.corporateActions).values({
+      symbol: "SPLITCO", exDate: rows[2]!.tradeDate, series: "EQ", subject: "Split",
+      kind: "split", factor: 5, company: null, recordDate: null,
+    });
+    await computeIndicators();
+    expect((await moves("SPLITCO"))[2]!).toBeCloseTo(0, 9);
+  });
+
+  test("the first day under a new symbol compares with the old symbol's last close", async () => {
+    const rows = synthetic("X", 4).map((r, i) => ({ ...r, symbol: i < 2 ? "OLDNAME" : "NEWNAME" }));
+    await db.insert(schema.dailyPrices).values(rows);
+    await member("NEWNAME");
+    await db.insert(schema.symbolChanges).values({
+      oldSymbol: "OLDNAME", newSymbol: "NEWNAME", changedOn: rows[2]!.tradeDate, company: null,
+    });
+    await computeIndicators();
+    expect((await moves("NEWNAME"))[2]!).toBeCloseTo((102 / 101 - 1) * 100, 9);
+  });
+
+  test("no move is claimed across a hole in the data", async () => {
+    const rows = synthetic("HOLE", 3);
+    rows[2]!.tradeDate = "2020-03-01"; // weeks after the previous row
+    await db.insert(schema.dailyPrices).values(rows);
+    await member("HOLE");
+    await computeIndicators();
+    expect((await moves("HOLE"))[2]).toBeNull();
+  });
+});

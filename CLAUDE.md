@@ -89,9 +89,18 @@ a real failure:
 
 **Averages never span a hole.** `segmentByGaps` splits the series at gaps over 21 days.
 Without it a partially loaded history averages 2018 closes with 2024 closes and writes
-the result out as a perfectly ordinary number. The 21-day threshold is duplicated as
-`MAX_GAP_DAYS` in `src/indicators/compute.ts` and `src/query/crossings.ts` (where it
-stops a hole from counting as a crossing); change both together.
+the result out as a perfectly ordinary number. `MAX_GAP_DAYS` and `segmentByGaps` live
+once, in `src/indicators/gaps.ts`, used by averages, crossings (where a hole must not count
+as a crossing) and Advance/Decline. Anything new that walks a series uses them too.
+
+**A stock's daily move is `daily_indicators.change_pct`**, computed on the adjusted,
+rename-joined series ([0008](docs/decisions/0008-measuring-a-days-move.md)). Never use
+bhavcopy's `prev_close` for it: it isn't adjusted on ex-dates. Volume, when needed, scales
+by split/bonus factors only, never by a demerger factor.
+
+**Weekends are fetched.** NSE trades on some (Budget days, Diwali Muhurat, special DR
+sessions); `daysBetween` includes every calendar day and a weekend 404 is a holiday
+([0007](docs/decisions/0007-weekend-trading-sessions.md)).
 
 **A member's history spans every symbol it traded under.** Bhavcopy uses the symbol
 current on each day, so `computeIndicators` follows `symbol_changes` back through
@@ -99,10 +108,6 @@ current on each day, so `computeIndicators` follows `symbol_changes` back throug
 ([0003](docs/decisions/0003-renamed-symbols-lose-history.md)). Any new per-member
 history query (52-week highs, A/D line…) must go through the lineage too, or a renamed
 member's history silently starts at its rename.
-
-**Weekends are fetched.** NSE trades on some (Budget days, Diwali Muhurat, special DR
-sessions); `daysBetween` includes every calendar day and a weekend 404 is a holiday
-([0007](docs/decisions/0007-weekend-trading-sessions.md)).
 
 **Symbols with a null average are excluded from breadth, not counted as "below".**
 Otherwise every backfill opens with a fabricated bearish reading.

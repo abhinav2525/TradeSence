@@ -1,41 +1,11 @@
 import { sql, type SQL } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
+import { segmentByGaps } from "./gaps";
 import { adjustmentFactors, demergerFactor, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 import { symbolLineage, type LineageEntry } from "../ingest/symbol-changes";
 
-/**
- * A gap longer than this means the series is discontinuous, not merely closed
- * for a holiday. NSE's longest normal break is a long weekend plus a holiday;
- * three weeks means data is genuinely missing.
- */
-const MAX_GAP_DAYS = 21;
-
-/**
- * Splits a date-ordered series wherever there is a hole.
- *
- * Moving averages count bars, not days, so without this a partially loaded
- * history would average 2018 closes together with 2024 closes and write the
- * result out as a perfectly ordinary non-null number.
- */
-export function segmentByGaps(dates: string[], maxGapDays = MAX_GAP_DAYS): number[][] {
-  const segments: number[][] = [];
-  let current: number[] = [];
-
-  for (let i = 0; i < dates.length; i++) {
-    if (i > 0) {
-      const prev = Date.parse(`${dates[i - 1]}T00:00:00Z`);
-      const curr = Date.parse(`${dates[i]}T00:00:00Z`);
-      if ((curr - prev) / 86_400_000 > maxGapDays) {
-        segments.push(current);
-        current = [];
-      }
-    }
-    current.push(i);
-  }
-  if (current.length > 0) segments.push(current);
-  return segments;
-}
+export { segmentByGaps } from "./gaps";
 
 const CHUNK = 1000;
 
@@ -133,6 +103,7 @@ export async function computeIndicators(
     const s50: (number | null)[] = new Array(closes.length).fill(null);
     const s200: (number | null)[] = new Array(closes.length).fill(null);
     const e200: (number | null)[] = new Array(closes.length).fill(null);
+    const move: (number | null)[] = new Array(closes.length).fill(null);
 
     for (const seg of segmentByGaps(dates)) {
       const segCloses = seg.map((i) => adjusted[i]!);
@@ -142,6 +113,9 @@ export async function computeIndicators(
       // Back into that day's own rupees, so it compares directly with `close`.
       const unadjust = (v: number | null, f: number) => (v === null ? null : v * f);
       seg.forEach((rowIndex, j) => {
+        // The day's move, on the adjusted series: a split day moves by what the
+        // stock actually did, not by the split. A segment's first day has none.
+        if (j > 0) move[rowIndex] = (adjusted[rowIndex]! / adjusted[seg[j - 1]!]! - 1) * 100;
         const f = factors[rowIndex]!;
         s50[rowIndex] = unadjust(a[j]!, f);
         s200[rowIndex] = unadjust(b[j]!, f);
@@ -156,6 +130,7 @@ export async function computeIndicators(
       sma50: s50[i],
       sma200: s200[i],
       ema200: e200[i],
+      changePct: move[i],
     }));
 
     for (let i = 0; i < rows.length; i += CHUNK) {
@@ -169,6 +144,7 @@ export async function computeIndicators(
             sma50: sql`excluded.sma_50`,
             sma200: sql`excluded.sma_200`,
             ema200: sql`excluded.ema_200`,
+            changePct: sql`excluded.change_pct`,
           },
         });
     }

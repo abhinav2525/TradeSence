@@ -88,7 +88,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | 50 SMA, 200 SMA and 200 EMA for every NIFTY 50 member, past and present, on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
+| **What** | 50 SMA, 200 SMA and 200 EMA, plus each day's % move (`change_pct`, for Advance/Decline), for every NIFTY 50 member, past and present, on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
 | **Reads** | `daily_prices`, `corporate_actions`, `symbol_changes`, `index_members` |
 | **Writes** | `daily_indicators` (~158,000 rows), fully recomputed each time (~5 s) |
 | **Nightly** | ✅ after pipelines 1–3 |

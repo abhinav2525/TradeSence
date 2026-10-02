@@ -1,13 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { MA_COLUMNS, type MaKind } from "./breadth";
-
-/**
- * A gap longer than this is missing data, not a closed market. Kept in step
- * with the same constant in the indicator pass: a hole in the history must not
- * be mistaken for the price doing something.
- */
-const MAX_GAP_DAYS = 21;
+import { MAX_GAP_DAYS } from "../indicators/gaps";
 
 export type CrossingStat = {
   symbol: string;

@@ -1,0 +1,1 @@
+ALTER TABLE "daily_indicators" ADD COLUMN "change_pct" double precision;
