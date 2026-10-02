@@ -68,6 +68,8 @@ Order agreed: beginner Report Card first (being designed now), then these.
   breadth-thrust sentence should say whether a thrust fired.
 - [ ] Learn pages keep the reader's average (`ma`) instead of resetting to the 200 SMA.
 
+- [ ] Compare our beta with TradingView for KOTAKBANK (0.98), RELIANCE (0.97), INFY (0.65) when its API isn't rate-limited (decision 0014).
+
 ## Report Card polish (deferred from the decision 0011 review) — n
 - [ ] The membership line ignores the chosen date: ETERNAL read in 2023 says "In the
   NIFTY 50 since 28 Mar 2025". Phrase it relative to the session shown.
@@ -140,3 +142,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Stock Report Card + Risk Calculator: 0011
 - [x] Every term explained: ⓘ popovers + `/learn` pages: 0012
 - [x] Independent Report Card audit; Strength rank and flat-month rounding fixed: 0013
+- [x] Report Card lights 6–8 (Right now, Bad days, In crashes): 0014

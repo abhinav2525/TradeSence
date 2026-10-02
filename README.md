@@ -379,6 +379,18 @@ Postgres's 65,535 bind-parameter cap).
 | `Term` | `<Term id today?>label</Term>` | The label plus an ⓘ popover. Never inside a `<Link>` or button. `Readout` tiles take `term:` and pass their value as `today`. |
 | `liveExample` | `(id) => Promise<string \| null>` | One real sentence about the latest session for `/learn/<id>`, from the pages' own queries; null when there's no data, never throws. |
 
+### `src/indicators/market-risk.ts` and `src/indicators/episodes.ts` — Report Card lights 6–8
+
+| Function | Signature | Notes |
+|---|---|---|
+| `ewmaVolatility` | `(line, λ = 0.94) => (number \| null)[]` | RiskMetrics σ after each session; seeded by the first 20 moves' sample variance; restarts at each segment. |
+| `rangeHitRate` | `(line, sigma) => { inside, of } \| null` | Share of week-long stretches (last 500 sessions) inside ±σₜ·√5, using σ known at each week's start. |
+| `marketCapture` | `(stock, nifty) => { beta, up, down, sessions } \| null` | Last 250 sessions matched by date; down/up capture in %; null under 120. |
+| `crashEpisodes` | `(breadth, stock, nifty) => Crashes` | Breadth < 20% episodes (merge gap 10); further fall over 63 sessions vs the NIFTY; back after 126; an unfinished crash is `ongoing`, not counted. |
+| `findEpisodes`, `MERGE_GAP` | | Shared with research 0001 so both count episodes identically. |
+
+The Report Card now has eight lights: `nowVolLight`, `downCaptureLight` and the crash ratio join the five of decision 0011 (cut-offs in `THRESHOLDS`, decision 0014).
+
 ### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
 
 | Function | Signature | Notes |
