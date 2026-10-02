@@ -179,6 +179,25 @@ bun run indicators                              # compute all moving averages (~
 bun run dev                                     # http://localhost:3000
 ```
 
+## Running it
+
+Start the database first, then the server:
+
+```bash
+# Database (Homebrew Postgres 14)
+brew services start postgresql@14     # start, and restart at login
+brew services stop postgresql@14      # stop
+brew services list | grep postgresql  # is it running?
+psql tradesence                       # open a SQL shell on the dev database
+
+# Server
+bun run dev                           # dev server with hot reload, http://localhost:3000
+bun run build && bun run start        # production build, served on :3000
+```
+
+To run on another port, use `bun run dev -- -p 3001`. The page queries Postgres on every
+request, so if the database is down the server still starts but the page fails to load.
+
 ## Keep it current
 
 ```cron
@@ -194,7 +213,10 @@ a missed night heals on the next run. Schedule it after ~7pm IST, once NSE has p
 
 | Command | What it does |
 |---|---|
+| `brew services start postgresql@14` | Start the database |
+| `brew services stop postgresql@14` | Stop the database |
 | `bun run dev` | Next.js dashboard on :3000 |
+| `bun run build && bun run start` | Production build and server on :3000 |
 | `bun test` | Full suite (78 tests; always uses `tradesence_test`) |
 | `bun test tests/breadth.test.ts` | One file |
 | `bun test --test-name-pattern "idempotent"` | One test by name |
