@@ -1,7 +1,8 @@
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
 import { adjustmentFactors, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
+import { symbolLineage, type LineageEntry } from "../ingest/symbol-changes";
 
 /**
  * A gap longer than this means the series is discontinuous, not merely closed
@@ -38,6 +39,14 @@ export function segmentByGaps(dates: string[], maxGapDays = MAX_GAP_DAYS): numbe
 
 const CHUNK = 1000;
 
+/** `symbol = s` restricted to the dates that symbol belonged to this company. */
+function inWindow(dateCol: SQL, e: LineageEntry): SQL {
+  const parts = [sql`symbol = ${e.symbol}`];
+  if (e.from) parts.push(sql`${dateCol} >= ${e.from}`);
+  if (e.to) parts.push(sql`${dateCol} < ${e.to}`);
+  return sql`(${sql.join(parts, sql` and `)})`;
+}
+
 /**
  * Recomputes moving averages for every index member and writes them to
  * `daily_indicators`.
@@ -53,6 +62,10 @@ const CHUNK = 1000;
  * as its `close` — and the breadth/crossings queries compare like with like
  * without knowing adjustment exists. `close` itself stays the raw bhavcopy price.
  * See docs/decisions/0002-split-adjusted-averages.md.
+ *
+ * Renames: a member's history includes every symbol it traded under before
+ * (ZOMATO for ETERNAL), each only for the dates it belonged to this company,
+ * all written under today's symbol. See docs/decisions/0003.
  */
 export async function computeIndicators(
   indexName = "NIFTY50",
@@ -64,22 +77,38 @@ export async function computeIndicators(
     )
   ).map((r) => r.symbol);
 
+  const renames = (
+    await db.execute<{ old_symbol: string; new_symbol: string; changed_on: string }>(
+      sql`select old_symbol, new_symbol, changed_on from symbol_changes`,
+    )
+  ).map((r) => ({ oldSymbol: r.old_symbol, newSymbol: r.new_symbol, changedOn: r.changed_on }));
+
   let written = 0;
 
   for (const symbol of symbols) {
+    const lineage = symbolLineage(symbol, renames);
+
     const prices = await db.execute<{ trade_date: string; close: number }>(
       sql`select trade_date, close
           from daily_prices
-          where symbol = ${symbol} and series = 'EQ'
+          where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
           order by trade_date asc`,
     );
     if (prices.length === 0) continue;
 
-    const events = await db.execute<{ ex_date: string; factor: number }>(
-      sql`select ex_date, factor
+    // NSE files past actions under the company's *current* symbol (UNOMINDA's
+    // 2022 bonus, while it traded as MINDAIND), so today's symbol is not
+    // date-bounded. Older symbols are, in case the ticker was reused. An action
+    // listed under both counts once.
+    const [current, ...older] = lineage;
+    const eventRows = await db.execute<{ ex_date: string; subject: string; factor: number }>(
+      sql`select distinct on (ex_date, subject) ex_date, subject, factor
           from corporate_actions
-          where symbol = ${symbol} and factor is not null and factor <> 1`,
+          where factor is not null and factor <> 1
+            and (symbol = ${current!.symbol}
+                 ${older.length ? sql`or ${sql.join(older.map((e) => inWindow(sql`ex_date`, e)), sql` or `)}` : sql``})`,
     );
+    const events = [...eventRows];
 
     const dates = prices.map((p) => p.trade_date);
     const closes = prices.map((p) => Number(p.close));

@@ -8,6 +8,7 @@
 import { backfill } from "./backfill";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
+import { ingestSymbolChanges } from "./symbol-changes";
 import { sql } from "../db";
 
 const LOOKBACK_DAYS = Number(process.env.NIGHTLY_LOOKBACK_DAYS ?? 7);
@@ -32,6 +33,14 @@ const actions = await ingestCorporateActions(iso(caFrom), iso(caTo));
 console.log(`[nightly] corporate actions:`, JSON.stringify(actions));
 if (actions.status === "error") {
   console.warn(`[nightly] WARNING corporate actions not updated: ${actions.message}`);
+}
+
+// Ticker renames: one small file, refreshed whole. On failure the stored list
+// is still used, so only a rename from the last day or two could be missed.
+const renames = await ingestSymbolChanges();
+console.log(`[nightly] symbol changes:`, JSON.stringify(renames));
+if (renames.status === "error") {
+  console.warn(`[nightly] WARNING symbol changes not updated: ${renames.message}`);
 }
 
 const unparsed = await sql`

@@ -15,6 +15,7 @@
     "ingest:backfill": "bun run src/ingest/cli-backfill.ts",
     "ingest:nifty50": "bun run src/ingest/cli-nifty50.ts",
     "ingest:corporate-actions": "bun run src/ingest/cli-corporate-actions.ts",
+    "ingest:symbol-changes": "bun run src/ingest/cli-symbol-changes.ts",
     "indicators": "bun run src/indicators/cli.ts",
     "ingest:nightly": "bun run src/ingest/cli-nightly.ts"
   },

@@ -37,6 +37,7 @@ bun run db:generate && bun run db:migrate      # schema change -> migration -> a
 
 bun run ingest:nifty50 2016-09-01              # seed/replace index membership
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
+bun run ingest:symbol-changes                  # NSE ticker renames; one file
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
@@ -78,6 +79,13 @@ Without it a partially loaded history averages 2018 closes with 2024 closes and 
 the result out as a perfectly ordinary number. The 21-day threshold is duplicated as
 `MAX_GAP_DAYS` in `src/indicators/compute.ts` and `src/query/crossings.ts` (where it
 stops a hole from counting as a crossing); change both together.
+
+**A member's history spans every symbol it traded under.** Bhavcopy uses the symbol
+current on each day, so `computeIndicators` follows `symbol_changes` back through
+`symbolLineage` and writes everything under today's symbol
+([0003](docs/decisions/0003-renamed-symbols-lose-history.md)). Any new per-member
+history query (52-week highs, A/D line…) must go through the lineage too, or a renamed
+member's history silently starts at its rename.
 
 **Symbols with a null average are excluded from breadth, not counted as "below".**
 Otherwise every backfill opens with a fabricated bearish reading.

@@ -102,6 +102,69 @@ describe("computeIndicators", () => {
   }, 45000);
 });
 
+describe("computeIndicators across a rename", () => {
+  // OLDNAME trades for 230 days, then the company becomes NEWNAME. The member
+  // list knows only NEWNAME — before the fix, its history began at the rename.
+  function renamed() {
+    return synthetic("X", 260).map((r, i) => ({ ...r, symbol: i < 230 ? "OLDNAME" : "NEWNAME" }));
+  }
+
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+    await db.delete(schema.symbolChanges);
+  });
+
+  async function load() {
+    const rows = renamed();
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({
+      indexName: "NIFTY50", symbol: "NEWNAME", addedOn: "2020-01-01", removedOn: null,
+    });
+    await db.insert(schema.symbolChanges).values({
+      oldSymbol: "OLDNAME", newSymbol: "NEWNAME", changedOn: rows[230]!.tradeDate, company: "Co Ltd",
+    });
+    return rows;
+  }
+
+  test("the history before the rename is used, under today's symbol", async () => {
+    const rows = await load();
+    await computeIndicators();
+    const out = await db.select().from(schema.dailyIndicators)
+      .where(eq(schema.dailyIndicators.symbol, "NEWNAME"));
+    expect(out).toHaveLength(260);
+
+    const closes = rows.map((r) => r.close);
+    const [last] = out.filter((r) => r.tradeDate === rows[259]!.tradeDate);
+    expect(last!.sma200!).toBeCloseTo(sma(closes, 200)[259]!, 6);
+    expect(last!.ema200!).toBeCloseTo(ema(closes, 200)[259]!, 6);
+  }, 30000);
+
+  test("a split NSE files under the new symbol still adjusts the old symbol's prices", async () => {
+    const rows = (await load()).map((r) => r); // prices: 100..359, a ramp
+    // Make day 100 a 1:2 split while the company was still OLDNAME.
+    await db.delete(schema.dailyPrices);
+    await db.insert(schema.dailyPrices).values(
+      rows.map((r, i) => (i < 100 ? { ...r, close: r.close * 2 } : r)),
+    );
+    await db.insert(schema.corporateActions).values({
+      symbol: "NEWNAME", exDate: rows[100]!.tradeDate, series: "EQ", subject: "Bonus 1:1",
+      kind: "bonus", factor: 2, company: "Co Ltd", recordDate: null,
+    });
+    const jumps: unknown[] = [];
+    await computeIndicators("NIFTY50", { onUnexplainedJump: (j) => jumps.push(j) });
+    expect(jumps).toEqual([]);
+
+    const [last] = await db.select().from(schema.dailyIndicators).where(and(
+      eq(schema.dailyIndicators.symbol, "NEWNAME"),
+      eq(schema.dailyIndicators.tradeDate, rows[259]!.tradeDate),
+    ));
+    expect(last!.sma200!).toBeCloseTo(sma(rows.map((r) => r.close), 200)[259]!, 6);
+  }, 30000);
+});
+
 describe("computeIndicators across a split", () => {
   // Flat at 500, then a 1:5 split on day 230: raw closes drop to 100 overnight
   // although nothing happened to the stock. This is the KOTAKBANK bug.

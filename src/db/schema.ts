@@ -95,6 +95,28 @@ export const corporateActions = pgTable(
   ],
 );
 
+/**
+ * NSE ticker renames (ZOMATO -> ETERNAL), from NSE's symbolchange.csv.
+ *
+ * Bhavcopy uses whatever symbol was current on each day, so without this a
+ * renamed company's history appears to start on the rename date. The old
+ * symbol's prices are joined on at compute time; `daily_prices` is never
+ * rewritten. See docs/decisions/0003-renamed-symbols-lose-history.md.
+ */
+export const symbolChanges = pgTable(
+  "symbol_changes",
+  {
+    oldSymbol: text("old_symbol").notNull(),
+    newSymbol: text("new_symbol").notNull(),
+    changedOn: date("changed_on").notNull(), // first day trading under newSymbol
+    company: text("company"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.oldSymbol, t.newSymbol, t.changedOn] }),
+    index("symbol_changes_new_symbol_idx").on(t.newSymbol),
+  ],
+);
+
 /** One row per attempted ingest. Drives both idempotency and backfill resume. */
 export const ingestLog = pgTable(
   "ingest_log",

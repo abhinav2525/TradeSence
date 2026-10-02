@@ -25,6 +25,7 @@ flowchart TB
         A1["bhavcopy zip<br/>one per trading day"]
         A2["ind_nifty50list.csv<br/>current constituents"]
         A3["corporate-actions feed<br/>splits, bonuses, dividends"]
+        A4["symbolchange.csv<br/>ticker renames"]
     end
 
     subgraph ING["Ingestion — src/ingest"]
@@ -39,6 +40,7 @@ flowchart TB
         C3[("ingest_log<br/>idempotency + resume")]
         C4[("daily_indicators<br/>sma50 / sma200 / ema200")]
         C5[("corporate_actions<br/>split/bonus factors")]
+        C6[("symbol_changes<br/>ticker renames")]
     end
 
     subgraph CALC["Indicators — src/indicators"]
@@ -58,6 +60,7 @@ flowchart TB
     B3 --> C3
     C3 -.->|"already settled?"| B3
     A3 --> C5 --> D3 --> D2
+    A4 --> C6 --> D1
     C1 --> D1 --> D2 --> C4
     C2 --> D2
     C4 --> E1 --> E3
@@ -154,6 +157,12 @@ erDiagram
         text company
         date record_date
     }
+    symbol_changes {
+        text old_symbol PK
+        text new_symbol PK
+        date changed_on PK "first day under new_symbol"
+        text company
+    }
     ingest_log {
         date trade_date PK
         text source PK
@@ -165,6 +174,7 @@ erDiagram
     daily_prices ||--o| daily_indicators : "averaged into"
     index_members ||--o{ daily_indicators : "filters"
     corporate_actions ||--o{ daily_indicators : "adjusts"
+    symbol_changes ||--o{ daily_indicators : "joins history of"
     ingest_log ||--o{ daily_prices : "records the load of"
 ```
 
@@ -191,6 +201,7 @@ DATABASE_URL=postgres://localhost:5432/tradesence_test bun run db:migrate
 bun run ingest:nifty50 2016-09-01               # seed index membership
 bun run ingest:backfill 2016-09-28 2026-09-25   # ~2,600 files, ~28 min, ~250 MB
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses (~15s)
+bun run ingest:symbol-changes                   # NSE ticker renames (one small file)
 bun run indicators                              # compute all moving averages (~5s)
 bun run dev                                     # http://localhost:3000
 ```
@@ -249,6 +260,7 @@ services` starts it at login). Re-run the installer if you move the repo or rein
 | `bun run db:studio` | Browse the data |
 | `bun run ingest:nifty50 <date>` | Seed/replace NIFTY 50 membership |
 | `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
+| `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |
@@ -319,6 +331,14 @@ Postgres's 65,535 bind-parameter cap).
 |---|---|---|
 | `adjustmentFactors` | `(dates, events: { exDate, factor }[]) => number[]` | For each date, the product of factors of events with an ex-date **strictly after** it. The ex-date already trades post-split. |
 | `findUnexplainedJumps` | `(dates, closes, factors) => { date, from, to }[]` | Moves beyond 30% either way that survive adjustment — a missing or misread split. |
+
+### `src/ingest/symbol-changes.ts` — ticker renames
+
+| Function | Signature | Notes |
+|---|---|---|
+| `parseSymbolChanges` | `(csv) => { rows, rejected }` | Reads `company,old,new,DD-MON-YYYY` from the right (company is free text). Unreadable lines are rejected, never guessed. |
+| `symbolLineage` | `(symbol, changes) => { symbol, from, to }[]` | Every symbol a company traded under, newest first, each with the dates it belonged to *this* company. Follows chains; a reused ticker's window starts at the hand-over. Cycle-safe. |
+| `fetchSymbolChanges` / `ingestSymbolChanges` | `(deps?) => ...` | Download and upsert the full list. An error page (zero readable rows) is an error, not "no renames". |
 
 ### `src/ingest/corporate-actions.ts` — NSE corporate actions
 
