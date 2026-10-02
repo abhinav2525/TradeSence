@@ -7,18 +7,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A NIFTY 50 market-breadth tracker. Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
-plus that percentage charted over ten years.
+plus that percentage charted over ten years. A second page, `/crossings`
+(`src/query/crossings.ts`), ranks members by how often they whipsaw across an average.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
-before making changes; this file covers only what the code cannot tell you.
+before making changes; this file covers only what the code cannot tell you. (README
+predates `/crossings` and does not document it yet.)
+
+**This is Next.js 16 — APIs differ from training data.** Read the relevant guide in
+`node_modules/next/dist/docs/` before writing framework code. `next dev` rewrites the
+Next.js block at the top of `AGENTS.md`; commit that change rather than reverting it.
 
 ## Commands
 
 ```bash
 bun run dev                                    # dashboard on :3000
-bun test                                       # 78 tests, always against tradesence_test
+bun test                                       # always against tradesence_test
 bun test tests/breadth.test.ts                 # one file
 bun test --test-name-pattern "idempotent"      # one test by name
+bunx tsc --noEmit                              # typecheck (no linter configured)
 
 bun run db:generate && bun run db:migrate      # schema change -> migration -> apply
 
@@ -56,7 +63,9 @@ a real failure:
 
 **Averages never span a hole.** `segmentByGaps` splits the series at gaps over 21 days.
 Without it a partially loaded history averages 2018 closes with 2024 closes and writes
-the result out as a perfectly ordinary number.
+the result out as a perfectly ordinary number. The 21-day threshold is duplicated as
+`MAX_GAP_DAYS` in `src/indicators/compute.ts` and `src/query/crossings.ts` (where it
+stops a hole from counting as a crossing); change both together.
 
 **Symbols with a null average are excluded from breadth, not counted as "below".**
 Otherwise every backfill opens with a fabricated bearish reading.
@@ -71,9 +80,11 @@ never read, and the fallback pointed at the dev database, whose first visitor is
 `db.delete(dailyPrices)`. Do not remove either guard, and do not weaken the connection
 check to a default.
 
-**`sql.raw` appears exactly once**, in `src/query/breadth.ts` `column()`. It is safe only
-because `MA_COLUMNS` is a fixed map and `isMaKind` in `page.tsx` is three strict
-comparisons. If you add another caller, validate the same way.
+**`sql.raw` appears exactly twice**, in the `column()` helpers of `src/query/breadth.ts`
+and `src/query/crossings.ts`. Each is safe only because `MA_COLUMNS` is a fixed map, and
+the `ma` search param is gated by an `isMaKind` of three strict comparisons, which is
+duplicated in `src/app/page.tsx` and `src/app/crossings/page.tsx`. Any new page or caller
+must validate the same way.
 
 **NSE file quirks** (all verified against the live archive):
 - Two formats. UDiFF from 2024-01-02; legacy up to ~2024-06. They overlap; the cutover
