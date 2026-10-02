@@ -58,7 +58,7 @@ export default async function CrossingsPage({
               fillTone: "down",
               sub: busiest.avgDaysPerRun
                 ? `Crosses once every ${busiest.avgDaysPerRun.toFixed(0)}d`
-                : "Crossings over ten years",
+                : "Crossings since 2020",
             },
             {
               label: "Median",
@@ -88,7 +88,7 @@ export default async function CrossingsPage({
           <CardHeader>
             <div>
               <CardTitle>The twelve busiest</CardTitle>
-              <CardDescription>Crossings of the {label}, ten years</CardDescription>
+              <CardDescription>Crossings of the {label}, since 2020</CardDescription>
             </div>
           </CardHeader>
           <div className="px-3 pb-4">

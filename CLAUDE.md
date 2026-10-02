@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A NIFTY 50 market-breadth tracker. Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
-plus that percentage charted over ten years. A second page, `/crossings`
+plus that percentage charted since 2020, on the index's real membership each day. A second page, `/crossings`
 (`src/query/crossings.ts`), ranks members by how often they whipsaw across an average.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
@@ -35,7 +35,7 @@ bunx tsc --noEmit                              # typecheck (no linter configured
 
 bun run db:generate && bun run db:migrate      # schema change -> migration -> apply
 
-bun run ingest:nifty50 2016-09-01              # seed/replace index membership
+bun run ingest:nifty50                         # membership since 2020, from the CSV
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:symbol-changes                  # NSE ticker renames; one file
 bun run ingest:day 2026-09-25 [--force]        # one session
@@ -50,13 +50,13 @@ Needs local Postgres (`brew services start postgresql@14`) and both `tradesence`
 `ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
 today, so a missed night heals on the next run. It runs from a launchd agent
 (`ops/install-nightly.sh`, Mon–Fri 19:30, log in `~/Library/Logs/tradesence-nightly.log`).
-`TODO.md` holds the prioritised roadmap; the survivorship fix (below) is item 1.
+`TODO.md` holds the prioritised roadmap.
 
 ## Design decisions that are load-bearing
 
 **Store everything, filter at query time.** `daily_prices` holds the whole NSE cash
 market because bhavcopy contains it anyway. "NIFTY 50" is rows in `index_members`,
-joined per trade date. Changing universe, or fixing survivorship, is a query change —
+joined per trade date. Changing universe, or correcting membership, is a query change —
 never a re-download. Do not "optimise" this by filtering at ingest.
 
 **`ingest_log` drives both idempotency and resume.** A settled day short-circuits before
@@ -152,11 +152,15 @@ deliberately: it is public and it is the component most likely to break, so mock
 would only prove the mock works. Where a fake is genuinely needed (a corrupt zip), use
 the injected `download` / `ingest` parameters rather than a mocking library.
 
-## Known limitation
+## Membership is point-in-time, from a hand-kept file
 
-Historical breadth is **survivorship-biased**: `index_members` is seeded with today's 50
-names over one open interval, so the ten-year chart is computed on today's winners and
-reads slightly optimistically. The schema already supports point-in-time membership, and
-`breadthSeries` already evaluates membership per date — so correcting it is an insert,
-not a re-ingest. Sources: niftyindices.com monthly archives or niftyhistory.in. NSE's own
-`IndexInclExcl.xls` is stale, with effectively nothing after ~2015.
+`src/ingest/nifty50-history.csv` is the source of truth for who was in the NIFTY 50 on
+each day since 2020 ([0005](docs/decisions/0005-point-in-time-membership.md)). Rows use
+**today's** symbol (renamed members are joined through `symbol_changes`), and
+`removed_on` is the first day *out*. `loadNifty50History` refuses any file that isn't
+exactly 50 members every day; `tests/nifty50-history.test.ts` also checks the file
+against NSE's live list, so **that test fails when NSE rebalances** — that is the signal
+to add a row, not a flaky test. Never go back to seeding today's list over one open
+interval: that reintroduces survivorship bias. Ex-members are in `index_members`, so
+`computeIndicators` already computes their averages; date navigation (`resolveSession`,
+`adjacentSessions`) only offers days with members.

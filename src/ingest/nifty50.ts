@@ -1,6 +1,3 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { db, schema } from "../db";
-
 const NIFTY50_LIST_URL =
   "https://nsearchives.nseindia.com/content/indices/ind_nifty50list.csv";
 
@@ -10,7 +7,9 @@ const USER_AGENT =
 export const INDEX_NAME = "NIFTY50";
 
 /**
- * Current NIFTY 50 constituents, from NSE's published list.
+ * Current NIFTY 50 constituents, from NSE's published list. Membership itself
+ * comes from nifty50-history.csv; this list is the nightly cross-check that
+ * the file is still up to date.
  * Columns: Company Name, Industry, Symbol, Series, ISIN Code.
  */
 export async function fetchNifty50Symbols(): Promise<string[]> {
@@ -25,29 +24,4 @@ export async function fetchNifty50Symbols(): Promise<string[]> {
     throw new Error(`Unrecognised NIFTY 50 list header: ${lines[0]?.slice(0, 120)}`);
   }
   return lines.slice(1).map((l) => (l.split(",")[iSymbol] ?? "").trim()).filter(Boolean);
-}
-
-/**
- * Seeds membership as one open interval per current constituent.
- *
- * This is the survivorship-biased v1 documented in the plan: it asserts today's
- * 50 names were members for the whole backfill window. The table shape already
- * supports real point-in-time history, so correcting it later is an insert.
- */
-export async function seedNifty50(addedOn: string): Promise<number> {
-  const symbols = await fetchNifty50Symbols();
-
-  // Replace the open intervals rather than adding to them. The primary key
-  // includes added_on, so a second seed with a different date would otherwise
-  // insert a parallel open interval per symbol and every breadth count would
-  // double.
-  await db
-    .delete(schema.indexMembers)
-    .where(and(eq(schema.indexMembers.indexName, INDEX_NAME), isNull(schema.indexMembers.removedOn)));
-
-  await db
-    .insert(schema.indexMembers)
-    .values(symbols.map((symbol) => ({ indexName: INDEX_NAME, symbol, addedOn, removedOn: null })))
-    .onConflictDoNothing();
-  return symbols.length;
 }

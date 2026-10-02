@@ -2,15 +2,15 @@
 
 **NIFTY 50 market-breadth tracker.** It answers one question every evening: *how many
 NIFTY 50 constituents are trading above their long-term moving average?* — and charts
-that percentage over ten years.
+that percentage since 2020, using the index's **real** membership on each day.
 
 A single reading is meaningless on its own. "30% of the index is above its 200-day
-average" could be a panic low or an ordinary Tuesday. The ten years of history are what
-turn it into a signal:
+average" could be a panic low or an ordinary Tuesday. The history is what turns it into
+a signal:
 
-> **Example (25 Sep 2026):** breadth was **30%**, which sits at the **6.8th percentile**
-> of 2,269 sessions. Only ~7% of the last decade has been this weak. The ten-year average
-> is 63%. The only worse stretches were March–June 2020 and February–March 2025.
+> **Example (25 Sep 2026):** breadth was **32%**, which sits at the **12.6th percentile**
+> of 1,670 sessions since 2020: only about one session in eight has been this weak. The
+> average since 2020 is 64.5%.
 
 Data comes from **free, public NSE bhavcopy archives**. No broker account, no API key,
 no subscription, no authentication anywhere in the codebase.
@@ -72,7 +72,7 @@ flowchart TB
 **The core design principle is "store everything, filter at query time."** Bhavcopy
 contains the whole NSE cash market and we download the entire file regardless, so
 `daily_prices` keeps all of it. "NIFTY 50" is just rows in `index_members`, joined at
-query time. Switching to NIFTY 500 — or fixing the survivorship caveat below — is a
+query time. Switching to NIFTY 500 — or changing the membership history — is a
 query change, never a re-download.
 
 ### How a single day is classified
@@ -198,7 +198,8 @@ DATABASE_URL=postgres://localhost:5432/tradesence_test bun run db:migrate
 ## Load data
 
 ```bash
-bun run ingest:nifty50 2016-09-01               # seed index membership
+bun run ingest:nifty50                          # load membership since 2020 from the CSV
+bun run ingest:symbol-changes                   # ticker renames (needed by the next steps)
 bun run ingest:backfill 2016-09-28 2026-09-25   # ~2,600 files, ~28 min, ~250 MB
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses (~15s)
 bun run ingest:symbol-changes                   # NSE ticker renames (one small file)
@@ -258,7 +259,7 @@ services` starts it at login). Re-run the installer if you move the repo or rein
 | `bun run db:generate` | Schema change → migration file |
 | `bun run db:migrate` | Apply migrations |
 | `bun run db:studio` | Browse the data |
-| `bun run ingest:nifty50 <date>` | Seed/replace NIFTY 50 membership |
+| `bun run ingest:nifty50` | Load NIFTY 50 membership since 2020 from `src/ingest/nifty50-history.csv` (replaces the table; refuses a file that isn't 50 members every day) |
 | `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
 | `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
@@ -308,8 +309,17 @@ Postgres's 65,535 bind-parameter cap).
 
 | Function | Signature | Notes |
 |---|---|---|
-| `fetchNifty50Symbols` | `() => Promise<string[]>` | The 50 current constituents from NSE's published CSV. |
-| `seedNifty50` | `(addedOn: string) => Promise<number>` | **Replaces** open intervals rather than adding to them — the primary key includes `added_on`, so a second seed at a different date would otherwise double every count. |
+| `fetchNifty50Symbols` | `() => Promise<string[]>` | The 50 current constituents from NSE's published CSV. Used only as the nightly cross-check of the membership file. |
+
+### `src/ingest/nifty50-history.ts` — point-in-time membership
+
+| Function | Signature | Notes |
+|---|---|---|
+| `parseMembershipHistory` / `readMembershipHistory` | `(text) / () => MembershipRow[]` | Reads `nifty50-history.csv`. Throws on a bad date, a removal before an addition, or a wrong header — never skips a row. |
+| `membersOn` | `(rows, date) => string[]` | Members on a date: `added_on` inclusive, `removed_on` exclusive (NSE's "effective from" date). |
+| `validateMembershipHistory` | `(rows, size) => string[]` | Every day the count isn't `size`, and any stock listed twice at once. Membership only changes on boundary dates, so checking those checks every day. |
+| `membershipDrift` | `(rows, live, date) => { added, removed }` | How NSE's live list differs from the file. The nightly job warns when it is non-empty. |
+| `loadNifty50History` | `(text?) => Promise<number>` | Validates, then replaces `index_members` for NIFTY50 in one transaction. |
 
 ### `src/indicators/moving-average.ts` — the maths
 
@@ -402,11 +412,12 @@ same rule at the connection point so no invocation path can reach the dev databa
 Network tests hit the live NSE archive deliberately: it is public, and it is the thing
 most likely to break — mocking it would only prove the mock works.
 
-## Known limitation
+## Membership history
 
-The ten-year chart is **survivorship-biased**. `index_members` is seeded with *today's*
-50 names over one open interval, so historical breadth is computed on today's winners and
-reads slightly optimistically. The schema already supports real point-in-time membership
-(`added_on` / `removed_on`); populating it needs a constituent-history source — NSE's own
-`IndexInclExcl.xls` is stale with effectively nothing after ~2015, so use
-niftyindices.com monthly archives or niftyhistory.in. **Fixing it requires no re-ingest.**
+Breadth uses the NIFTY 50 as it actually was on each day **since 2020-01-01**, not
+today's 50 projected backwards (that would be survivorship-biased: it drops the stocks
+that collapsed and were removed). The membership lives in
+`src/ingest/nifty50-history.csv`, built from NSE Indices press releases, and is checked
+to have exactly 50 members on every day. NSE changes the index about twice a year; the
+nightly job warns when its live list no longer matches the file. How to add a change:
+[docs/decisions/0005](docs/decisions/0005-point-in-time-membership.md).

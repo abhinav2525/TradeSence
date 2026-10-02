@@ -57,7 +57,7 @@ export default async function Page({
     total: p.total,
   }));
 
-  // How rare is this reading? That is the question the ten years exist to answer.
+  // How rare is this reading? That is the question the history since 2020 exists to answer.
   const percentile = point
     ? (series.filter((p) => p.pctAbove <= point.pctAbove).length / series.length) * 100
     : 0;
@@ -87,8 +87,8 @@ export default async function Page({
           fillTone: percentile <= 20 ? "down" : percentile >= 80 ? "up" : "neutral",
           sub:
             percentile <= 50
-              ? `Weaker than ${(100 - percentile).toFixed(0)}% of ten years`
-              : `Stronger than ${percentile.toFixed(0)}% of ten years`,
+              ? `Weaker than ${(100 - percentile).toFixed(0)}% of sessions since 2020`
+              : `Stronger than ${percentile.toFixed(0)}% of sessions since 2020`,
         },
         {
           label: "Five-session change",
@@ -101,7 +101,7 @@ export default async function Page({
               : `${delta > 0 ? "Improving" : delta < 0 ? "Deteriorating" : "Flat"} since ${formatDate(prior!.date)}`,
         },
         {
-          label: "Ten-year average",
+          label: "Average since 2020",
           value: average.toFixed(0),
           unit: "%",
           fill: average / 100,
@@ -124,7 +124,7 @@ export default async function Page({
       <PageHeader
         eyebrow="NIFTY 50 · Market breadth"
         title="Breadth"
-        description="How many of the fifty constituents close above their moving average, and how rare that is against ten years of sessions."
+        description="How many of the fifty constituents close above their moving average, and how rare that is against every session since 2020."
         actions={
           <>
             <MaTabs base="/" ma={ma} date={wanted} />

@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema, sql } from "../src/db";
 import { parseUdiff, parseLegacy, fetchBhavcopy } from "../src/ingest/bhavcopy";
-import { seedNifty50 } from "../src/ingest/nifty50";
+import { loadNifty50History } from "../src/ingest/nifty50-history";
 import { breadthSeries, latestBreakdown } from "../src/query/breadth";
 import { computeIndicators } from "../src/indicators/compute";
 
@@ -99,9 +99,9 @@ describe("I1 — re-seeding membership never double-counts a constituent", () =>
     await db.delete(schema.indexMembers);
   });
 
-  test("seeding twice with different added_on leaves one open interval per symbol", async () => {
-    await seedNifty50("2016-09-01");
-    await seedNifty50("2020-01-01");
+  test("loading membership twice leaves one open interval per symbol", async () => {
+    await loadNifty50History();
+    await loadNifty50History();
     const [{ n }] = await sql`
       select count(*)::int as n from index_members
       where index_name = 'NIFTY50' and removed_on is null`;

@@ -19,7 +19,7 @@ type Props = {
 
 /**
  * The headline: today's share in big type, the above/below split, and where
- * today sits among ten years of sessions. The distribution replaces a dial: it
+ * today sits among every session since 2020. The distribution replaces a dial: it
  * shows the same position and also how unusual that position is.
  */
 export default function BreadthHero({

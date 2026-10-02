@@ -80,6 +80,19 @@ export async function breadthSeries(
 }
 
 /**
+ * True when `i.symbol` was in the index on `i.trade_date`. Without it, date
+ * navigation would offer days before the membership history starts (2020),
+ * where every list is empty.
+ */
+function isMemberThen(indexName: string) {
+  return sql`exists (
+    select 1 from index_members m
+    where m.symbol = i.symbol and m.index_name = ${indexName}
+      and i.trade_date >= m.added_on
+      and (m.removed_on is null or i.trade_date < m.removed_on))`;
+}
+
+/**
  * Turns a requested date into an actual trading session.
  *
  * Weekends, exchange holidays and future dates all snap *backwards* to the most
@@ -90,12 +103,13 @@ export async function breadthSeries(
 export async function resolveSession(
   ma: MaKind,
   dateIso?: string,
+  indexName = "NIFTY50",
 ): Promise<string | null> {
   const col = column(ma);
   const rows = await db.execute<{ d: string | null }>(sql`
     select max(i.trade_date)::text as d
     from daily_indicators i
-    where i.${col} is not null
+    where i.${col} is not null and ${isMemberThen(indexName)}
       ${dateIso ? sql`and i.trade_date <= ${dateIso}` : sql``}
   `);
   return rows[0]?.d ?? null;
@@ -105,14 +119,15 @@ export async function resolveSession(
 export async function adjacentSessions(
   ma: MaKind,
   dateIso: string,
+  indexName = "NIFTY50",
 ): Promise<{ prev: string | null; next: string | null }> {
   const col = column(ma);
   const rows = await db.execute<{ prev: string | null; next: string | null }>(sql`
     select
-      (select max(trade_date)::text from daily_indicators
-        where ${col} is not null and trade_date < ${dateIso}) as prev,
-      (select min(trade_date)::text from daily_indicators
-        where ${col} is not null and trade_date > ${dateIso}) as next
+      (select max(i.trade_date)::text from daily_indicators i
+        where i.${col} is not null and ${isMemberThen(indexName)} and i.trade_date < ${dateIso}) as prev,
+      (select min(i.trade_date)::text from daily_indicators i
+        where i.${col} is not null and ${isMemberThen(indexName)} and i.trade_date > ${dateIso}) as next
   `);
   return { prev: rows[0]?.prev ?? null, next: rows[0]?.next ?? null };
 }

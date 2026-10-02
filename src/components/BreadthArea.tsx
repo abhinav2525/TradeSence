@@ -29,7 +29,7 @@ type RangeKey = (typeof RANGES)[number]["key"];
 type Props = { data: AreaPoint[]; selectedDate?: string | null };
 
 /**
- * Ten years of breadth: one series, so no legend (the heading names it).
+ * Breadth since 2020: one series, so no legend (the heading names it).
  * The bands under 20% and over 80% mark the extremes the percentile is about.
  */
 export default function BreadthArea({ data, selectedDate }: Props) {

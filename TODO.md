@@ -9,13 +9,14 @@ each item unlocks or de-risks the ones below it.
   installed 2026-10-02 via `ops/install-nightly.sh`.
 
 ## 1. Survivorship fix: historical NIFTY 50 membership — a, b
-- [ ] **Spike:** can we get reliable, machine-readable NIFTY 50
+- [x] **Done 2026-10-02, from 2020 onward** — docs/decisions/0005.
+- [x] **Spike:** can we get reliable, machine-readable NIFTY 50
   additions/removals for 2016→today?
   - Sample niftyindices.com monthly archives and niftyhistory.in.
   - Cross-check against known changes (e.g. Adani Enterprises / Shriram
     Finance added; Vedanta / Zee dropped).
   - Output: which source, what format, how complete. No repo changes.
-- [ ] Loader (bounded task, own approval): insert closed intervals into
+- [x] Loader (bounded task, own approval): insert closed intervals into
   `index_members`. No schema change — `breadthSeries` already evaluates
   membership per date.
 - [x] Renamed symbols lose pre-rename history (TATACONSUM, SHRIRAMFIN,

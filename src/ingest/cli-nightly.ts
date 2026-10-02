@@ -9,6 +9,8 @@ import { backfill } from "./backfill";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
+import { fetchNifty50Symbols } from "./nifty50";
+import { membershipDrift, readMembershipHistory } from "./nifty50-history";
 import { sql } from "../db";
 
 const LOOKBACK_DAYS = Number(process.env.NIGHTLY_LOOKBACK_DAYS ?? 7);
@@ -41,6 +43,21 @@ const renames = await ingestSymbolChanges();
 console.log(`[nightly] symbol changes:`, JSON.stringify(renames));
 if (renames.status === "error") {
   console.warn(`[nightly] WARNING symbol changes not updated: ${renames.message}`);
+}
+
+// NSE changes the index twice a year. The membership file is maintained by
+// hand, so say loudly when NSE's live list no longer matches it.
+try {
+  const drift = membershipDrift(readMembershipHistory(), await fetchNifty50Symbols(), iso(end));
+  if (drift.added.length || drift.removed.length) {
+    console.warn(
+      `[nightly] WARNING NIFTY 50 changed: NSE added ${drift.added.join(", ") || "none"}, ` +
+        `removed ${drift.removed.join(", ") || "none"}. Update src/ingest/nifty50-history.csv ` +
+        `(see docs/decisions/0005) and run bun run ingest:nifty50.`,
+    );
+  }
+} catch (e) {
+  console.warn(`[nightly] WARNING could not check NIFTY 50 membership: ${e instanceof Error ? e.message : e}`);
 }
 
 const unparsed = await sql`

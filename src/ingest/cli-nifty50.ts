@@ -1,7 +1,7 @@
-import { seedNifty50 } from "./nifty50";
+/** Loads NIFTY 50 membership since 2020 from nifty50-history.csv. */
+import { loadNifty50History } from "./nifty50-history";
 import { sql } from "../db";
 
-const addedOn = process.argv[2] ?? "2016-01-01";
-const n = await seedNifty50(addedOn);
-console.log(`[nifty50] seeded ${n} members with added_on=${addedOn}`);
+const n = await loadNifty50History();
+console.log(`[nifty50] loaded ${n} membership periods from nifty50-history.csv`);
 await sql.end();
