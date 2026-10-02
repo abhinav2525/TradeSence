@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { countFrame, formatLike, parseShown } from "../src/lib/count";
+import { countFrame, countPlan, formatLike, parseShown } from "../src/lib/count";
 
 const SAMPLES = ["16", "−24", "+12", "0", "35.7", "−58.8", "−1,560", "2,300", "1,23,456", "₹476 cr", "0.9×", "+4.6%", "−36%", "81%", "92nd", "1st", "13th"];
 
@@ -48,5 +48,18 @@ describe("countFrame", () => {
   });
   test("from === to stays put", () => {
     expect(countFrame(5, 5, 0.3)).toBe(5);
+  });
+});
+
+describe("countPlan (review fix: no 16 → 0 → 16 on slow phones)", () => {
+  test("first appearance, still hidden: count from 0, slowly", () => {
+    expect(countPlan(null, false)).toEqual({ from: 0, duration: "slow" });
+  });
+  test("first appearance, but the figure is already showing (the failsafe revealed it): don't count", () => {
+    expect(countPlan(null, true)).toBeNull();
+  });
+  test("a change: count from what is on screen, quickly", () => {
+    expect(countPlan(10, false)).toEqual({ from: 10, duration: "base" });
+    expect(countPlan(10, true)).toEqual({ from: 10, duration: "base" });
   });
 });

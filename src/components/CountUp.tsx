@@ -1,7 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
-import { countFrame, formatLike, parseShown } from "@/lib/count";
+import { countFrame, countPlan, formatLike, parseShown } from "@/lib/count";
 import { MOTION, prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +27,16 @@ export default function CountUp({ text, className }: { text: string; className?:
       el.dataset.counted = "";
       return;
     }
-    const from = onScreen.current ?? 0;
-    const duration = onScreen.current === null ? MOTION.slow : MOTION.base;
+    const shownNow = el.lastElementChild ? getComputedStyle(el.lastElementChild).opacity === "1" : true;
+    const plan = countPlan(onScreen.current, shownNow && !("counted" in el.dataset));
+    if (!plan) {
+      onScreen.current = target.value;
+      setShown(text);
+      el.dataset.counted = "";
+      return;
+    }
+    const { from } = plan;
+    const duration = MOTION[plan.duration];
     setShown(formatLike(target, from));
     el.dataset.counted = "";
     const start = performance.now();
@@ -49,7 +57,7 @@ export default function CountUp({ text, className }: { text: string; className?:
   return (
     <span ref={box} className={cn("countup", className)}>
       <span className="sr-only">{text}</span>
-      <span aria-hidden="true">{shown}</span>
+      <span aria-hidden="true" className="select-none">{shown}</span>
     </span>
   );
 }

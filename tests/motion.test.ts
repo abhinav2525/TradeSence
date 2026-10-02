@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { MOTION, chartAnimation, prefersReducedMotion } from "../src/lib/motion";
 
 const css = readFileSync("src/app/globals.css", "utf8");
@@ -50,7 +50,7 @@ test("every meter bar grows in, and every card rises in", () => {
   expect(css).toContain("tr:nth-child(n+16)"); // long tables: only the first screenful animates
 });
 
-test("every segmented switch has a sliding pill; pages cross-fade; a loading skeleton exists", () => {
+test("every segmented switch has a sliding pill", () => {
   const files = ["src/components/MaTabs.tsx", "src/components/BreadthArea.tsx", "src/components/AdLineChart.tsx", "src/components/RiskCalculator.tsx", "src/app/screener/page.tsx"];
   for (const f of files) {
     const src = readFileSync(f, "utf8");
@@ -58,8 +58,18 @@ test("every segmented switch has a sliding pill; pages cross-fade; a loading ske
     const pills = (src.match(/<SlidingPill /g) ?? []).length;
     expect({ f, groups, pills, seg: (src.match(/\bseg relative\b/g) ?? []).length }).toEqual({ f, groups, pills: groups, seg: groups });
   }
-  const shell = readFileSync("src/components/AppShell.tsx", "utf8");
-  expect(shell).toContain("<ViewTransition");
-  expect(css).toContain("::view-transition-new(.page-in)");
-  expect(readFileSync("src/app/loading.tsx", "utf8")).toContain("skeleton");
+});
+
+// ── review fixes (decision 0015) ──
+test("no root loading boundary: with it, no-JS readers saw only a skeleton and every navigation flashed 'No data loaded'", () => {
+  expect(existsSync("src/app/loading.tsx")).toBe(false);
+});
+test("no page-transition code that never runs (React never started a view transition here)", () => {
+  expect(readFileSync("src/components/AppShell.tsx", "utf8")).not.toContain("ViewTransition");
+  expect(css).not.toContain("::view-transition");
+});
+test("reduced motion cancels delays too, so nothing waits hidden in a stagger", () => {
+  const block = /@media \(prefers-reduced-motion: reduce\) \{\s*\*, \*::before, \*::after \{([^}]*)\}/.exec(css);
+  expect(block).not.toBeNull();
+  expect(block![1]).toContain("animation-delay: 0s !important");
 });

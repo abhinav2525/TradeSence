@@ -106,6 +106,8 @@ Prerequisites first, or whole-market numbers will be wrong:
   for history.
 
 ## Nice-to-haves (old item 8) — c
+- [ ] Page cross-fades: React's `<ViewTransition>` never started here (decision 0015). Retry when Next.js documents it working for pages that render their own sidebar, or move `SiteNav` into the layout first.
+- [ ] Motion polish (decision 0015 review): the pill should re-measure when option labels change width; `−₹` figures can't count; hover on the breadth histogram eases 300 ms; rename `.fade-in` (clashes with tw-animate-css); the pill's 8 px radius has no token; behaviour tests for no-JS and reduced motion.
 - [ ] Learn pages: small diagrams for SMA vs EMA and for a drawdown (decision 0012).
 - [ ] Volume/turnover anomalies vs the 20-day baseline (`vol_ratio` exists now).
 - [ ] New 52-week highs vs lows. Apply the split/bonus/demerger adjustment

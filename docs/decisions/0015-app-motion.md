@@ -35,9 +35,9 @@ What moves:
 - the six charts draw in and morph when you change the date or range;
 - every meter and bar grows, and traffic lights pop in;
 - switches slide (averages, ranges, horizons, Screener tabs);
-- pages cross-fade while the sidebar stays put;
-- popovers zoom open;
-- a shimmering skeleton shows while a page loads.
+- popovers zoom open.
+
+Page cross-fades and a loading skeleton were built, then removed after review (below).
 
 Full table: the design system's "States and motion".
 
@@ -87,10 +87,34 @@ Full table: the design system's "States and motion".
   - No sideways scrolling.
   - Stepping the date with ← never showed the loading skeleton, and the hero counted 16 →
     18 → 24, never from 0.
-  - The `a` key cross-faded to Advance/Decline.
   - The pills sit under the selected option.
   - Popovers animate.
 - **Numbers unchanged:** the independent audit (decision 0013) still finds 0 mismatches.
+
+## Found by the independent review (fixed)
+
+A fresh reviewer tested the branch in the browser, including with JavaScript off and on a
+slow connection. The count-ups, charts, meters and pills held up. It found:
+
+- **The loading skeleton hid pages from readers without JavaScript.** A root
+  `loading.tsx` wraps every page, so the page arrived hidden behind the skeleton, and only
+  JavaScript swapped it in. With JavaScript on, the skeleton's sidebar also flashed "No
+  data loaded" on every navigation, which is false. **Removed.** A page now loads as it did
+  before: the old page stays until the new one is ready.
+- **Page cross-fades never ran.** React never started a view transition on any navigation,
+  in development or in production, even from a client-side wrapper. My browser check had
+  only confirmed that the URL changed, not that a fade happened. **Removed**, with its CSS;
+  this decision no longer claims it. Try again when Next.js/React document it working for
+  pages that render their own sidebar.
+- **"Reduce motion" still delayed cards** by up to 0.6 s, one after another, because only
+  durations were cut, not delays. Now delays are cut too, and every card and figure is
+  visible from the first frame (0 of 58 hidden at 40 ms).
+- **On slow phones the "16 → 0 → 16" flicker came back.** The safety net revealed the true
+  figure, then JavaScript counted from 0. Now a figure already showing doesn't count.
+- **Copying a number copied it twice** ("1616%"). Now only one copy can be selected.
+
+Each was fixed with a test that failed first; suite 323 pass. In the browser, with
+JavaScript off, the Report Card shows all 8 figures and no skeleton.
 
 ## Revisit when
 

@@ -10,6 +10,10 @@ describe("CountUp on the server", () => {
     expect(html).toContain("countup");
     expect(html.match(/−1,560/g)!.length).toBe(2); // the sr-only copy and the visible one
   });
+  test("copying a figure copies it once: the animated copy can't be selected", () => {
+    const html = renderToString(createElement(CountUp, { text: "16" }));
+    expect(html).toMatch(/aria-hidden="true" class="select-none"/);
+  });
   test("a non-figure renders unchanged", () => {
     expect(renderToString(createElement(CountUp, { text: "—" }))).toContain("—");
   });

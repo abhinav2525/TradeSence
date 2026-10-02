@@ -79,7 +79,7 @@ One family, Geist, does everything including figures; Geist Mono is only for key
 
 **Motion** (decision 0015). Polished and smooth, never in the way. Four rules:
 
-1. **Only when something opens or changes, never while you read.** Hover, crosshairs and tooltips are instant; nothing loops (the loading shimmer runs only while waiting).
+1. **Only when something opens or changes, never while you read.** Hover, crosshairs and tooltips are instant; nothing loops.
 2. **The final value is the true one.** Figures end exactly on the server-rendered text, which is in the HTML from the first paint and in an `sr-only` copy for screen readers.
 3. **`prefers-reduced-motion` turns it all off**, in CSS and in JavaScript.
 4. **One clock:** `--motion-fast` 150ms, `--motion-base` 300ms, `--motion-slow` 600ms and `--ease-out`; JavaScript reads `MOTION` from `src/lib/motion.ts`.
@@ -91,12 +91,10 @@ One family, Geist, does everything including figures; Geist Mono is only for key
 | Charts | Draw in, `slow` | Morph, `base` | `useChartAnimation()` |
 | Meters and bars | Grow from 0, `slow` (first screenful of a table only) | Slide, `base` | `.grow-x`, `.grow-x-end`, `.grow-y`, `.grow-y-top`; markers `.fade-in` |
 | Traffic lights | Pop in after their card | Colour fade | `.pop-in` |
-| Pages | New page fades in, `base`; old fades out, `fast`; sidebar still | none (same page) | `<ViewTransition>` in `AppShell` |
 | Switches | | Pill slides, `fast` | `SlidingPill` |
 | Popovers, date picker | Zoom and fade, `fast` | | `tw-animate-css` |
-| Loading | Shimmering page skeleton | | `app/loading.tsx` |
 
-Not animated: the risk calculator's rupee figures (they change as you type).
+Not animated: the risk calculator's rupee figures (they change as you type), and page changes (React's view transitions never started here; see decision 0015). There is no root `loading.tsx`: it hid every page from readers without JavaScript.
 
 ## Iconography
 

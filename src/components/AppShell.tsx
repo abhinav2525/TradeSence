@@ -1,4 +1,3 @@
-import { ViewTransition } from "react";
 import SiteNav, { type Section } from "@/components/SiteNav";
 
 type Props = {
@@ -14,12 +13,9 @@ export default function AppShell({ current, ma, asOf, children }: Props) {
     <>
       <SiteNav current={current} ma={ma} asOf={asOf} />
       <main className="lg:pl-60">
-        {/* a new page fades in; the sidebar (outside) stays put; same-page updates (date, average) don't cross-fade */}
-        <ViewTransition enter="page-in" exit="page-out" update="none" default="none">
-          <div className="mx-auto w-full max-w-[1280px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
-            {children}
-          </div>
-        </ViewTransition>
+        <div className="mx-auto w-full max-w-[1280px] px-4 pb-16 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+          {children}
+        </div>
       </main>
     </>
   );

@@ -38,3 +38,14 @@ export function countFrame(from: number, to: number, t: number): number {
   const e = 1 - (1 - t) ** 3;
   return from + (to - from) * e;
 }
+
+/**
+ * Whether and how to count. A figure appearing for the first time counts from 0,
+ * unless it is already showing: on a slow phone the CSS failsafe reveals the true
+ * figure before JavaScript arrives, and counting from 0 then would flicker
+ * "16 → 0 → 16". A change always counts from what is on screen.
+ */
+export function countPlan(onScreen: number | null, alreadyShowing: boolean): { from: number; duration: "slow" | "base" } | null {
+  if (onScreen !== null) return { from: onScreen, duration: "base" };
+  return alreadyShowing ? null : { from: 0, duration: "slow" };
+}
