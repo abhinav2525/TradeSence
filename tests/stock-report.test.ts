@@ -27,6 +27,20 @@ async function seedIndex(n: number) {
   for (let i = 0; i < rows.length; i += 500) await db.insert(schema.indexPrices).values(rows.slice(i, i + 500));
 }
 
+/** Explicit closes; change_pct follows them; sma_200 = 100 (so breadth is "above" when close > 100). */
+async function seedCloses(symbol: string, closes: number[], rawClose?: (i: number, c: number) => number) {
+  const rows = closes.map((c, i) => ({
+    tradeDate: d(i), symbol, close: rawClose ? rawClose(i, c) : c, sma50: 100, sma200: 100, ema200: 100,
+    changePct: i === 0 ? null : (c / closes[i - 1]! - 1) * 100, volRatio: 1, turnover: 2e9,
+  }));
+  for (let i = 0; i < rows.length; i += 500) await db.insert(schema.dailyIndicators).values(rows.slice(i, i + 500));
+}
+async function seedIndexCloses(closes: number[]) {
+  const rows = closes.map((close, i) => ({ tradeDate: d(i), indexName: "Nifty 50", open: null, high: null, low: null, close }));
+  for (let i = 0; i < rows.length; i += 500) await db.insert(schema.indexPrices).values(rows.slice(i, i + 500));
+}
+const member = (symbol: string) => db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol, addedOn: "2020-01-01", removedOn: null });
+
 describe("stockReport", () => {
   beforeEach(reset);
 
@@ -141,6 +155,86 @@ describe("stockReport", () => {
     expect(await at("LOW")).toMatchObject({ percentile: 0, peers: 2, light: "red" });
     expect(await at("MID")).toMatchObject({ percentile: 50, peers: 2 });
     expect(await at("HIGH")).toMatchObject({ percentile: 100, peers: 2, light: "green" });
+  });
+  test("In crashes: three completed episodes count, today's ongoing one is mentioned, light from the median ratio", async () => {
+    await member("CR");
+    const N = 800, starts = [300, 450, 600, 790];
+    const stock = Array.from({ length: N }, () => 110), nifty = Array.from({ length: N }, () => 1100);
+    for (const s of starts) {
+      [99, 95, 90, 95, 99].forEach((v, k) => { if (s + k < N) stock[s + k] = v; });
+      [1089, 1070, 1050, 1070, 1089].forEach((v, k) => { if (s + k < N) nifty[s + k] = v; });
+    }
+    await seedCloses("CR", stock);
+    await seedIndexCloses(nifty);
+    const r = await stockReport("CR");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    const c = r.report.crashes;
+    expect(c.episodes.map((e) => e.start)).toEqual([d(300), d(450), d(600)]);
+    expect(c.ongoing).toBe(d(790));
+    expect(c.ratio!).toBeCloseTo((90 / 99 - 1) / (1050 / 1089 - 1), 9); // 2.54×
+    expect(c.light).toBe("red");
+    expect(c).toMatchObject({ backCount: 3, backOf: 3 });
+  });
+
+  test("a past date inside a crash: only data up to it, the crash is ongoing (no hindsight)", async () => {
+    await member("CR");
+    const stock = Array.from({ length: 400 }, (_, i) => (i >= 300 && i < 305 ? 95 : 110));
+    await seedCloses("CR", stock);
+    await seedIndexCloses(stock.map((c) => c * 10));
+    const r = await stockReport("CR", d(305));
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.crashes).toMatchObject({ episodes: [], ongoing: d(300), light: null });
+  });
+
+  test("Right now: a steady ±1% stock reads its usual self, a ±2.2% week, and every week inside", async () => {
+    await member("ALT");
+    await seed("ALT", 400, (i) => (i % 2 ? 1 : -1));
+    await seedIndex(400);
+    const r = await stockReport("ALT");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    const n = r.report.rightNow;
+    expect(n.light).toBe("green");
+    expect(n.ratio!).toBeCloseTo(1, 1);
+    expect(n.weekPct!).toBeCloseTo(Math.sqrt(5), 1);
+    expect(n.hit).toEqual({ inside: 375, of: 375 }); // weeks start 0..394, but σ only exists from day 20: 375
+  });
+
+  test("Bad days: a stock that moves 2× the NIFTY falls 2% when it falls 1%: red", async () => {
+    await member("CAP");
+    const m = (i: number) => ((i % 7) - 3) * 0.5;
+    await seed("CAP", 300, (i) => 2 * m(i));
+    const closes = [1000];
+    for (let i = 1; i < 300; i++) closes.push(closes[i - 1]! * (1 + m(i) / 100));
+    await seedIndexCloses(closes);
+    const r = await stockReport("CAP");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    const b = r.report.badDays;
+    expect(b.capture!.beta).toBeCloseTo(2, 6);
+    expect(b.capture!.down).toBeCloseTo(200, 6);
+    expect(b.light).toBe("red");
+  });
+
+  test("a short history gets no new lights, never a guessed colour", async () => {
+    await member("NEW");
+    await seed("NEW", 100, (i) => (i % 2 ? 1 : -1));
+    await seedIndex(100);
+    const r = await stockReport("NEW");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect([r.report.rightNow.light, r.report.badDays.light, r.report.crashes.light]).toEqual([null, null, null]);
+  });
+
+  test("a raw split (close ÷ 5, flat adjusted move) changes neither σ nor beta", async () => {
+    for (const s of ["PLAIN", "SPLIT"]) await member(s);
+    const closes = Array.from({ length: 400 }, (_, i) => 100 * (1 + 0.01 * Math.sin(i)));
+    await seedCloses("PLAIN", closes);
+    await seedCloses("SPLIT", closes, (i, c) => (i >= 200 ? c / 5 : c));
+    const idx = [1000];
+    for (let i = 1; i < 400; i++) idx.push(idx[i - 1]! * (1 + 0.004 * Math.cos(i)));
+    await seedIndexCloses(idx);
+    const a = await stockReport("PLAIN"), b = await stockReport("SPLIT");
+    if (a.kind !== "ok" || b.kind !== "ok") throw new Error("no report");
+    expect(b.report.rightNow.sigma!).toBeCloseTo(a.report.rightNow.sigma!, 9);
+    expect(b.report.badDays.capture!.beta).toBeCloseTo(a.report.badDays.capture!.beta, 9);
   });
 });
 

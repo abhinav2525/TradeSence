@@ -2,7 +2,7 @@ import { test, expect, describe } from "bun:test";
 import { adjustedLine, drawdownSeries, worstDrawdown, currentDrawdownPct, closesToMoves } from "../src/indicators/risk";
 import {
   horizonStats, periodReturn, dailyVolatility, percentRank, rankAmongPeers,
-  trendLight, strengthLight, ratioLight, liquidityLight, HORIZONS,
+  trendLight, strengthLight, ratioLight, liquidityLight, nowVolLight, downCaptureLight, HORIZONS,
 } from "../src/indicators/risk";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
@@ -146,4 +146,9 @@ test("a stretch that ends at exactly its starting price is not 'lower', despite 
   // windows: 100→100⁻, 101→102, 100⁻→100⁻, 102→99, 100⁻→100⁻, 99→100⁻, 100⁻→100⁻ : only 102→99 fell
   expect(h.windows).toBe(7);
   expect(h.shareNegative).toBeCloseTo(100 / 7, 9);
+});
+
+test("Right now and Bad days lights switch exactly at their cut-offs (0014)", () => {
+  expect([nowVolLight(1.0), nowVolLight(1.5), nowVolLight(1.51)]).toEqual(["green", "amber", "red"]);
+  expect([downCaptureLight(100), downCaptureLight(120), downCaptureLight(120.1)]).toEqual(["green", "amber", "red"]);
 });

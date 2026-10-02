@@ -7,8 +7,10 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { symbolLineage } from "../ingest/symbol-changes";
+import { WEEK, crashEpisodes, ewmaVolatility, marketCapture, rangeHitRate, type Capture, type Crashes } from "../indicators/market-risk";
+import { breadthSeries } from "./breadth";
 import {
-  DRAWDOWN_MIN, HORIZONS, THRESHOLDS, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
+  DRAWDOWN_MIN, HORIZONS, THRESHOLDS, VOL_WINDOW, downCaptureLight, nowVolLight, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
   drawdownSeries, horizonStats, liquidityLight, periodReturn, rankAmongPeers, ratioLight,
   strengthLight, trendLight, worstDrawdown,
   type Drawdown, type HorizonKey, type HorizonStats, type Light,
@@ -35,6 +37,9 @@ export type StockReport = {
   bumpiness: { light: Light | null; dailyVol: number | null; niftyVol: number | null; ratio: number | null };
   worstFall: { light: Light | null; stock: Drawdown | null; nifty: Drawdown | null; ratio: number | null; currentPct: number | null };
   liquidity: { light: Light | null; medianCrore: number | null };
+  rightNow: { light: Light | null; sigma: number | null; weekPct: number | null; ratio: number | null; hit: { inside: number; of: number } | null };
+  badDays: { light: Light | null; capture: Capture | null };
+  crashes: { light: Light | null } & Crashes;
   horizons: Record<HorizonKey, HorizonPair>;
   price: { date: string; close: number; sma200: number | null }[]; // adjusted, in the shown session's rupees
   drawdown: { date: string; pct: number }[];
@@ -141,6 +146,29 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
     (Object.keys(HORIZONS) as HorizonKey[]).map((k) => [k, { stock: horizonStats(line, HORIZONS[k]), nifty: horizonStats(niftyLine, HORIZONS[k]) }]),
   ) as Record<HorizonKey, HorizonPair>;
 
+  // Right now: RiskMetrics σ against its own last year (decision 0014)
+  const sigmas = ewmaVolatility(line);
+  const sigma = sigmas.at(-1) ?? null;
+  const yearOfMoves = moves.filter((m) => m.changePct !== null).length >= VOL_WINDOW;
+  const nowRatio = yearOfMoves && sigma !== null && dailyVol ? sigma / dailyVol : null;
+  const rightNow = {
+    light: nowRatio === null ? null : nowVolLight(nowRatio),
+    sigma, weekPct: sigma === null ? null : sigma * Math.sqrt(WEEK), ratio: nowRatio,
+    hit: rangeHitRate(line, sigmas),
+  };
+
+  // Bad days: capture and beta against the NIFTY 50, matched by date
+  const capture = marketCapture(moves, niftyMoves);
+  const badDays = { light: capture ? downCaptureLight(capture.down) : null, capture };
+
+  // In crashes: breadth up to this session only, so a crash under way isn't counted
+  const breadth = (await breadthSeries("sma200", indexName)).filter((b) => b.date <= date);
+  const crash = crashEpisodes(breadth, line, niftyLine);
+  const crashes = {
+    light: crash.ratio !== null && crash.episodes.length >= THRESHOLDS.crashMinEpisodes ? ratioLight(crash.ratio) : null,
+    ...crash,
+  };
+
   // Price in the shown session's rupees: adjusted level scaled so the last point equals today's close
   const last = line.at(-1)!.level;
   const price = upto.map((r, i) => {
@@ -182,6 +210,7 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
       bumpiness: { light: volRatio === null ? null : ratioLight(volRatio), dailyVol, niftyVol, ratio: volRatio },
       worstFall: { light: ddRatio === null ? null : ratioLight(ddRatio), stock: ddStock, nifty: ddNifty, ratio: ddRatio, currentPct: currentDrawdownPct(line) },
       liquidity: { light: medianCrore === null ? null : liquidityLight(medianCrore), medianCrore },
+      rightNow, badDays, crashes,
       horizons, price, drawdown: drawdownSeries(line), events, dividends12m,
     },
   };

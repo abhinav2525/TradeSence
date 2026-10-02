@@ -193,12 +193,15 @@ export function rankAmongPeers(
 
 export type Light = "green" | "amber" | "red";
 
-/** Every light's cut-off, in one place (decision 0011). */
+/** Every light's cut-off, in one place (decisions 0011 and 0014). */
 export const THRESHOLDS = {
   strength: { green: 67, red: 33 }, // percentile among members
-  ratio: { green: 1.2, amber: 1.8 }, // × the NIFTY 50 (bumpiness, worst fall)
+  ratio: { green: 1.2, amber: 1.8 }, // × the NIFTY 50 (bumpiness, worst fall, in crashes)
   liquidityCrore: { green: 100, amber: 10 },
   liquiditySessions: 20,
+  nowVol: { green: 1.0, amber: 1.5 }, // recent σ ÷ its own last year
+  downCapture: { green: 100, amber: 120 }, // % of the NIFTY's fall on its down days
+  crashMinEpisodes: 3,
 } as const;
 
 export function trendLight(close: number, sma50: number | null, sma200: number | null): Light | null {
@@ -217,4 +220,12 @@ export function ratioLight(ratio: number): Light {
 
 export function liquidityLight(crore: number): Light {
   return crore >= THRESHOLDS.liquidityCrore.green ? "green" : crore >= THRESHOLDS.liquidityCrore.amber ? "amber" : "red";
+}
+
+export function nowVolLight(ratio: number): Light {
+  return ratio <= THRESHOLDS.nowVol.green ? "green" : ratio <= THRESHOLDS.nowVol.amber ? "amber" : "red";
+}
+
+export function downCaptureLight(pct: number): Light {
+  return pct <= THRESHOLDS.downCapture.green ? "green" : pct <= THRESHOLDS.downCapture.amber ? "amber" : "red";
 }
