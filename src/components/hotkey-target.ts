@@ -6,6 +6,7 @@ const BASE: Record<Section, string> = {
   crossings: "/crossings",
   screener: "/screener",
   stock: "/stock",
+  learn: "/learn",
 };
 
 export type HotkeyContext = {
@@ -38,5 +39,6 @@ export function hotkeyTarget(key: string, c: HotkeyContext): string | null {
   if (key === "c") return `/crossings?ma=${c.ma}`;
   if (key === "s") return `/screener?ma=${c.ma}`;
   if (key === "r") return "/stock";
+  if (key === "l") return "/learn";
   return null;
 }

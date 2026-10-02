@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Activity, ArrowLeftRight, ChartColumn, ChartSpline, IdCard, ListFilter, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "stock";
+export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "stock" | "learn";
 type Props = { current: Section; ma: string; asOf?: string | null };
 
 type NavLink = { key: Section; href: string; label: string; short: string; hint: string; icon: LucideIcon };
@@ -29,6 +29,12 @@ const GROUPS: { label: string; links: NavLink[] }[] = [
       { key: "stock", href: "/stock", label: "Report card", short: "Report card", hint: "r", icon: IdCard },
     ],
   },
+  {
+    label: "Help",
+    links: [
+      { key: "learn", href: "/learn", label: "Learn", short: "Learn", hint: "l", icon: BookOpen },
+    ],
+  },
 ];
 
 const LINKS = GROUPS.flatMap((g) => g.links);
@@ -36,7 +42,7 @@ const LINKS = GROUPS.flatMap((g) => g.links);
 const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
-  ["b a c s r", "Switch page"],
+  ["b a c s r l", "Switch page"],
 ] as const;
 
 /** The product name in plain type. There is no logo yet; the glyph is lucide's chart-spline. */

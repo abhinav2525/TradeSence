@@ -7,7 +7,7 @@ import { hotkeyTarget, type HotkeyContext } from "@/components/hotkey-target";
 
 /**
  * Keyboard navigation, because this is a readout you check repeatedly: arrows
- * step sessions, 1-3 switch the average, b/a/c/s/r switch page, t flips the theme.
+ * step sessions, 1-3 switch the average, b/a/c/s/r/l switch page, t flips the theme.
  * Ignored while typing so the date field and the calculator still work normally.
  * Where each key goes lives in hotkey-target.ts (tested).
  */
@@ -19,6 +19,7 @@ export default function Hotkeys({ ma, prev, next, page, base, extra }: HotkeyCon
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target as HTMLElement | null;
       if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      if (el?.closest?.("[data-radix-popper-content-wrapper]")) return; // a popover or date picker is open
 
       if (e.key === "t") {
         e.preventDefault();

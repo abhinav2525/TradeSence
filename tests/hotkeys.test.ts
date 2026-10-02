@@ -25,3 +25,7 @@ describe("hotkeyTarget", () => {
     expect(hotkeyTarget("r", breadth)).toBe("/stock");
   });
 });
+
+test("l opens Learn from anywhere", () => {
+  expect(hotkeyTarget("l", { page: "breadth", ma: "sma200" })).toBe("/learn");
+});
