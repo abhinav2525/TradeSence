@@ -27,6 +27,7 @@ export type StockReport = {
   prev: string | null;
   next: string | null;
   firstDate: string; // first session in the stock's history
+  lastDate: string; // latest session loaded, for the date picker's upper bound
   membership: { addedOn: string; removedOn: string | null }[];
   close: number;
   trend: { light: Light | null; sma50: number | null; sma200: number | null; side200: "above" | "below" | null; sessions200: number };
@@ -170,7 +171,7 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
     kind: "ok",
     report: {
       symbol, date, requested: dateIso ?? null, snapped: Boolean(dateIso && dateIso !== date), prev, next,
-      firstDate: firstDate!, membership, close,
+      firstDate: firstDate!, lastDate: all.at(-1)!.d, membership, close,
       trend: { light: trendLight(close, sma50, sma200), sma50, sma200, side200, sessions200 },
       strength: {
         light: percentile === null ? null : strengthLight(percentile), percentile,

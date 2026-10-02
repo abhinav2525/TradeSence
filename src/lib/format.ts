@@ -36,3 +36,11 @@ export function formatDayMonth(iso: string): string {
   const [, m, d] = iso.split("-");
   return `${Number(d)} ${MONTHS[Number(m) - 1]}`;
 }
+
+/** 1 → "1st", 92 → "92nd", 12 → "12th". */
+export function ordinal(n: number): string {
+  const v = Math.round(n);
+  const teen = v % 100 >= 11 && v % 100 <= 13;
+  const suffix = teen ? "th" : ["th", "st", "nd", "rd"][v % 10] ?? "th";
+  return `${v}${v % 10 > 3 && !teen ? "th" : suffix}`;
+}

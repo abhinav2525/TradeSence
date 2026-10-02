@@ -106,6 +106,7 @@ describe("stockReport", () => {
     const r = await stockReport("AAA", d(79));
     if (r.kind !== "ok") throw new Error(r.kind);
     expect(r.report.date).toBe(d(79));
+    expect(r.report.lastDate).toBe(d(99)); // for the date picker's upper bound
     expect(r.report.worstFall.stock!.depthPct).toBeCloseTo(0, 9);
   });
 });

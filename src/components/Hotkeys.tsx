@@ -17,6 +17,7 @@ const BASE: Record<Section, string> = {
   "advance-decline": "/advance-decline",
   crossings: "/crossings",
   screener: "/screener",
+  stock: "/stock",
 };
 
 /**

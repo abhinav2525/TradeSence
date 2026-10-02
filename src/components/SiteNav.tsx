@@ -4,7 +4,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type Section = "breadth" | "advance-decline" | "crossings" | "screener";
+export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "stock";
 type Props = { current: Section; ma: string; asOf?: string | null };
 
 type NavLink = { key: Section; href: string; label: string; short: string; hint: string; icon: LucideIcon };
