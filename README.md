@@ -247,6 +247,8 @@ services` starts it at login). Re-run the installer if you move the repo or rein
 
 ## Commands
 
+Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs/pipelines.md).
+
 | Command | What it does |
 |---|---|
 | `brew services start postgresql@14` | Start the database |

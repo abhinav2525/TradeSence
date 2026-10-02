@@ -14,6 +14,9 @@ plus that percentage charted since 2020, on the index's real membership each day
 before making changes; this file covers only what the code cannot tell you. (README
 predates `/crossings` and does not document it yet.)
 
+**`docs/pipelines.md` lists every pipeline and its automation status** — update it
+when a pipeline or a nightly step changes.
+
 **`docs/decisions/` is the project's memory — keep it current.** Every problem hit
 (bug, wrong data, ops issue, design choice) gets its own numbered file there in the
 same change as the fix: the problem, the options, the decision, and *why*. Write it in

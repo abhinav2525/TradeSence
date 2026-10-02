@@ -1,0 +1,146 @@
+# Pipelines
+
+Every data flow in tradeSence: what it does, where its data comes from, how it runs,
+and whether it is automated. Why each one exists is in [decisions/](decisions/README.md).
+
+## At a glance
+
+| # | Pipeline | Source | Runs | Automated? |
+|---|---|---|---|---|
+| 1 | [Daily prices](#1-daily-prices) | NSE bhavcopy (free) | Nightly | ✅ Yes |
+| 2 | [Corporate actions](#2-corporate-actions-splits-bonuses-demergers) | NSE corporate-actions feed (free) | Nightly | ✅ Yes |
+| 3 | [Ticker renames](#3-ticker-renames) | NSE `symbolchange.csv` (free) | Nightly | ✅ Yes |
+| 4 | [Moving averages](#4-moving-averages) | Pipelines 1–3 + 5 | Nightly | ✅ Yes |
+| 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
+| 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
+| 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
+| 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
+
+**The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 2 → 3 → 5's check → 4
+→ 6, every weekday at **19:30 IST**, from a launchd agent on the Mac
+([decision 0001](decisions/0001-nightly-schedule-launchd.md)). Every step is safe to
+re-run, and a failure in one step is logged without stopping the others.
+
+```mermaid
+flowchart LR
+    A["1 · Daily prices<br/>bhavcopy, last 7 days"] --> D
+    B["2 · Corporate actions<br/>-31 / +30 days"] --> D
+    C["3 · Ticker renames<br/>full list"] --> D
+    M["5 · Membership CSV<br/>(hand-kept)"] --> D
+    M -. "nightly check vs NSE live list" .-> W
+    D["4 · Moving averages<br/>adjusted + stitched"] --> W["6 · Safety checks<br/>WARNING lines in the log"]
+    D --> P["7 · Dashboard"]
+```
+
+## Automation status
+
+| Pipeline | Automated now | Could it be fully automated? | What it would take |
+|---|---|---|---|
+| 1 Daily prices | ✅ | — | Done |
+| 2 Corporate actions | ✅ | — | Done |
+| 3 Ticker renames | ✅ | — | Done |
+| 4 Moving averages | ✅ | — | Done |
+| 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
+| 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
+| 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
+| Scheduling itself | ✅ on the Mac | Needs redoing when the app moves to a server | cron or systemd on the server. **First check that NSE answers from the server's IP**; NSE blocks some cloud addresses ([0001](decisions/0001-nightly-schedule-launchd.md)) |
+
+---
+
+## 1. Daily prices
+
+| | |
+|---|---|
+| **What** | Downloads NSE's end-of-day file for every trading day and stores every NSE equity close (the whole market, not just the 50) |
+| **Source** | `nsearchives.nseindia.com` bhavcopy, in two formats (UDiFF from 2024, legacy before) |
+| **Writes** | `daily_prices`, `ingest_log` |
+| **Nightly** | The last 7 days. Days already loaded are skipped without a download, so a missed night fills itself in |
+| **By hand** | `bun run ingest:day <date> [--force]`, `bun run ingest:backfill <start> <end>` |
+| **Code** | `src/ingest/bhavcopy.ts`, `ingest-day.ts`, `backfill.ts` |
+
+## 2. Corporate actions (splits, bonuses, demergers)
+
+| | |
+|---|---|
+| **What** | Every NSE corporate action for the whole market, with a factor so the averages aren't distorted by splits, bonuses or demergers |
+| **Source** | NSE's public corporate-actions feed (one request per date range) |
+| **Writes** | `corporate_actions` (~22,000 rows since 2016) |
+| **Nightly** | From 31 days back (late filings) to 30 days ahead (announced splits) |
+| **By hand** | `bun run ingest:corporate-actions <start> <end>` |
+| **Code** | `src/ingest/corporate-actions.ts` |
+| **Why** | [0002 splits](decisions/0002-split-adjusted-averages.md), [0004 demergers](decisions/0004-demerger-adjustment.md) |
+
+## 3. Ticker renames
+
+| | |
+|---|---|
+| **What** | NSE's list of every symbol change (e.g. ZOMATO → ETERNAL), so a renamed company keeps its history |
+| **Source** | `nsearchives.nseindia.com/content/equities/symbolchange.csv` (1,065 renames) |
+| **Writes** | `symbol_changes` |
+| **Nightly** | The full list, refreshed (one small file) |
+| **By hand** | `bun run ingest:symbol-changes` |
+| **Code** | `src/ingest/symbol-changes.ts` |
+| **Why** | [0003](decisions/0003-renamed-symbols-lose-history.md) |
+
+## 4. Moving averages
+
+| | |
+|---|---|
+| **What** | 50 SMA, 200 SMA and 200 EMA for every NIFTY 50 member, past and present, on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
+| **Reads** | `daily_prices`, `corporate_actions`, `symbol_changes`, `index_members` |
+| **Writes** | `daily_indicators` (~158,000 rows), fully recomputed each time (~5 s) |
+| **Nightly** | ✅ after pipelines 1–3 |
+| **By hand** | `bun run indicators` |
+| **Code** | `src/indicators/compute.ts`, `adjust.ts`, `moving-average.ts` |
+
+## 5. NIFTY 50 membership
+
+| | |
+|---|---|
+| **What** | Who was in the NIFTY 50 on each day since 2020-01-01, so the history isn't biased toward today's winners |
+| **Source** | `src/ingest/nifty50-history.csv`, hand-kept and built from NSE Indices press releases (12 changes since 2020) |
+| **Writes** | `index_members` (66 rows) |
+| **Nightly** | **Check only**: compares the file with NSE's live list and prints `WARNING NIFTY 50 changed` if they differ |
+| **By hand** | Twice a year (end of March / end of September): add the rows, then `bun run ingest:nifty50 && bun run indicators`. Steps: [0005](decisions/0005-point-in-time-membership.md#how-to-update-it-twice-a-year-2-minutes) |
+| **Guard** | The loader refuses any file that isn't exactly 50 members on every day |
+| **Code** | `src/ingest/nifty50-history.ts`, `nifty50.ts` |
+
+## 6. Safety checks
+
+All run inside the nightly job and print a `WARNING` line to
+`~/Library/Logs/tradesence-nightly.log`. **Nothing notifies you yet**; read the log, or
+build TODO item 6.
+
+| Check | Catches | Window |
+|---|---|---|
+| Corporate actions not updated | NSE feed down or blocked | Each run |
+| Symbol changes not updated | Rename list unreachable | Each run |
+| NIFTY 50 changed | NSE rebalanced and the CSV needs rows | Each run |
+| Unreadable corporate action | A split/bonus worded in a way the parser doesn't know | Last 31 days |
+| Unexplained jump | A member moved >30% overnight with no corporate action (a missed split, or a real crash) | Last 31 days |
+
+Also, failed price downloads are stored as `error` and retried the next night, and a day
+that looks like a holiday is re-checked for 2 days in case NSE was just late.
+
+## 7. Dashboard
+
+| | |
+|---|---|
+| **What** | `/` breadth page and `/crossings`, queried live from Postgres on every page view |
+| **Run** | Development: `bun run dev`. Production: `bun run build && bun run start` (port 3000) |
+| **Automated?** | Pages always show the latest data, but the server is started by hand and stops when the Mac restarts |
+| **Needs** | Postgres running (`brew services start postgresql@14`, starts at login) |
+
+## 8. One-time setup and backfills
+
+Run once on a new machine (full list in the [README](../README.md#setup)):
+
+```bash
+bun run db:migrate
+bun run ingest:backfill 2016-09-28 <today>      # prices, ~28 min, resumable
+bun run ingest:corporate-actions 2016-01-01 <today+30d>
+bun run ingest:symbol-changes
+bun run ingest:nifty50
+bun run indicators
+./ops/install-nightly.sh                         # schedule the nightly job
+```
