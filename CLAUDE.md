@@ -36,6 +36,7 @@ bunx tsc --noEmit                              # typecheck (no linter configured
 bun run db:generate && bun run db:migrate      # schema change -> migration -> apply
 
 bun run ingest:nifty50 2016-09-01              # seed/replace index membership
+bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
@@ -105,7 +106,15 @@ must validate the same way.
   naively that becomes year 20 AD and Postgres rejects it mid-backfill.
 - Bhavcopy dates are honest, but NSE's *52-week high/low* file is **off by one** — the
   file labelled day D holds data through D−1. Not used here; remember it if you add it.
-- Prices are **unadjusted** for splits/bonuses.
+- Prices are **unadjusted** for splits/bonuses, and `prev_close` is not adjusted on
+  the ex-date either. Averages are adjusted at compute time from `corporate_actions`
+  ([0002](docs/decisions/0002-split-adjusted-averages.md)); stored averages are scaled
+  back into each day's own rupees, so `close` vs MA queries need no adjustment logic.
+  **Never write adjusted prices into `daily_prices`.**
+- Corporate-action `subject` is free text in ~30 wordings, including abbreviations
+  (`Fv Splt Frm Rs 10 To Re 1`). `classifyAction` must return `unparsed` — never factor
+  1 — for share-count wording it cannot read. A new wording goes into
+  `tests/corporate-actions.test.ts` first.
 
 **Header validation must list every column the parser reads.** `at()` returns `-1` for a
 missing column and `f[-1]` is `undefined`; the old code turned that into `0` and would

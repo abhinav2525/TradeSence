@@ -50,5 +50,7 @@ on current winners and flatters any backtested signal.
 ## 8. Nice-to-haves — c
 - [ ] Relative-strength ranking vs index.
 - [ ] Volume/turnover anomalies vs 20-day baseline.
-- [ ] New 52-week highs vs lows — **needs split/bonus adjustment first**
-  (prices are unadjusted; splits read as fake crashes).
+- [ ] New 52-week highs vs lows — split/bonus factors now exist in
+  `corporate_actions` (docs/decisions/0002); apply them to highs/lows too.
+- [ ] Show split/bonus history per stock — data is in `corporate_actions`;
+  **owner will say where it goes in the UI**.

@@ -65,6 +65,36 @@ export const dailyIndicators = pgTable(
   (t) => [primaryKey({ columns: [t.tradeDate, t.symbol] })],
 );
 
+/**
+ * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
+ * market, exactly as NSE words them.
+ *
+ * Bhavcopy prices are unadjusted, so a 1:5 split looks like an 80% crash. The
+ * `factor` here is what closes *before* `exDate` must be divided by to be
+ * comparable with closes on and after it: 5 for a 1:5 split, 1.5 for a 1:2
+ * bonus, 0.1 for a 10:1 consolidation, 1 for anything that leaves the share
+ * count alone. `kind = 'unparsed'` with a null factor marks a share-count event
+ * whose wording we could not read; it is kept so it can be reported, and never
+ * guessed at. See docs/decisions/0002-split-adjusted-averages.md.
+ */
+export const corporateActions = pgTable(
+  "corporate_actions",
+  {
+    symbol: text("symbol").notNull(),
+    exDate: date("ex_date").notNull(),
+    subject: text("subject").notNull(), // NSE's own text, verbatim
+    series: text("series").notNull(),
+    kind: text("kind").notNull(), // split | bonus | bonus+split | consolidation | other | unparsed
+    factor: doublePrecision("factor"), // null only when kind = 'unparsed'
+    company: text("company"),
+    recordDate: date("record_date"),
+  },
+  (t) => [
+    primaryKey({ columns: [t.symbol, t.exDate, t.subject] }),
+    index("corporate_actions_ex_date_idx").on(t.exDate),
+  ],
+);
+
 /** One row per attempted ingest. Drives both idempotency and backfill resume. */
 export const ingestLog = pgTable(
   "ingest_log",

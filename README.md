@@ -24,6 +24,7 @@ flowchart TB
     subgraph SRC["NSE public archives (free, no auth)"]
         A1["bhavcopy zip<br/>one per trading day"]
         A2["ind_nifty50list.csv<br/>current constituents"]
+        A3["corporate-actions feed<br/>splits, bonuses, dividends"]
     end
 
     subgraph ING["Ingestion — src/ingest"]
@@ -37,10 +38,12 @@ flowchart TB
         C2[("index_members<br/>who is in the index, when")]
         C3[("ingest_log<br/>idempotency + resume")]
         C4[("daily_indicators<br/>sma50 / sma200 / ema200")]
+        C5[("corporate_actions<br/>split/bonus factors")]
     end
 
     subgraph CALC["Indicators — src/indicators"]
         D1["segmentByGaps()<br/>split history at holes"]
+        D3["adjustmentFactors()<br/>undo splits and bonuses"]
         D2["sma() / ema()<br/>per contiguous segment"]
     end
 
@@ -54,6 +57,7 @@ flowchart TB
     A2 --> C2
     B3 --> C3
     C3 -.->|"already settled?"| B3
+    A3 --> C5 --> D3 --> D2
     C1 --> D1 --> D2 --> C4
     C2 --> D2
     C4 --> E1 --> E3
@@ -140,6 +144,16 @@ erDiagram
         float sma_200
         float ema_200
     }
+    corporate_actions {
+        text symbol PK
+        date ex_date PK
+        text subject PK "NSE wording, verbatim"
+        text series
+        text kind "split | bonus | bonus+split | consolidation | other | unparsed"
+        float factor "divide closes before ex_date by this"
+        text company
+        date record_date
+    }
     ingest_log {
         date trade_date PK
         text source PK
@@ -150,6 +164,7 @@ erDiagram
     }
     daily_prices ||--o| daily_indicators : "averaged into"
     index_members ||--o{ daily_indicators : "filters"
+    corporate_actions ||--o{ daily_indicators : "adjusts"
     ingest_log ||--o{ daily_prices : "records the load of"
 ```
 
@@ -175,6 +190,7 @@ DATABASE_URL=postgres://localhost:5432/tradesence_test bun run db:migrate
 ```bash
 bun run ingest:nifty50 2016-09-01               # seed index membership
 bun run ingest:backfill 2016-09-28 2026-09-25   # ~2,600 files, ~28 min, ~250 MB
+bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses (~15s)
 bun run indicators                              # compute all moving averages (~5s)
 bun run dev                                     # http://localhost:3000
 ```
@@ -232,6 +248,7 @@ services` starts it at login). Re-run the installer if you move the repo or rein
 | `bun run db:migrate` | Apply migrations |
 | `bun run db:studio` | Browse the data |
 | `bun run ingest:nifty50 <date>` | Seed/replace NIFTY 50 membership |
+| `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |
@@ -294,7 +311,23 @@ Postgres's 65,535 bind-parameter cap).
 | Function | Signature | Notes |
 |---|---|---|
 | `segmentByGaps` | `(dates: string[], maxGapDays = 21) => number[][]` | Splits a series at holes. Without it, a partially loaded history would average 2018 closes with 2024 closes and write the result out as an ordinary non-null number. |
-| `computeIndicators` | `(indexName = "NIFTY50") => Promise<number>` | Recomputes every average for every member, per contiguous segment. Cheap enough (~5s for 113k rows) that there is no incremental path to get subtly wrong. |
+| `computeIndicators` | `(indexName = "NIFTY50", opts?: { onUnexplainedJump }) => Promise<number>` | Recomputes every average for every member, per contiguous segment. Cheap enough (~5s for 113k rows) that there is no incremental path to get subtly wrong. Averages are computed on split-adjusted closes, then scaled back into each day's own rupees, so they compare directly with that day's raw `close`. `onUnexplainedJump` reports >30% overnight moves no corporate action explains. |
+
+### `src/indicators/adjust.ts` — split/bonus adjustment
+
+| Function | Signature | Notes |
+|---|---|---|
+| `adjustmentFactors` | `(dates, events: { exDate, factor }[]) => number[]` | For each date, the product of factors of events with an ex-date **strictly after** it. The ex-date already trades post-split. |
+| `findUnexplainedJumps` | `(dates, closes, factors) => { date, from, to }[]` | Moves beyond 30% either way that survive adjustment — a missing or misread split. |
+
+### `src/ingest/corporate-actions.ts` — NSE corporate actions
+
+| Function | Signature | Notes |
+|---|---|---|
+| `classifyAction` | `(subject: string) => { kind, factor }` | Reads NSE's free-text subject. Split "From Rs 5 To Re 1" → 5; bonus "a:b" → (a+b)/b; combined events multiply; consolidation → <1; dividends/rights → `other`, 1. Unreadable share-count wording → `unparsed`, `null` — never 1. |
+| `parseExDate` | `(raw) => string \| null` | `14-Jan-2026` → `2026-01-14`; NSE's `-` → `null`. |
+| `fetchCorporateActions` | `(from, to, deps?) => Promise<ok \| error>` | Whole market for an ex-date range in one request. Non-JSON or non-list responses are errors, never "no actions". |
+| `ingestCorporateActions` | `(from, to, deps?) => Promise<{ stored, unparsed, skipped }>` | Upserts into `corporate_actions`; idempotent. |
 
 ### `src/query/breadth.ts` — the two questions the page asks
 
@@ -335,8 +368,10 @@ Exports `MA_COLUMNS`, `MA_LABELS`, and types `MaKind`, `BreadthPoint`, `MemberRo
 - **Bhavcopy dates are honest** (`TradDt` matches the URL date). NSE's *52-week high/low*
   file is **not** — the file labelled day D holds data through D−1. Not used here, but
   remember it if you add that source.
-- Prices are **unadjusted** for splits and bonuses, so a split shows as a price gap that
-  briefly distorts that symbol's average.
+- Prices are **unadjusted** for splits and bonuses, so a split shows as a fake crash —
+  and `prev_close` is not adjusted on the ex-date either. Averages are adjusted from
+  NSE's corporate-actions feed; see
+  [docs/decisions/0002](docs/decisions/0002-split-adjusted-averages.md).
 
 ## Testing
 

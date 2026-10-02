@@ -101,3 +101,82 @@ describe("computeIndicators", () => {
     expect(out).toHaveLength(260);
   }, 45000);
 });
+
+describe("computeIndicators across a split", () => {
+  // Flat at 500, then a 1:5 split on day 230: raw closes drop to 100 overnight
+  // although nothing happened to the stock. This is the KOTAKBANK bug.
+  function splitSeries() {
+    return synthetic("SPLITCO", 260).map((r, i) => {
+      const close = i < 230 ? 500 : 100;
+      return { ...r, open: close, high: close, low: close, close, prevClose: close };
+    });
+  }
+
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+  });
+
+  async function load(withAction: boolean) {
+    const rows = splitSeries();
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({
+      indexName: "NIFTY50", symbol: "SPLITCO", addedOn: "2020-01-01", removedOn: null,
+    });
+    if (withAction) {
+      await db.insert(schema.corporateActions).values({
+        symbol: "SPLITCO", exDate: rows[230]!.tradeDate, series: "EQ",
+        subject: "Face Value Split (Sub-Division) - From Rs 5/- Per Share To Re 1/- Per Share",
+        kind: "split", factor: 5, company: "SplitCo Ltd", recordDate: null,
+      });
+    }
+    await computeIndicators();
+    return rows;
+  }
+
+  async function on(date: string) {
+    const [got] = await db.select().from(schema.dailyIndicators).where(and(
+      eq(schema.dailyIndicators.symbol, "SPLITCO"),
+      eq(schema.dailyIndicators.tradeDate, date),
+    ));
+    return got!;
+  }
+
+  test("averages after the split are in post-split rupees", async () => {
+    const rows = await load(true);
+    const last = await on(rows[259]!.tradeDate);
+    expect(last.close).toBe(100);
+    expect(last.sma50!).toBeCloseTo(100, 6);
+    expect(last.sma200!).toBeCloseTo(100, 6);
+    expect(last.ema200!).toBeCloseTo(100, 6);
+  }, 30000);
+
+  test("averages before the split stay in the rupees that day traded at", async () => {
+    const rows = await load(true);
+    const before = await on(rows[229]!.tradeDate);
+    expect(before.close).toBe(500);
+    expect(before.sma200!).toBeCloseTo(500, 6);
+    expect(before.ema200!).toBeCloseTo(500, 6);
+  }, 30000);
+
+  test("without the action the raw drop poisons the average (the original bug)", async () => {
+    const rows = await load(false);
+    const last = await on(rows[259]!.tradeDate);
+    expect(last.sma200!).toBeGreaterThan(150);
+  }, 30000);
+
+  test("reports a jump that no corporate action explains", async () => {
+    const jumps: { symbol: string; date: string; from: number; to: number }[] = [];
+    const rows = splitSeries();
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({
+      indexName: "NIFTY50", symbol: "SPLITCO", addedOn: "2020-01-01", removedOn: null,
+    });
+    await computeIndicators("NIFTY50", { onUnexplainedJump: (j) => jumps.push(j) });
+    expect(jumps).toEqual([
+      { symbol: "SPLITCO", date: rows[230]!.tradeDate, from: 500, to: 100 },
+    ]);
+  }, 30000);
+});

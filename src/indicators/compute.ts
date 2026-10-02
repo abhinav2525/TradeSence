@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
+import { adjustmentFactors, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 
 /**
  * A gap longer than this means the series is discontinuous, not merely closed
@@ -45,8 +46,18 @@ const CHUNK = 1000;
  * previous value and cannot be expressed as a window function. Cheap enough to
  * recompute wholesale (50 symbols x ~2,500 days), so there is no incremental
  * path to get subtly wrong.
+ *
+ * Splits and bonuses: the averages are computed on closes adjusted by
+ * `corporate_actions`, then scaled back by each day's own factor. So every
+ * stored average is in the rupees that day actually traded at — the same units
+ * as its `close` — and the breadth/crossings queries compare like with like
+ * without knowing adjustment exists. `close` itself stays the raw bhavcopy price.
+ * See docs/decisions/0002-split-adjusted-averages.md.
  */
-export async function computeIndicators(indexName = "NIFTY50"): Promise<number> {
+export async function computeIndicators(
+  indexName = "NIFTY50",
+  opts: { onUnexplainedJump?: (j: UnexplainedJump & { symbol: string }) => void } = {},
+): Promise<number> {
   const symbols = (
     await db.execute<{ symbol: string }>(
       sql`select distinct symbol from index_members where index_name = ${indexName}`,
@@ -64,7 +75,23 @@ export async function computeIndicators(indexName = "NIFTY50"): Promise<number> 
     );
     if (prices.length === 0) continue;
 
+    const events = await db.execute<{ ex_date: string; factor: number }>(
+      sql`select ex_date, factor
+          from corporate_actions
+          where symbol = ${symbol} and factor is not null and factor <> 1`,
+    );
+
+    const dates = prices.map((p) => p.trade_date);
     const closes = prices.map((p) => Number(p.close));
+    const factors = adjustmentFactors(
+      dates,
+      events.map((e) => ({ exDate: e.ex_date, factor: Number(e.factor) })),
+    );
+    const adjusted = closes.map((c, i) => c / factors[i]!);
+
+    for (const jump of findUnexplainedJumps(dates, closes, factors)) {
+      opts.onUnexplainedJump?.({ symbol, ...jump });
+    }
 
     // Compute each contiguous stretch independently, so an average never spans
     // a hole in the history.
@@ -72,15 +99,18 @@ export async function computeIndicators(indexName = "NIFTY50"): Promise<number> 
     const s200: (number | null)[] = new Array(closes.length).fill(null);
     const e200: (number | null)[] = new Array(closes.length).fill(null);
 
-    for (const seg of segmentByGaps(prices.map((p) => p.trade_date))) {
-      const segCloses = seg.map((i) => closes[i]!);
+    for (const seg of segmentByGaps(dates)) {
+      const segCloses = seg.map((i) => adjusted[i]!);
       const a = sma(segCloses, 50);
       const b = sma(segCloses, 200);
       const c = ema(segCloses, 200);
+      // Back into that day's own rupees, so it compares directly with `close`.
+      const unadjust = (v: number | null, f: number) => (v === null ? null : v * f);
       seg.forEach((rowIndex, j) => {
-        s50[rowIndex] = a[j]!;
-        s200[rowIndex] = b[j]!;
-        e200[rowIndex] = c[j]!;
+        const f = factors[rowIndex]!;
+        s50[rowIndex] = unadjust(a[j]!, f);
+        s200[rowIndex] = unadjust(b[j]!, f);
+        e200[rowIndex] = unadjust(c[j]!, f);
       });
     }
 
