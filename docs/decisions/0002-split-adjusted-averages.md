@@ -95,6 +95,23 @@ affected because it never fully forgets an old price; it only fades it ~1% a day
 - NSE's bhavcopy `prev_close` is **not** adjusted on the ex-date either, so it cannot
   be used to detect splits.
 
+## Known gaps (checked 2026-10-02)
+
+All **50 NIFTY 50 members: 0 unexplained jumps** over ten years, so every split and
+bonus that affects the dashboard is handled.
+
+Across the **whole market**, 487 of 729 big overnight jumps are explained. The other
+242 are outside NIFTY 50 and don't affect the dashboard today, since averages are only
+computed for members. They fall into three groups:
+- **Genuine moves:** real crashes and rallies, and demergers (e.g. ABFRL 2025), which
+  we deliberately don't adjust.
+- **ETF unit splits** (GOLDADD, HDFC/ICICI/UTI index ETFs…): NSE's *equities*
+  corporate-actions feed doesn't list ETFs.
+- **Renamed companies:** the feed files the event under the new symbol, while the old
+  prices use the old one. See [0003](0003-renamed-symbols-lose-history.md).
+
+Both of the last two need fixing before whole-market breadth (TODO item 7).
+
 ## Revisit when
 
 - **The nightly log shows a `WARNING`.** Look up the event, add its wording to

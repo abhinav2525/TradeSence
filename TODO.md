@@ -18,6 +18,8 @@ each item unlocks or de-risks the ones below it.
 - [ ] Loader (bounded task, own approval): insert closed intervals into
   `index_members`. No schema change — `breadthSeries` already evaluates
   membership per date.
+- [ ] Renamed symbols lose pre-rename history (TATACONSUM, SHRIRAMFIN,
+  ETERNAL) — docs/decisions/0003. Fix with NSE's symbolchange.csv.
 
 Why first: every later item reads the 10-year history, which today is computed
 on current winners and flatters any backtested signal.
