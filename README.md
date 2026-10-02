@@ -347,6 +347,14 @@ Postgres's 65,535 bind-parameter cap).
 | `demergerFactor` | `(dates, opens, closes, exDate) => number \| null` | A demerger's factor from prices: last close before the ex-date ÷ ex-date open (NSE's special pre-open session). Matches TradingView. `null` (no adjustment) when it can't be priced honestly. |
 | `findUnexplainedJumps` | `(dates, closes, factors) => { date, from, to }[]` | Moves beyond 30% either way that survive adjustment — a missing or misread split. |
 
+### `src/query/advance-decline.ts` — the Advance/Decline page
+
+| Function | Signature | Notes |
+|---|---|---|
+| `advanceDeclineCounts` | `(indexName?) => Promise<AdCounts[]>` | Members on each date with `change_pct` > 0 / < 0 / = 0. Stocks with no move that day (first session after a gap) are left out. |
+| `deriveAdvanceDecline` | `(rows) => AdPoint[]` | Net, RANA ((A−D)÷(A+D)×1,000; 0 when nothing moved), McClellan (EMA19 − EMA39 of RANA), summation index, A/D line, 10-day advancing share. Restarts after a data gap. |
+| `advanceDeclineSeries` | `(indexName?) => Promise<AdPoint[]>` | Both of the above. |
+
 ### `src/ingest/symbol-changes.ts` — ticker renames
 
 | Function | Signature | Notes |

@@ -13,10 +13,11 @@ export function formatMonth(iso: string): string {
   return `${MONTHS[Number(m) - 1]} ’${y!.slice(2)}`;
 }
 
-/** A signed number with a true minus sign: +4, −12, 0. */
+/** A signed number with a true minus sign and Indian grouping: +4, −12, −1,560, 0. */
 export function signed(n: number, digits = 0): string {
-  const s = Math.abs(n).toFixed(digits);
-  if (Number(s) === 0) return s;
+  const rounded = Number(Math.abs(n).toFixed(digits));
+  const s = rounded.toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  if (rounded === 0) return s;
   return n > 0 ? `+${s}` : `−${s}`;
 }
 
@@ -28,4 +29,10 @@ export function formatInt(n: number): string {
 /** A price to two decimals with Indian grouping: 127584.29 -> "1,27,584.29". */
 export function formatPrice(n: number): string {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** "2026-09-29" -> "29 Sep", for tables and short axis labels within a year. */
+export function formatDayMonth(iso: string): string {
+  const [, m, d] = iso.split("-");
+  return `${Number(d)} ${MONTHS[Number(m) - 1]}`;
 }

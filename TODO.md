@@ -32,8 +32,9 @@ on current winners and flatters any backtested signal.
   Above 80%: no edge.
 
 ## 3. Advance/Decline line + McClellan oscillator — c, a
-- [ ] From `close` vs `prev_close` per member per day. Cheap, standard, new
-  instrument on existing data.
+- [x] **Done 2026-10-02** — `/advance-decline` page (decision 0008). Built from the
+  adjusted daily move, not `prev_close` (wrong on split days). Found and fixed 10
+  missing weekend sessions on the way (decision 0007).
 
 ## 4. Signal detectors — a
 - [ ] Breadth washout: 200-SMA breadth < 20%, shown with its history (research 0001

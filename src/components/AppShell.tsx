@@ -1,7 +1,7 @@
-import SiteNav from "@/components/SiteNav";
+import SiteNav, { type Section } from "@/components/SiteNav";
 
 type Props = {
-  current: "breadth" | "crossings";
+  current: Section;
   ma: string;
   asOf?: string | null;
   children: React.ReactNode;

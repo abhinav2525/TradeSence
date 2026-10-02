@@ -7,8 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A NIFTY 50 market-breadth tracker. Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
-plus that percentage charted since 2020, on the index's real membership each day. A second page, `/crossings`
-(`src/query/crossings.ts`), ranks members by how often they whipsaw across an average.
+plus that percentage charted since 2020, on the index's real membership each day. Other
+pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
+A/D line) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+whipsaw across an average). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
 before making changes; this file covers only what the code cannot tell you. (README
@@ -125,8 +127,8 @@ check to a default.
 **`sql.raw` appears exactly twice**, in the `column()` helpers of `src/query/breadth.ts`
 and `src/query/crossings.ts`. Each is safe only because `MA_COLUMNS` is a fixed map, and
 the `ma` search param is gated by an `isMaKind` of three strict comparisons, which is
-duplicated in `src/app/page.tsx` and `src/app/crossings/page.tsx`. Any new page or caller
-must validate the same way.
+duplicated in every page (`src/app/page.tsx`, `crossings/page.tsx`, `advance-decline/page.tsx`).
+Any new page or caller must validate the same way.
 
 **Layout is a fixed sidebar beside a scrolling document.** From `lg` up, `SiteNav` is a
 fixed `w-60` sidebar and `AppShell` pads the content column with the matching `lg:pl-60`;

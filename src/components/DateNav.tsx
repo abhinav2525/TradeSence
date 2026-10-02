@@ -5,6 +5,8 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  /** The page whose sessions this steps through. */
+  base?: string;
   ma: string;
   date: string | null;
   requested: string | null;
@@ -18,7 +20,7 @@ type Props = {
 const stepClass =
   "inline-flex size-8 items-center justify-center rounded-[8px] text-foreground-2 transition-colors";
 
-export default function DateNav({ ma, date, requested, snapped, prev, next, min, max }: Props) {
+export default function DateNav({ base = "/", ma, date, requested, snapped, prev, next, min, max }: Props) {
   const step = (target: string | null, dir: "prev" | "next") => {
     const Icon = dir === "prev" ? ChevronLeft : ChevronRight;
     const label = dir === "prev" ? "Previous session" : "Next session";
@@ -35,7 +37,7 @@ export default function DateNav({ ma, date, requested, snapped, prev, next, min,
     }
     return (
       <Link
-        href={`/?ma=${ma}&date=${target}`}
+        href={`${base}?ma=${ma}&date=${target}`}
         prefetch
         rel={dir}
         aria-label={label}
@@ -54,7 +56,7 @@ export default function DateNav({ ma, date, requested, snapped, prev, next, min,
 
         {/* a plain GET form keeps this page a server component and puts the
             selected session in the URL, so a view can be bookmarked */}
-        <form method="get" action="/" className="flex items-center gap-1">
+        <form method="get" action={base} className="flex items-center gap-1">
           <input type="hidden" name="ma" value={ma} />
           <label htmlFor="date" className="sr-only">
             Session date

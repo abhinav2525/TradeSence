@@ -61,6 +61,27 @@ Advance/Decline. It used to be copied in two places.
 - The instruments stay in TypeScript, as the handoff suggested: a few thousand sessions,
   computed per page view.
 
+## The page (`/advance-decline`)
+
+Built from the design handoff (`docs/design/`). Choices made along the way:
+
+- **The sidebar only lists pages that exist.** The handoff shows Screener and Signals
+  too, but they're added when they're built, so there's never a dead link.
+- **The A/D line starts from zero at the left edge of whatever range is shown**
+  (3M / 6M / 1Y / All). Its level means nothing; only its slope does, so each window
+  starts level.
+- **"Flat" summation index** = moved less than 10 points over 20 sessions.
+- **The oscillator's scale always includes zero**, in round steps. Without that, a
+  stretch where every bar is negative (March 2020) looked like bars hanging from the top.
+- **Every axis labels each month or year once** (`dateTicks` in `src/lib/ticks.ts`). The first draft
+  read "2020 2020" and "Feb ’20 Feb ’20".
+- **Large signed numbers use Indian grouping** ("−1,560"), as the design system asks.
+  This changed the shared `signed()` helper, so every page benefits.
+
+Checked in the browser: today's view, 23 Mar 2020 (0 rose, 50 fell: the COVID low),
+and a date before history starts (shows the "nothing loaded" message). On 1 Oct 2026
+the page shows 13 rose, 37 fell, matching NSE's raw data exactly.
+
 ## A note for the Screener (next screen)
 
 The handoff says volume "must be scaled by the same factors" as prices. That's right for

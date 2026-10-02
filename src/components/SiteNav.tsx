@@ -1,21 +1,40 @@
 import Link from "next/link";
-import { Activity, ArrowLeftRight, ChartSpline } from "lucide-react";
+import { Activity, ArrowLeftRight, ChartColumn, ChartSpline, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-type Section = "breadth" | "crossings";
+export type Section = "breadth" | "advance-decline" | "crossings";
 type Props = { current: Section; ma: string; asOf?: string | null };
 
-const LINKS = [
-  { key: "breadth", href: "/", label: "Breadth", hint: "b", icon: Activity },
-  { key: "crossings", href: "/crossings", label: "Crossings", hint: "c", icon: ArrowLeftRight },
-] as const;
+type NavLink = { key: Section; href: string; label: string; short: string; hint: string; icon: LucideIcon };
+
+/**
+ * Pages in labelled groups (docs/design/HANDOFF.md). Screener and Signals join
+ * here when they are built, so the nav never links to a page that isn't there.
+ */
+const GROUPS: { label: string; links: NavLink[] }[] = [
+  {
+    label: "Market",
+    links: [
+      { key: "breadth", href: "/", label: "Breadth", short: "Breadth", hint: "b", icon: Activity },
+      { key: "advance-decline", href: "/advance-decline", label: "Advance/Decline", short: "A/D", hint: "a", icon: ChartColumn },
+    ],
+  },
+  {
+    label: "Stocks",
+    links: [
+      { key: "crossings", href: "/crossings", label: "Crossings", short: "Crossings", hint: "c", icon: ArrowLeftRight },
+    ],
+  },
+];
+
+const LINKS = GROUPS.flatMap((g) => g.links);
 
 const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
-  ["b  c", "Switch page"],
+  ["b a c", "Switch page"],
 ] as const;
 
 /** The product name in plain type. There is no logo yet; the glyph is lucide's chart-spline. */
@@ -43,9 +62,11 @@ export default function SiteNav({ current, ma, asOf }: Props) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r bg-card lg:flex">
         <Wordmark className="px-5 pb-6 pt-5" />
 
-        <p className="px-5 pb-2 text-eyebrow uppercase text-muted-foreground">Analysis</p>
-        <nav aria-label="Sections" className="flex flex-col gap-0.5 px-3">
-          {LINKS.map((l) => {
+        {GROUPS.map((g, gi) => (
+        <div key={g.label} className={cn(gi > 0 && "pt-5")}>
+        <p className="px-5 pb-2 text-eyebrow uppercase text-muted-foreground">{g.label}</p>
+        <nav aria-label={g.label} className="flex flex-col gap-0.5 px-3">
+          {g.links.map((l) => {
             const active = current === l.key;
             const Icon = l.icon;
             return (
@@ -76,6 +97,8 @@ export default function SiteNav({ current, ma, asOf }: Props) {
             );
           })}
         </nav>
+        </div>
+        ))}
 
         <div className="mt-auto flex flex-col gap-4 p-3">
           <div className="rounded-md border bg-raised px-3 py-2.5">
@@ -104,7 +127,8 @@ export default function SiteNav({ current, ma, asOf }: Props) {
 
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-background/85 px-4 py-2.5 backdrop-blur-md lg:hidden">
         <Wordmark />
-        <nav aria-label="Sections" className="ml-auto flex items-center gap-1">
+        {/* scrolls sideways rather than wrapping once there are more pages than room */}
+        <nav aria-label="Sections" className="ml-auto flex min-w-0 items-center gap-1 overflow-x-auto">
           {LINKS.map((l) => {
             const active = current === l.key;
             return (
@@ -114,11 +138,11 @@ export default function SiteNav({ current, ma, asOf }: Props) {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+                  "shrink-0 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
                   active ? "bg-brand-soft font-medium text-foreground" : "text-foreground-2 hover:text-foreground",
                 )}
               >
-                {l.label}
+                {l.short}
               </Link>
             );
           })}
