@@ -6,27 +6,33 @@ const ORDER: MaKind[] = ["sma200", "ema200", "sma50"];
 
 type Props = { base: "/" | "/crossings"; ma: MaKind; date?: string };
 
+/** A segmented control: the selected average sits on a raised thumb. */
 export default function MaTabs({ base, ma, date }: Props) {
   return (
-    <div className="flex flex-wrap gap-1" role="tablist" aria-label="Moving average">
-      {ORDER.map((k, i) => (
-        <Link
-          key={k}
-          href={`${base}?ma=${k}${date ? `&date=${date}` : ""}`}
-          prefetch
-          role="tab"
-          aria-selected={k === ma}
-          className={cn(
-            "flex items-baseline gap-2 rounded-md border px-3 py-1.5 text-xs transition-colors",
-            k === ma
-              ? "border-foreground/25 bg-accent text-foreground"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
-          )}
-        >
-          {MA_LABELS[k]}
-          <kbd className="font-mono text-[10px] opacity-50">{i + 1}</kbd>
-        </Link>
-      ))}
+    <div
+      className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5"
+      role="tablist"
+      aria-label="Moving average"
+    >
+      {ORDER.map((k, i) => {
+        const active = k === ma;
+        return (
+          <Link
+            key={k}
+            href={`${base}?ma=${k}${date ? `&date=${date}` : ""}`}
+            prefetch
+            role="tab"
+            aria-selected={active}
+            className={cn(
+              "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-[13px] font-medium transition-colors",
+              active ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {MA_LABELS[k]}
+            <kbd className="hidden font-mono text-[10px] text-muted-foreground sm:inline">{i + 1}</kbd>
+          </Link>
+        );
+      })}
     </div>
   );
 }

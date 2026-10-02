@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { toggleTheme } from "@/components/ThemeToggle";
 
 type Props = {
   ma: string;
@@ -12,8 +13,8 @@ type Props = {
 
 /**
  * Keyboard navigation, because this is a readout you check repeatedly: arrows
- * step sessions, 1-3 switch the average, b/c switch view. Ignored while typing
- * so the date field still works normally.
+ * step sessions, 1-3 switch the average, b/c switch view, t flips the theme.
+ * Ignored while typing so the date field still works normally.
  */
 export default function Hotkeys({ ma, prev, next, page }: Props) {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function Hotkeys({ ma, prev, next, page }: Props) {
       if (e.key === "3") return go(`${base}?ma=sma50`);
       if (e.key === "b") return go(`/?ma=${ma}`);
       if (e.key === "c") return go(`/crossings?ma=${ma}`);
+      if (e.key === "t") {
+        e.preventDefault();
+        toggleTheme();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

@@ -98,6 +98,19 @@ the `ma` search param is gated by an `isMaKind` of three strict comparisons, whi
 duplicated in `src/app/page.tsx` and `src/app/crossings/page.tsx`. Any new page or caller
 must validate the same way.
 
+**Layout is a fixed sidebar beside a scrolling document.** From `lg` up, `SiteNav` is a
+fixed `w-60` sidebar and `AppShell` pads the content column with the matching `lg:pl-60`;
+change both together. Below `lg` the sidebar becomes a sticky top bar. Long tables scroll
+inside their card (`max-h-[520px]`, `max-h-[560px]`) under a sticky header.
+
+**Theme and tokens.** Dark is the default and is server-rendered (`className="dark"` on
+`<html>`); a stored `light` choice is applied by the inline script in `layout.tsx` before
+first paint, which is why `<html>` has `suppressHydrationWarning`. Every colour, radius,
+shadow and type size lives in `globals.css` and is documented in the tradeSence Design
+System artifact; use the tokens (`text-up`, `bg-card`, `text-heading`), never raw hex.
+The custom type sizes are registered with tailwind-merge in `src/lib/utils.ts`; a new one
+added to `@theme` must be added there too, or `cn()` silently drops it.
+
 **NSE file quirks** (all verified against the live archive):
 - Two formats. UDiFF from 2024-01-02; legacy up to ~2024-06. They overlap; the cutover
   constant sits inside the gap and the fetcher falls back between them.

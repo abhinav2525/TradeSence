@@ -1,23 +1,20 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 /*
- * Plex was designed for technical instrumentation, and pairing the sans with
- * its own mono lets every measured figure sit in aligned columns - which is
- * what actually makes a dense readout fast to scan.
+ * Geist carries the whole interface, numbers included; its tabular figures
+ * keep table columns aligned. Geist Mono is reserved for dates, keys and code.
  */
-const plexSans = IBM_Plex_Sans({
+const geistSans = Geist({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-sans",
+  variable: "--font-geist-sans",
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
@@ -26,13 +23,25 @@ export const metadata: Metadata = {
   description: "How many NIFTY 50 constituents trade above their moving average.",
 };
 
+/*
+ * Dark is the default and is what the server renders. A stored "light" choice
+ * is applied by this script while the HTML is still parsing, before the first
+ * paint, so a light-mode reader never sees a dark flash. suppressHydrationWarning
+ * on <html> lets React accept the class the script changed.
+ */
+const THEME_SCRIPT = `(function(){try{if(localStorage.getItem("theme")==="light")document.documentElement.classList.remove("dark")}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`dark ${plexSans.variable} ${plexMono.variable}`}>
-      {/* On a large screen the app is a fixed readout: the page itself does not
-          scroll, its panels do. On small screens that would trap content, so
-          normal document scrolling is kept below lg. */}
-      <body className="lg:h-dvh lg:overflow-hidden">{children}</body>
+    <html
+      lang="en"
+      className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

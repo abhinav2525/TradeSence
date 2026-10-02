@@ -15,46 +15,51 @@ const config = {
  * The busiest crossers as a horizontal bar chart.
  *
  * Horizontal because the category labels are ticker symbols — they read
- * straight across instead of being rotated, which is the usual reason a
- * vertical bar chart of named things is hard to scan.
+ * straight across instead of being rotated. One series, so one colour: the
+ * bars are not recoloured by value, their length already says it.
  */
 export default function CrossingsBars({ data }: { data: BarDatum[] }) {
+  const height = Math.max(160, data.length * 30 + 8);
   return (
-    <ChartContainer config={config} className="h-[260px] w-full">
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 36, bottom: 0, left: 4 }}>
+    <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 40, bottom: 4, left: 0 }} barCategoryGap={8}>
         <CartesianGrid stroke="var(--grid-line)" horizontal={false} />
         <XAxis type="number" hide domain={[0, "dataMax"]} />
         <YAxis
           type="category"
           dataKey="symbol"
-          tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+          interval={0}
+          tick={{ fill: "var(--foreground-2)", fontSize: 12 }}
           tickLine={false}
           axisLine={false}
-          width={92}
+          width={96}
         />
         <ChartTooltip
-          cursor={{ fill: "var(--muted)", opacity: 0.4 }}
+          cursor={{ fill: "var(--raised)" }}
           content={
             <ChartTooltipContent
-              hideLabel={false}
+              hideIndicator
               formatter={(value, _name, item) => {
                 const d = item?.payload as BarDatum | undefined;
                 return (
-                  <span className="font-mono text-xs">
-                    {value} crossings
-                    {d?.avgRun ? ` — one every ${d.avgRun.toFixed(0)}d` : ""}
-                  </span>
+                  <div className="flex w-full items-center justify-between gap-4 tabular-nums">
+                    <span className="text-muted-foreground">
+                      {d?.avgRun ? `one every ${d.avgRun.toFixed(0)}d` : "crossings"}
+                    </span>
+                    <span className="font-semibold text-foreground">{value}</span>
+                  </div>
                 );
               }}
             />
           }
         />
-        <Bar dataKey="crossings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+        <Bar dataKey="crossings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} maxBarSize={18} isAnimationActive={false}>
           <LabelList
             dataKey="crossings"
             position="right"
-            className="fill-muted-foreground"
-            fontSize={11}
+            offset={8}
+            className="fill-foreground-2 tabular-nums"
+            fontSize={12}
           />
         </Bar>
       </BarChart>

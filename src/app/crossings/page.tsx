@@ -1,9 +1,13 @@
-import SiteNav from "@/components/SiteNav";
+import AppShell from "@/components/AppShell";
+import PageHeader from "@/components/PageHeader";
 import MaTabs from "@/components/MaTabs";
 import Readout from "@/components/Readout";
 import CrossingsTable from "@/components/CrossingsTable";
 import CrossingsBars from "@/components/CrossingsBars";
 import Hotkeys from "@/components/Hotkeys";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatInt } from "@/lib/format";
 import { crossingStats } from "@/query/crossings";
 import { MA_LABELS, resolveSession, type MaKind } from "@/query/breadth";
 
@@ -32,63 +36,62 @@ export default async function CrossingsPage({
     : 0;
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col px-4 pb-20 pt-6 lg:h-full lg:overflow-y-auto lg:pb-5">
-      <SiteNav current="crossings" ma={ma} asOf={asOf} />
+    <AppShell current="crossings" ma={ma} asOf={asOf}>
       <Hotkeys ma={ma} page="crossings" />
 
-      <div className="mb-4 flex shrink-0 flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-base font-medium">How often each stock crosses its average</h1>
-          <p className="mt-0.5 max-w-[70ch] text-xs text-muted-foreground">
-            Whipsaw, not strength. A name that crosses every few weeks produces signals worth
-            distrusting; one that crosses twice a decade means something when it does.
-          </p>
-        </div>
-        <MaTabs base="/crossings" ma={ma} />
-      </div>
+      <PageHeader
+        eyebrow="NIFTY 50 · Whipsaw"
+        title="Crossings"
+        description="How often each stock crosses its average. Whipsaw, not strength: a name that crosses every few weeks produces signals worth distrusting; one that crosses twice a decade means something when it does."
+        actions={<MaTabs base="/crossings" ma={ma} />}
+      />
 
       {busiest && (
-        <div className="shrink-0">
         <Readout
-          cells={[
+          className="mb-4 lg:grid-cols-4"
+          tiles={[
             {
+              label: "Busiest",
               value: String(busiest.crossings),
-              label: `crossings by ${busiest.symbol}, the busiest`,
+              badge: { text: busiest.symbol, tone: "down" },
               fill: 1,
-              tone: "down",
-              hint: busiest.avgDaysPerRun ? `one every ${busiest.avgDaysPerRun.toFixed(0)}d` : undefined,
+              fillTone: "down",
+              sub: busiest.avgDaysPerRun
+                ? `Crosses once every ${busiest.avgDaysPerRun.toFixed(0)}d`
+                : "Crossings over ten years",
             },
             {
+              label: "Median",
               value: String(median),
-              label: "median across the index",
               fill: busiest.crossings ? median / busiest.crossings : 0,
-              tone: "neutral",
+              sub: `Across ${rows.length} constituents`,
             },
             {
+              label: "Calmest",
               value: String(calmest?.crossings ?? 0),
-              label: `crossings by ${calmest?.symbol ?? "—"}, the calmest`,
+              badge: calmest ? { text: calmest.symbol, tone: "up" } : undefined,
               fill: busiest.crossings ? (calmest?.crossings ?? 0) / busiest.crossings : 0,
-              tone: "up",
+              fillTone: "up",
+              sub: "Fewest crossings in the index",
             },
             {
-              value: String(total),
-              label: `crossings in total, across ${rows.length} constituents`,
-              tone: "neutral",
+              label: "Total crossings",
+              value: formatInt(total),
+              sub: `Every constituent, vs the ${label}`,
             },
           ]}
         />
-        </div>
       )}
 
-      {/* Side by side on a wide screen: stacking a 260px chart above the table
-          starved it of height. Below xl they stack and the page scrolls. */}
-      <div className="mt-4 grid gap-4 xl:min-h-[300px] xl:flex-1 xl:grid-cols-[minmax(0,380px)_1fr]">
-        <section className="self-start rounded-lg border bg-card">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-2.5">
-            <h2 className="text-sm font-medium">The twelve busiest</h2>
-            <p className="font-mono text-xs text-muted-foreground">vs the {label}</p>
-          </div>
-          <div className="px-2 pb-3 pt-3">
+      <div className="grid gap-4 xl:grid-cols-12">
+        <Card className="self-start xl:col-span-5">
+          <CardHeader>
+            <div>
+              <CardTitle>The twelve busiest</CardTitle>
+              <CardDescription>Crossings of the {label}, ten years</CardDescription>
+            </div>
+          </CardHeader>
+          <div className="px-3 pb-4">
             <CrossingsBars
               data={rows.slice(0, 12).map((r) => ({
                 symbol: r.symbol,
@@ -97,21 +100,23 @@ export default async function CrossingsPage({
               }))}
             />
           </div>
-        </section>
+        </Card>
 
-        <section className="flex min-h-[280px] flex-col rounded-lg border bg-card xl:min-h-0">
-          <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-2 border-b px-4 py-2.5">
-            <h2 className="text-sm font-medium">All {rows.length} constituents</h2>
-            <p className="font-mono text-xs text-muted-foreground">ten years</p>
-          </div>
+        <Card className="flex flex-col overflow-hidden xl:col-span-7">
+          <CardHeader className="border-b pb-3.5 pt-3.5">
+            <div>
+              <CardTitle>All constituents</CardTitle>
+              <CardDescription>Sorted by crossings, busiest first</CardDescription>
+            </div>
+            <Badge variant="neutral">{rows.length} stocks</Badge>
+          </CardHeader>
           <CrossingsTable rows={rows} maLabel={label} />
-          <p className="shrink-0 border-t px-4 py-2 text-xs text-muted-foreground">
+          <CardFooter className="mt-auto">
             A crossing counts only between consecutive sessions that both have an average, so
             neither the start of the averaging window nor a gap in the data can fake one.
-          </p>
-        </section>
+          </CardFooter>
+        </Card>
       </div>
-
-    </main>
+    </AppShell>
   );
 }

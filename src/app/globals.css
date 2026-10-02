@@ -3,122 +3,201 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Instrument panel.
+ * tradeSence: a modern fintech dashboard. Dark is the default theme; light sits
+ * behind the toggle. The design system artifact documents every token here.
  *
- * The base is a deep indigo rather than near-black: this is a readout you sit
- * in front of, and a blue-shifted ground keeps the cyan signal from looking
- * like neon on a void. Signal colours were chosen with the palette validator,
- * not by eye - both pairs clear the lightness band, chroma floor, CVD
- * separation and 3:1 contrast against their own surface.
+ * Neutrals carry the chrome. Three hues carry meaning and nothing else:
+ *   brand (blue)   the breadth series, focus, selection, primary action
+ *   up    (green)  above the average, improving
+ *   down  (red)    below the average, deteriorating
+ *
+ * Up and down differ in lightness as well as hue (colour-blind ΔE 14.0 dark,
+ * 9.2 light, checked with the palette validator rather than by eye). Every
+ * up/down value also carries a sign, an arrow or a word, so colour is never
+ * the only cue. Every text colour clears 4.5:1 on background, card, raised and
+ * popover in both themes; input borders and the focus ring clear 3:1.
  */
 :root {
-  --background: #ffffff;
-  --foreground: #09090b;
+  --background: #f4f6f9;
+  --foreground: #0e1218;
+  --foreground-2: #475163;
+  --muted-foreground: #5f697b;
+
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #0e1218;
+  --raised: #f0f2f6;
+  --thumb: #ffffff;
   --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #d1495b;
-  --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #a1a1aa;
+  --popover-foreground: #0e1218;
 
-  /* Data roles. Chrome is neutral; colour is reserved for measurements. */
-  --signal-up: #0891b2;
-  --signal-down: #d1495b;
-  --grid-line: #ececef;
-  --chart-1: #0891b2;
+  --border: #e3e7ed;
+  --border-strong: #d3d9e2;
+  --input: #808a9b;
+  --ring: #2a62e8;
 
-  --radius: 0.5rem;
+  --brand: #2a62e8;
+  --brand-foreground: #ffffff;
+  --brand-soft: rgba(42, 98, 232, 0.1);
+  --up: #067132;
+  --up-soft: rgba(6, 113, 50, 0.1);
+  --down: #d00021;
+  --down-soft: rgba(208, 0, 33, 0.09);
+
+  --grid-line: #edf0f4;
+  --chart-1: var(--brand);
+  --chart-muted: #d6dce5;
+
+  /* shadcn roles, mapped onto the tokens above */
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: var(--raised);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--raised);
+  --accent: #e8ecf2;
+  --accent-foreground: var(--foreground);
+  --destructive: var(--down);
+  --destructive-foreground: #ffffff;
+
+  --elev-card: 0 1px 2px 0 rgba(16, 24, 40, 0.05), 0 16px 32px -20px rgba(16, 24, 40, 0.18);
+  --elev-pop: 0 0 0 1px rgba(16, 24, 40, 0.06), 0 12px 32px -8px rgba(16, 24, 40, 0.2);
+  --elev-thumb: 0 1px 2px 0 rgba(16, 24, 40, 0.12), 0 0 0 1px rgba(16, 24, 40, 0.06);
 }
 
 .dark {
-  /* Five neutral steps, shadcn-style: page, panel, raised, line, ink.
-     Nothing is pure #000 - a true black makes borders disappear and gives the
-     panels nothing to sit against. */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #111113;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
-  --secondary: #1c1c1f;
-  --secondary-foreground: #fafafa;
-  --muted: #1c1c1f;
-  --muted-foreground: #8f8f99;
-  --accent: #232327;
-  --accent-foreground: #fafafa;
-  --destructive: #db5147;
-  --destructive-foreground: #fafafa;
-  --border: #26262a;
-  --input: #26262a;
-  --ring: #52525b;
+  /* A cool near-black, never #000: pure black swallows borders and gives
+     the raised cards nothing to sit against. */
+  --background: #0b0d11;
+  --foreground: #edf0f5;
+  --foreground-2: #a9b1bf;
+  --muted-foreground: #808a9a;
 
-  /* Validated against #09090B: lightness band, chroma floor, CVD separation
-     (worst dE 18.2 deutan) and 3:1 contrast all pass. */
-  --signal-up: #0fa3c7;
-  --signal-down: #db5147;
-  --grid-line: #1e1e22;
-  --chart-1: #0fa3c7;
+  --card: #12151b;
+  --card-foreground: #edf0f5;
+  --raised: #191d25;
+  --thumb: #272e3a;
+  --popover: #1b2029;
+  --popover-foreground: #edf0f5;
+
+  --border: #232934;
+  --border-strong: #2f3643;
+  --input: #5d677a;
+  --ring: #5b93ff;
+
+  /* Lightened for the dark ground, so fills take dark ink (brand-foreground). */
+  --brand: #5b93ff;
+  --brand-foreground: #0b0d11;
+  --brand-soft: rgba(91, 147, 255, 0.16);
+  --up: #3ee0a0;
+  --up-soft: rgba(62, 224, 160, 0.14);
+  --down: #f2545b;
+  --down-soft: rgba(242, 84, 91, 0.14);
+
+  --grid-line: #1d222b;
+  --chart-muted: #2a313d;
+
+  --accent: #1f2530;
+  --destructive-foreground: #0b0d11;
+
+  --elev-card: inset 0 1px 0 0 rgba(255, 255, 255, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.5), 0 16px 32px -20px rgba(0, 0, 0, 0.8);
+  --elev-pop: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+  --elev-thumb: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-2: var(--foreground-2);
+  --color-muted-foreground: var(--muted-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-raised: var(--raised);
+  --color-thumb: var(--thumb);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-up: var(--up);
+  --color-up-soft: var(--up-soft);
+  --color-down: var(--down);
+  --color-down-soft: var(--down-soft);
+  --color-grid-line: var(--grid-line);
+  --color-chart-1: var(--chart-1);
+  --color-chart-muted: var(--chart-muted);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-signal-up: var(--signal-up);
-  --color-signal-down: var(--signal-down);
-  --color-grid-line: var(--grid-line);
 
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-card: var(--elev-card);
+  --shadow-pop: var(--elev-pop);
+  --shadow-thumb: var(--elev-thumb);
+}
+
+/* The type scale. One family (Geist) does everything, numbers included;
+   Geist Mono is kept for dates, keys and code. */
+@theme {
+  --text-display: 4rem;
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.04em;
+  --text-display--font-weight: 600;
+  --text-metric: 1.75rem;
+  --text-metric--line-height: 2rem;
+  --text-metric--letter-spacing: -0.025em;
+  --text-metric--font-weight: 600;
+  --text-title: 1.5rem;
+  --text-title--line-height: 2rem;
+  --text-title--letter-spacing: -0.02em;
+  --text-title--font-weight: 600;
+  --text-heading: 0.9375rem;
+  --text-heading--line-height: 1.25rem;
+  --text-heading--letter-spacing: -0.005em;
+  --text-heading--font-weight: 600;
+  --text-eyebrow: 0.6875rem;
+  --text-eyebrow--line-height: 1rem;
+  --text-eyebrow--letter-spacing: 0.08em;
+  --text-eyebrow--font-weight: 600;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    /* every figure in this interface is a measurement; keep them aligned */
-    font-variant-numeric: tabular-nums;
   }
-  /* the readout is navigated by keyboard, so focus must always be obvious */
+  /* the dashboard is navigated by keyboard, so focus must always be obvious:
+     a solid brand ring, at least 3:1 on every surface in both themes */
   :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background rounded-sm;
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* axis ticks are a column of numbers: keep their digits aligned */
+  .recharts-cartesian-axis-tick text {
+    font-variant-numeric: tabular-nums;
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
