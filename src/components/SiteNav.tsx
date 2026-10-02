@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, ArrowLeftRight, ChartColumn, ChartSpline, ListFilter, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeftRight, ChartColumn, ChartSpline, IdCard, ListFilter, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ const GROUPS: { label: string; links: NavLink[] }[] = [
     links: [
       { key: "crossings", href: "/crossings", label: "Crossings", short: "Crossings", hint: "c", icon: ArrowLeftRight },
       { key: "screener", href: "/screener", label: "Screener", short: "Screener", hint: "s", icon: ListFilter },
+      { key: "stock", href: "/stock", label: "Report card", short: "Report card", hint: "r", icon: IdCard },
     ],
   },
 ];
@@ -35,7 +36,7 @@ const LINKS = GROUPS.flatMap((g) => g.links);
 const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
-  ["b a c s", "Switch page"],
+  ["b a c s r", "Switch page"],
 ] as const;
 
 /** The product name in plain type. There is no logo yet; the glyph is lucide's chart-spline. */

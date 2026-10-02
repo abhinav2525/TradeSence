@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -61,7 +62,7 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
           <TableBody>
             {shown.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground">{r.symbol}</TableCell>
+                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
                 <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground">{formatPrice(r.close)}</TableCell>
                 <TableCell
                   className={cn(

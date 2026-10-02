@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -35,7 +36,7 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
           const above = r.currentState === "above";
           return (
             <TableRow key={r.symbol} className="hover:bg-raised">
-              <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground">{r.symbol}</TableCell>
+              <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
               <TableCell className="px-3 py-2.5">
                 <div className="flex items-center justify-end gap-2.5">
                   <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-chart-muted md:flex" aria-hidden="true">

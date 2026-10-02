@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -61,7 +62,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
               return (
                 <TableRow key={r.symbol} className="hover:bg-raised">
                   <TableCell className="py-2.5 pl-5 pr-3">
-                    <span className="text-[13px] font-semibold text-foreground">{r.symbol}</span>
+                    <span className="text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></span>
                     {near && (
                       <Badge variant="outline" className="ml-2 align-middle" title={`Within ${NEAR}% of the average`}>
                         near line

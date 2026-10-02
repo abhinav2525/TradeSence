@@ -262,7 +262,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground">{r.symbol}</TableCell>
+                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
                 <TableCell className={cn("px-3 py-2.5 text-right text-[13px] font-medium", tone === "down" ? "text-down" : "text-up")}>
                   {signed(r.pctFromMa!, 2)}%
                 </TableCell>
