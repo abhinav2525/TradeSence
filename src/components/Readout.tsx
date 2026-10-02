@@ -50,7 +50,7 @@ export default function Readout({ tiles, className }: { tiles: Tile[]; className
 function StatTile({ label, term, today, value, unit, sub, direction, badge, fill, fillTone = "neutral", range }: Tile) {
   const Arrow = direction === "up" ? ArrowUpRight : ArrowDownRight;
   return (
-    <div className="flex min-w-0 flex-col rounded-lg border bg-card p-4 shadow-card">
+    <div className="reveal flex min-w-0 flex-col rounded-lg border bg-card p-4 shadow-card">
       <div className="flex items-center justify-between gap-2">
         {term ? (
           <p className="min-w-0 text-[12px] font-medium text-muted-foreground">
@@ -77,7 +77,7 @@ function StatTile({ label, term, today, value, unit, sub, direction, badge, fill
       {fill !== undefined && (
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-chart-muted">
           <div
-            className={cn("h-full rounded-full", toneBg[fillTone])}
+            className={cn("grow-x h-full rounded-full", toneBg[fillTone])}
             style={{ width: `${Math.max(2, Math.min(100, fill * 100))}%` }}
           />
         </div>
@@ -86,11 +86,11 @@ function StatTile({ label, term, today, value, unit, sub, direction, badge, fill
       {range && (
         <div className="relative mt-3 h-1.5 w-full rounded-full bg-chart-muted" aria-hidden="true">
           <div
-            className="absolute inset-y-0 rounded-full bg-brand/45"
+            className="grow-x absolute inset-y-0 rounded-full bg-brand/45"
             style={{ left: `${range.lo}%`, width: `${Math.max(1, range.hi - range.lo)}%` }}
           />
           <div
-            className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-2 ring-card"
+            className="fade-in absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand ring-2 ring-card"
             style={{ left: `${range.now}%` }}
           />
         </div>

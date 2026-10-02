@@ -228,3 +228,43 @@ html[data-motion] .countup:not([data-counted]) > [aria-hidden] {
   animation: countup-failsafe 0s 1.5s forwards;
 }
 @keyframes countup-failsafe { to { opacity: 1; } }
+
+/* Cards and tiles rise in on open, staggered 40ms for the first 8 siblings. */
+@keyframes reveal { from { opacity: 0; transform: translateY(8px); } }
+.reveal { animation: reveal var(--motion-base) var(--ease-out) backwards; }
+.reveal:nth-child(2) { animation-delay: 40ms; }
+.reveal:nth-child(3) { animation-delay: 80ms; }
+.reveal:nth-child(4) { animation-delay: 120ms; }
+.reveal:nth-child(5) { animation-delay: 160ms; }
+.reveal:nth-child(6) { animation-delay: 200ms; }
+.reveal:nth-child(7) { animation-delay: 240ms; }
+.reveal:nth-child(n+8) { animation-delay: 280ms; }
+
+/* Meters grow from zero on open (no JS, so no flicker; the real width is the
+   final value) and slide to a new value on change. */
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes grow-y { from { transform: scaleY(0); } }
+.grow-x, .grow-x-end, .grow-y, .grow-y-top {
+  animation: var(--motion-slow) var(--ease-out) backwards;
+  transition-property: width, height, left, background-color;
+  transition-duration: var(--motion-base);
+  transition-timing-function: var(--ease-out);
+}
+.grow-x { animation-name: grow-x; transform-origin: left center; }
+.grow-x-end { animation-name: grow-x; transform-origin: right center; }
+.grow-y { animation-name: grow-y; transform-origin: center bottom; }
+.grow-y-top { animation-name: grow-y; transform-origin: center top; }
+/* long tables: only the first screenful animates, so scrolling never lags */
+tr:nth-child(n+16) .grow-x, tr:nth-child(n+16) .grow-x-end { animation: none; }
+
+/* Markers that sit on a meter fade in and slide; traffic lights pop in after their card. */
+@keyframes fade-in { from { opacity: 0; } }
+.fade-in {
+  animation: fade-in var(--motion-slow) var(--ease-out) backwards;
+  transition: left var(--motion-base) var(--ease-out);
+}
+@keyframes pop-in { from { opacity: 0; transform: scale(0.6); } }
+.pop-in {
+  animation: pop-in var(--motion-base) var(--ease-out) 150ms backwards;
+  transition: background-color var(--motion-base) var(--ease-out);
+}

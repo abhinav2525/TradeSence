@@ -40,7 +40,7 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
               <TableCell className="px-3 py-2.5">
                 <div className="flex items-center justify-end gap-2.5">
                   <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-chart-muted md:flex" aria-hidden="true">
-                    <span className="h-full rounded-full bg-brand" style={{ width: `${Math.max(3, (r.crossings / max) * 100)}%` }} />
+                    <span className="grow-x h-full rounded-full bg-brand" style={{ width: `${Math.max(3, (r.crossings / max) * 100)}%` }} />
                   </span>
                   <span className="w-8 text-right text-[13px] font-medium text-foreground">{r.crossings}</span>
                 </div>

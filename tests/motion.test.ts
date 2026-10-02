@@ -35,3 +35,17 @@ test("every chart takes its motion from useChartAnimation, none hard-codes it", 
     expect(readFileSync(`${dir}/${f}.tsx`, "utf8")).toContain("useChartAnimation()");
   }
 });
+
+test("every meter bar grows in, and every card rises in", () => {
+  const files = ["Readout", "BreadthHero", "AdHero", "MemberTable", "CrossingsTable", "VolumeTrack", "RiskCalculator"];
+  for (const f of files) {
+    const src = readFileSync(`src/components/${f}.tsx`, "utf8");
+    const bars = (src.match(/style=\{\{ (width|height|left):/g) ?? []).length;
+    const grows = (src.match(/\b(grow-x|grow-x-end|grow-y|grow-y-top|fade-in)\b/g) ?? []).length;
+    expect({ f, ok: grows >= bars }).toEqual({ f, ok: true });
+  }
+  expect(readFileSync("src/components/ui/card.tsx", "utf8")).toContain("reveal");
+  expect(readFileSync("src/components/LightDot.tsx", "utf8")).toContain("pop-in");
+  for (const k of ["reveal", "grow-x", "grow-y", "pop-in"]) expect(css).toContain(`@keyframes ${k}`);
+  expect(css).toContain("tr:nth-child(n+16)"); // long tables: only the first screenful animates
+});

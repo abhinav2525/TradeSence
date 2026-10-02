@@ -117,7 +117,7 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
                 <div key={i} className="group relative flex h-full flex-1 items-end">
                   <div
                     className={cn(
-                      "w-full rounded-t-[3px]",
+                      "grow-y w-full rounded-t-[3px]",
                       b.to <= 0 ? "bg-down/70" : b.from >= 0 ? "bg-up/70" : "bg-chart-muted",
                       i === niftyBin && "ring-1 ring-inset ring-foreground/60",
                     )}

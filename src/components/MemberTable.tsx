@@ -80,7 +80,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
                     <div className="flex items-center justify-end gap-2.5">
                       <span className="hidden h-1.5 w-14 justify-end overflow-hidden rounded-full bg-chart-muted sm:flex" aria-hidden="true">
                         <span
-                          className={cn("h-full rounded-full", tone === "up" ? "bg-up" : "bg-down")}
+                          className={cn("grow-x-end h-full rounded-full", tone === "up" ? "bg-up" : "bg-down")}
                           style={{ width: `${Math.max(4, (Math.abs(r.pctFromMa) / maxAbs) * 100)}%` }}
                         />
                       </span>

@@ -56,8 +56,8 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
         <div className="mt-auto pt-6">
           {/* three fills with 2px surface gaps, so the split reads without strokes */}
           <div className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
-            {advancing > 0 && <div className="h-full bg-up" style={{ width: `${(advancing / total) * 100}%` }} />}
-            {unchanged > 0 && <div className="h-full bg-chart-muted" style={{ width: `${(unchanged / total) * 100}%` }} />}
+            {advancing > 0 && <div className="grow-x h-full bg-up" style={{ width: `${(advancing / total) * 100}%` }} />}
+            {unchanged > 0 && <div className="grow-x h-full bg-chart-muted" style={{ width: `${(unchanged / total) * 100}%` }} />}
             {declining > 0 && <div className="h-full flex-1 bg-down" />}
           </div>
           <div className="mt-2 flex justify-between text-[12px] tabular-nums text-foreground-2">
@@ -91,12 +91,12 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
             <div key={b.date} className="group relative flex flex-1 flex-col">
               <div className="flex flex-1 items-end">
                 {b.net > 0 && (
-                  <div className="w-full rounded-t-[3px] bg-up" style={{ height: `${Math.max(4, (b.net / max) * 100)}%` }} />
+                  <div className="grow-y w-full rounded-t-[3px] bg-up" style={{ height: `${Math.max(4, (b.net / max) * 100)}%` }} />
                 )}
               </div>
               <div className="flex flex-1 items-start">
                 {b.net < 0 && (
-                  <div className="w-full rounded-b-[3px] bg-down" style={{ height: `${Math.max(4, (-b.net / max) * 100)}%` }} />
+                  <div className="grow-y-top w-full rounded-b-[3px] bg-down" style={{ height: `${Math.max(4, (-b.net / max) * 100)}%` }} />
                 )}
               </div>
               <span

@@ -53,7 +53,7 @@ export default function BreadthHero({
         <div className="mt-auto pt-6">
           {/* two fills with a 2px surface gap, so the split reads without a stroke */}
           <div className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
-            {above > 0 && <div className="h-full rounded-l-full bg-up" style={{ width: `${(above / total) * 100}%` }} />}
+            {above > 0 && <div className="grow-x h-full rounded-l-full bg-up" style={{ width: `${(above / total) * 100}%` }} />}
             {below > 0 && <div className="h-full flex-1 rounded-r-full bg-down" />}
           </div>
           <div className="mt-2 flex justify-between text-[12px] tabular-nums">
@@ -83,7 +83,7 @@ export default function BreadthHero({
             <div key={b.from} className="group relative flex h-full flex-1 items-end">
               <div
                 className={cn(
-                  "w-full rounded-t-[3px] transition-colors",
+                  "grow-y w-full rounded-t-[3px] transition-colors",
                   i === current ? "bg-brand" : "bg-chart-muted group-hover:bg-foreground/25",
                 )}
                 style={{ height: `${b.count ? Math.max(4, (b.count / max) * 100) : 0}%` }}

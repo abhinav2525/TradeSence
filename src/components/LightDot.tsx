@@ -14,7 +14,7 @@ export default function LightDot({ light, className }: { light: Light | null; cl
       <span
         aria-hidden="true"
         className={cn(
-          "size-2.5 rounded-full",
+          "pop-in size-2.5 rounded-full",
           light === "green" ? "bg-up" : light === "red" ? "bg-down" : "bg-chart-muted ring-2 ring-inset ring-foreground/40",
         )}
       />
