@@ -8,6 +8,7 @@ import type { HorizonKey } from "@/indicators/risk";
 import type { HorizonPair } from "@/query/stock-report";
 import { HORIZON_LABELS as LABEL, parseAmount } from "@/lib/report-card";
 import Term from "@/components/Term";
+import SlidingPill from "@/components/SlidingPill";
 
 const ORDER: HorizonKey[] = ["1w", "1m", "3m", "1y"];
 
@@ -60,7 +61,8 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
               className="h-8 w-28 rounded-[8px] border border-input bg-transparent px-2 font-mono text-[12px] tabular-nums text-foreground"
             />
           </label>
-          <div className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Holding period">
+          <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Holding period">
+            <SlidingPill active={h} />
             {ORDER.map((k) => (
               <button
                 key={k}

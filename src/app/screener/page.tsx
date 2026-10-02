@@ -19,6 +19,7 @@ import { HISTORY_START } from "@/ingest/nifty50-history";
 import { NEAR_PCT, isNear, percentile, screenerOn, volumeAtLeast, type ScreenerRow } from "@/query/screener";
 import { GLOSSARY } from "@/lib/glossary";
 import Term from "@/components/Term";
+import SlidingPill from "@/components/SlidingPill";
 
 export const dynamic = "force-dynamic";
 
@@ -175,7 +176,8 @@ export default async function Page({
 
           <Card className="overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
-              <div className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Signal">
+              <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Signal">
+                <SlidingPill active={view} />
                 {([["above", "Crossed above", above.length], ["below", "Crossed below", below.length], ["near", "Near the line", near.length]] as const).map(([k, text, n]) => (
                   <Link key={k} href={href({ view: k })} role="tab" aria-selected={view === k} className={seg(view === k)}>
                     {text}
@@ -185,7 +187,8 @@ export default async function Page({
               </div>
               <div className={cn("flex items-center gap-2", view === "near" && "opacity-40")}>
                 <span id="vol-label" className="text-[12px] font-medium text-muted-foreground">Volume</span>
-                <div className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-labelledby="vol-label">
+                <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-labelledby="vol-label">
+                  <SlidingPill active={vol} />
                   {(["any", "1.5", "2", "3"] as const).map((v) => (
                     <Link key={v} href={href({ vol: v })} aria-pressed={vol === v} className={cn(seg(vol === v), "h-7 px-2.5 text-[12px]")}>
                       {v === "any" ? "Any" : `≥${v}×`}

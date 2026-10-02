@@ -11,6 +11,7 @@ import { formatDate, formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
 import { useChartAnimation } from "@/lib/motion";
+import SlidingPill from "@/components/SlidingPill";
 
 export type AreaPoint = { date: string; pct: number; above: number; total: number };
 
@@ -60,7 +61,8 @@ export default function BreadthArea({ data, selectedDate }: Props) {
             {visible[0] ? `${formatDate(visible[0].date)} – ${formatDate(visible.at(-1)!.date)}` : "No sessions"}
           </p>
         </div>
-        <div className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Time range">
+        <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Time range">
+          <SlidingPill active={range} />
           {RANGES.map((r) => (
             <button
               key={r.key}

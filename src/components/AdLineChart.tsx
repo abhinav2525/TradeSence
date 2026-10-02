@@ -10,6 +10,7 @@ import { dateTicks } from "@/lib/ticks";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
 import { useChartAnimation } from "@/lib/motion";
+import SlidingPill from "@/components/SlidingPill";
 
 export type NetPoint = { date: string; net: number };
 type LinePoint = NetPoint & { line: number };
@@ -54,7 +55,8 @@ export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; 
             {visible[0] ? `Cumulative net advances, ${formatDate(visible[0].date)} – ${formatDate(last!.date)}` : "No sessions"}
           </p>
         </div>
-        <div className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Time range">
+        <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Time range">
+          <SlidingPill active={range} />
           {RANGES.map((r) => (
             <button
               key={r.key}

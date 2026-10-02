@@ -49,3 +49,17 @@ test("every meter bar grows in, and every card rises in", () => {
   for (const k of ["reveal", "grow-x", "grow-y", "pop-in"]) expect(css).toContain(`@keyframes ${k}`);
   expect(css).toContain("tr:nth-child(n+16)"); // long tables: only the first screenful animates
 });
+
+test("every segmented switch has a sliding pill; pages cross-fade; a loading skeleton exists", () => {
+  const files = ["src/components/MaTabs.tsx", "src/components/BreadthArea.tsx", "src/components/AdLineChart.tsx", "src/components/RiskCalculator.tsx", "src/app/screener/page.tsx"];
+  for (const f of files) {
+    const src = readFileSync(f, "utf8");
+    const groups = (src.match(/rounded-md border bg-raised p-0\.5/g) ?? []).length;
+    const pills = (src.match(/<SlidingPill /g) ?? []).length;
+    expect({ f, groups, pills, seg: (src.match(/\bseg relative\b/g) ?? []).length }).toEqual({ f, groups, pills: groups, seg: groups });
+  }
+  const shell = readFileSync("src/components/AppShell.tsx", "utf8");
+  expect(shell).toContain("<ViewTransition");
+  expect(css).toContain("::view-transition-new(.page-in)");
+  expect(readFileSync("src/app/loading.tsx", "utf8")).toContain("skeleton");
+});

@@ -268,3 +268,39 @@ tr:nth-child(n+16) .grow-x, tr:nth-child(n+16) .grow-x-end { animation: none; }
   animation: pop-in var(--motion-base) var(--ease-out) 150ms backwards;
   transition: background-color var(--motion-base) var(--ease-out);
 }
+
+/* Segmented switches: one raised pill slides to the selected option. */
+.seg-pill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 8px;
+  background: var(--thumb);
+  box-shadow: var(--elev-thumb);
+  transition: left var(--motion-fast) var(--ease-out), width var(--motion-fast) var(--ease-out);
+}
+.seg > a, .seg > button { position: relative; z-index: 1; }
+.seg[data-pill] > [aria-pressed="true"], .seg[data-pill] > [aria-selected="true"] { background: transparent; box-shadow: none; }
+
+/* Page changes: the new page fades in; the old one fades out quickly. The root
+   snapshot (sidebar included) doesn't animate, and clicks pass through. */
+::view-transition { pointer-events: none; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(6px); } }
+::view-transition-old(.page-out) { animation: var(--motion-fast) var(--ease-out) both vt-out; }
+::view-transition-new(.page-in) { animation: var(--motion-base) var(--ease-out) both vt-in; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* Loading skeleton: the only repeating motion, and only while waiting. */
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, var(--raised) 25%, var(--border) 50%, var(--raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
