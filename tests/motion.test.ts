@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { MOTION, chartAnimation, prefersReducedMotion } from "../src/lib/motion";
 
 const css = readFileSync("src/app/globals.css", "utf8");
@@ -23,4 +23,15 @@ describe("the motion clock", () => {
   test("no window (server): not reduced", () => {
     expect(prefersReducedMotion()).toBe(false);
   });
+});
+
+test("every chart takes its motion from useChartAnimation, none hard-codes it", () => {
+  const dir = "src/components";
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".tsx"))) {
+    const src = readFileSync(`${dir}/${f}`, "utf8");
+    expect({ f, literal: /isAnimationActive=\{|animationDuration=\{/.test(src) }).toEqual({ f, literal: false });
+  }
+  for (const f of ["BreadthArea", "AdLineChart", "McClellanBars", "CrossingsBars", "StockPriceChart", "DrawdownChart"]) {
+    expect(readFileSync(`${dir}/${f}.tsx`, "utf8")).toContain("useChartAnimation()");
+  }
 });

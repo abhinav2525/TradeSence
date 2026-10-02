@@ -5,6 +5,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { formatDate, formatPrice } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
 import Term from "@/components/Term";
+import { useChartAnimation } from "@/lib/motion";
 
 type Point = { date: string; close: number; sma200: number | null };
 
@@ -15,6 +16,7 @@ const config = {
 
 /** Two series, so it carries a legend. Adjusted, so a split is not a cliff. */
 export default function StockPriceChart({ data, selectedDate }: { data: Point[]; selectedDate?: string | null }) {
+  const anim = useChartAnimation();
   const axis = dateTicks(data.map((p) => p.date), 8);
   return (
     <div>
@@ -54,8 +56,8 @@ export default function StockPriceChart({ data, selectedDate }: { data: Point[];
               />
             }
           />
-          <Line dataKey="sma200" type="monotone" stroke="var(--muted-foreground)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} isAnimationActive={false} connectNulls={false} />
-          <Line dataKey="close" type="monotone" stroke="var(--chart-1)" strokeWidth={2} dot={false} isAnimationActive={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)", fill: "var(--chart-1)" }} />
+          <Line dataKey="sma200" type="monotone" stroke="var(--muted-foreground)" strokeWidth={1.5} strokeDasharray="4 3" dot={false} {...anim} connectNulls={false} />
+          <Line dataKey="close" type="monotone" stroke="var(--chart-1)" strokeWidth={2} dot={false} {...anim} activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)", fill: "var(--chart-1)" }} />
         </LineChart>
       </ChartContainer>
     </div>

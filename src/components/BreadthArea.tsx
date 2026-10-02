@@ -10,6 +10,7 @@ import {
 import { formatDate, formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
+import { useChartAnimation } from "@/lib/motion";
 
 export type AreaPoint = { date: string; pct: number; above: number; total: number };
 
@@ -34,6 +35,7 @@ type Props = { data: AreaPoint[]; selectedDate?: string | null };
  * The bands under 20% and over 80% mark the extremes the percentile is about.
  */
 export default function BreadthArea({ data, selectedDate }: Props) {
+  const anim = useChartAnimation();
   const [range, setRange] = useState<RangeKey>("all");
 
   const visible = useMemo(() => {
@@ -144,7 +146,7 @@ export default function BreadthArea({ data, selectedDate }: Props) {
             stroke="var(--chart-1)"
             strokeWidth={2}
             fill="url(#breadthFill)"
-            isAnimationActive={false}
+            {...anim}
             dot={false}
             activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)", fill: "var(--chart-1)" }}
           />

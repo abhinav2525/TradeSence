@@ -5,6 +5,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { formatDate } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
 import Term from "@/components/Term";
+import { useChartAnimation } from "@/lib/motion";
 
 type Point = { date: string; pct: number };
 
@@ -12,6 +13,7 @@ const config = { pct: { label: "Below its high", color: "var(--down)" } } satisf
 
 /** How far below its previous high the stock sat, every session: the shape of its falls and recoveries. */
 export default function DrawdownChart({ data, trough }: { data: Point[]; trough: { date: string; pct: number } | null }) {
+  const anim = useChartAnimation();
   const axis = dateTicks(data.map((p) => p.date), 7);
   const deepest = Math.min(...data.map((p) => p.pct), 0);
   const step = deepest < -60 ? 25 : deepest < -30 ? 10 : 5;
@@ -52,7 +54,7 @@ export default function DrawdownChart({ data, trough }: { data: Point[]; trough:
               />
             }
           />
-          <Area dataKey="pct" type="monotone" stroke="var(--down)" strokeWidth={1.5} fill="url(#ddFill)" isAnimationActive={false} dot={false} />
+          <Area dataKey="pct" type="monotone" stroke="var(--down)" strokeWidth={1.5} fill="url(#ddFill)" {...anim} dot={false} />
           {trough && trough.pct < 0 && (
             <ReferenceDot
               x={trough.date}

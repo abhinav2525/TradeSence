@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
+import { useChartAnimation } from "@/lib/motion";
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig,
 } from "@/components/ui/chart";
@@ -19,6 +20,7 @@ const config = {
  * bars are not recoloured by value, their length already says it.
  */
 export default function CrossingsBars({ data }: { data: BarDatum[] }) {
+  const anim = useChartAnimation();
   const height = Math.max(160, data.length * 30 + 8);
   return (
     <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
@@ -53,7 +55,7 @@ export default function CrossingsBars({ data }: { data: BarDatum[] }) {
             />
           }
         />
-        <Bar dataKey="crossings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} maxBarSize={18} isAnimationActive={false}>
+        <Bar dataKey="crossings" fill="var(--chart-1)" radius={[0, 4, 4, 0]} maxBarSize={18} {...anim}>
           <LabelList
             dataKey="crossings"
             position="right"

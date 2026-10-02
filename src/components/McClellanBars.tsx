@@ -7,6 +7,7 @@ import {
 import { formatDate, signed } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
 import Term from "@/components/Term";
+import { useChartAnimation } from "@/lib/motion";
 
 export type OscPoint = { date: string; value: number };
 
@@ -17,6 +18,7 @@ const config = { value: { label: "McClellan", color: "var(--chart-1)" } } satisf
  * zero), so unlike the single-series charts this one has a legend.
  */
 export default function McClellanBars({ data }: { data: OscPoint[] }) {
+  const anim = useChartAnimation();
   const axis = dateTicks(data.map((p) => p.date), 6);
   // Round steps that always include zero, so an all-negative stretch still
   // reads as below the line and the ticks are numbers a person would pick.
@@ -79,7 +81,7 @@ export default function McClellanBars({ data }: { data: OscPoint[] }) {
               />
             }
           />
-          <Bar dataKey="value" maxBarSize={18} isAnimationActive={false}>
+          <Bar dataKey="value" maxBarSize={18} {...anim}>
             {data.map((p) => (
               <Cell key={p.date} fill={p.value >= 0 ? "var(--up)" : "var(--down)"} />
             ))}

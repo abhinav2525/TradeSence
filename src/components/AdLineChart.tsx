@@ -9,6 +9,7 @@ import { formatDate, signed } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
 import { cn } from "@/lib/utils";
 import Term from "@/components/Term";
+import { useChartAnimation } from "@/lib/motion";
 
 export type NetPoint = { date: string; net: number };
 type LinePoint = NetPoint & { line: number };
@@ -28,6 +29,7 @@ type RangeKey = (typeof RANGES)[number]["key"];
  * zero at its first session. The level is arbitrary; the slope is the reading.
  */
 export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; selectedDate?: string | null }) {
+  const anim = useChartAnimation();
   const [range, setRange] = useState<RangeKey>("1y");
 
   const visible: LinePoint[] = useMemo(() => {
@@ -119,7 +121,7 @@ export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; 
             stroke="var(--chart-1)"
             strokeWidth={2}
             dot={false}
-            isAnimationActive={false}
+            {...anim}
             activeDot={{ r: 4, strokeWidth: 2, stroke: "var(--card)", fill: "var(--chart-1)" }}
           />
           {high && high !== last && (
