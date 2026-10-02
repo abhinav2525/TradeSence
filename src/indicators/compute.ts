@@ -1,7 +1,7 @@
 import { sql, type SQL } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
-import { adjustmentFactors, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
+import { adjustmentFactors, demergerFactor, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 import { symbolLineage, type LineageEntry } from "../ingest/symbol-changes";
 
 /**
@@ -88,8 +88,8 @@ export async function computeIndicators(
   for (const symbol of symbols) {
     const lineage = symbolLineage(symbol, renames);
 
-    const prices = await db.execute<{ trade_date: string; close: number }>(
-      sql`select trade_date, close
+    const prices = await db.execute<{ trade_date: string; open: number; close: number }>(
+      sql`select trade_date, open, close
           from daily_prices
           where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
           order by trade_date asc`,
@@ -101,21 +101,27 @@ export async function computeIndicators(
     // date-bounded. Older symbols are, in case the ticker was reused. An action
     // listed under both counts once.
     const [current, ...older] = lineage;
-    const eventRows = await db.execute<{ ex_date: string; subject: string; factor: number }>(
-      sql`select distinct on (ex_date, subject) ex_date, subject, factor
+    const eventRows = await db.execute<{ ex_date: string; subject: string; kind: string; factor: number }>(
+      sql`select distinct on (ex_date, subject) ex_date, subject, kind, factor
           from corporate_actions
-          where factor is not null and factor <> 1
+          where ((factor is not null and factor <> 1) or kind = 'demerger')
             and (symbol = ${current!.symbol}
                  ${older.length ? sql`or ${sql.join(older.map((e) => inWindow(sql`ex_date`, e)), sql` or `)}` : sql``})`,
     );
-    const events = [...eventRows];
 
     const dates = prices.map((p) => p.trade_date);
+    const opens = prices.map((p) => Number(p.open));
     const closes = prices.map((p) => Number(p.close));
-    const factors = adjustmentFactors(
-      dates,
-      events.map((e) => ({ exDate: e.ex_date, factor: Number(e.factor) })),
-    );
+
+    // Splits and bonuses carry their factor; a demerger's comes from prices.
+    // One that cannot be priced is left out, and the jump check reports it.
+    const events = eventRows.flatMap((e) => {
+      const factor = e.kind === "demerger"
+        ? demergerFactor(dates, opens, closes, e.ex_date)
+        : Number(e.factor);
+      return factor === null ? [] : [{ exDate: e.ex_date, factor }];
+    });
+    const factors = adjustmentFactors(dates, events);
     const adjusted = closes.map((c, i) => c / factors[i]!);
 
     for (const jump of findUnexplainedJumps(dates, closes, factors)) {

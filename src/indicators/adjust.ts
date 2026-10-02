@@ -30,6 +30,37 @@ export function adjustmentFactors(dates: string[], events: AdjustingEvent[]): nu
   return out;
 }
 
+/** How far after the ex-date the first trade may be and still price the demerger. */
+const DEMERGER_MAX_DAYS = 7;
+
+/**
+ * A demerger's adjustment factor, worked out from prices because NSE's
+ * corporate-actions text carries no ratio.
+ *
+ * Last close before the ex-date divided by the ex-date's open. NSE runs a
+ * special pre-open session on that day to discover the price of what remains,
+ * so the open reflects the spun-off value without the day's ordinary trading.
+ * For TATAMOTORS 2025 this gives 660.75 / 400 = 1.652; TradingView uses 1.656.
+ *
+ * Returns null when it cannot be worked out honestly — no trade before, no
+ * trade within a week after, or an open at or above the last close (a
+ * demerger hands value out, so the price must fall). The jump check then
+ * reports the move instead of a guess being written.
+ */
+export function demergerFactor(
+  dates: string[],
+  opens: number[],
+  closes: number[],
+  exDate: string,
+): number | null {
+  const i = dates.findIndex((d) => d >= exDate);
+  if (i <= 0) return null;
+  const days = (Date.parse(`${dates[i]}T00:00:00Z`) - Date.parse(`${exDate}T00:00:00Z`)) / 86_400_000;
+  if (days > DEMERGER_MAX_DAYS) return null;
+  const f = closes[i - 1]! / opens[i]!;
+  return Number.isFinite(f) && f > 1 ? f : null;
+}
+
 /** An overnight move beyond this, after adjustment, is assumed to be a missing action. */
 const JUMP_LIMIT = 0.7;
 

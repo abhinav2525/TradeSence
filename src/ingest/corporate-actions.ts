@@ -12,7 +12,8 @@ import { sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { download } from "./bhavcopy";
 
-export type ActionKind = "split" | "bonus" | "bonus+split" | "consolidation" | "other" | "unparsed";
+export type ActionKind =
+  | "split" | "bonus" | "bonus+split" | "consolidation" | "demerger" | "other" | "unparsed";
 
 export type Classified = { kind: ActionKind; factor: number | null };
 
@@ -63,6 +64,10 @@ const SHARE_COUNT = /split|splt|sub-?division|bonus|consolidat|capital reduction
  * Value Split ..."), so each clause is read on its own and the factors multiply.
  * The "/" in "Rs 10/-" is part of an amount, not a separator, hence `(?!-)`.
  *
+ * A demerger's text carries no ratio ("Demerger", "Scheme Of Demerger"), so it
+ * is returned with factor 1 and the ratio is worked out from prices at compute
+ * time (`demergerFactor`). See docs/decisions/0004-demerger-adjustment.md.
+ *
  * The one rule that matters: a clause that talks about the share count but
  * cannot be read makes the whole subject `unparsed`. Quietly returning 1 would
  * leave that split unadjusted with nothing to signal it.
@@ -72,6 +77,10 @@ export function classifyAction(subject: string): Classified {
   let factor = 1;
 
   for (const clause of subject.split(/\/(?!\s*-)|\+/)) {
+    if (/demerg/i.test(clause)) {
+      kinds.push("demerger");
+      continue;
+    }
     if (!SHARE_COUNT.test(clause)) continue;
     if (/bonus/i.test(clause) && NON_EQUITY.test(clause)) continue;
 

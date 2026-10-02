@@ -1,5 +1,5 @@
 import { test, expect, describe } from "bun:test";
-import { adjustmentFactors, findUnexplainedJumps } from "../src/indicators/adjust";
+import { adjustmentFactors, findUnexplainedJumps, demergerFactor } from "../src/indicators/adjust";
 
 const dates = ["2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15"];
 
@@ -24,6 +24,30 @@ describe("adjustmentFactors", () => {
 
   test("no events means no adjustment", () => {
     expect(adjustmentFactors(dates, [])).toEqual([1, 1, 1, 1]);
+  });
+});
+
+describe("demergerFactor", () => {
+  // TATAMOTORS, 2025-10-14: commercial vehicles demerged. Real bhavcopy values.
+  const d = ["2025-10-10", "2025-10-13", "2025-10-14", "2025-10-15"];
+  const opens = [684.8, 679, 400, 403];
+  const closes = [678.95, 660.75, 395.45, 390.85];
+
+  test("is the last close before the ex-date over the ex-date open", () => {
+    // TradingView's adjustment for the same event is 1 / 0.6037 = 1.6565.
+    expect(demergerFactor(d, opens, closes, "2025-10-14")!).toBeCloseTo(660.75 / 400, 6);
+  });
+
+  test("uses the first trading day if the ex-date itself was a holiday", () => {
+    expect(demergerFactor(["2025-10-10", "2025-10-13"], [684.8, 400], [678.95, 395], "2025-10-11")!)
+      .toBeCloseTo(678.95 / 400, 6);
+  });
+
+  test("gives up rather than guess when it cannot be worked out", () => {
+    expect(demergerFactor(d, opens, closes, "2025-10-10")).toBeNull();           // no day before
+    expect(demergerFactor(d, opens, closes, "2025-12-01")).toBeNull();           // no day after
+    expect(demergerFactor(d, [684.8, 679, 700, 403], closes, "2025-10-14")).toBeNull(); // opened higher
+    expect(demergerFactor(["2025-10-10", "2025-11-20"], [1, 400], [660, 395], "2025-10-14")).toBeNull(); // first trade weeks later
   });
 });
 

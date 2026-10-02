@@ -165,6 +165,47 @@ describe("computeIndicators across a rename", () => {
   }, 30000);
 });
 
+describe("computeIndicators across a demerger", () => {
+  // Flat at 100; on day 230 a business is spun off and the stock opens at 60.
+  function demerged() {
+    return synthetic("DEMCO", 260).map((r, i) => {
+      const close = i < 230 ? 100 : 60;
+      return { ...r, open: close, high: close, low: close, close, prevClose: close };
+    });
+  }
+
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+    await db.delete(schema.symbolChanges);
+  });
+
+  test("averages are adjusted by the price-derived ratio and nothing is flagged", async () => {
+    const rows = demerged();
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({
+      indexName: "NIFTY50", symbol: "DEMCO", addedOn: "2020-01-01", removedOn: null,
+    });
+    await db.insert(schema.corporateActions).values({
+      symbol: "DEMCO", exDate: rows[230]!.tradeDate, series: "EQ", subject: "Demerger",
+      kind: "demerger", factor: 1, company: "DemCo Ltd", recordDate: null,
+    });
+    const jumps: unknown[] = [];
+    await computeIndicators("NIFTY50", { onUnexplainedJump: (j) => jumps.push(j) });
+    expect(jumps).toEqual([]);
+
+    const at = async (i: number) => (await db.select().from(schema.dailyIndicators).where(and(
+      eq(schema.dailyIndicators.symbol, "DEMCO"),
+      eq(schema.dailyIndicators.tradeDate, rows[i]!.tradeDate),
+    )))[0]!;
+    expect((await at(259)).sma200!).toBeCloseTo(60, 6);
+    expect((await at(259)).ema200!).toBeCloseTo(60, 6);
+    expect((await at(229)).sma200!).toBeCloseTo(100, 6);
+  }, 30000);
+});
+
 describe("computeIndicators across a split", () => {
   // Flat at 500, then a 1:5 split on day 230: raw closes drop to 100 overnight
   // although nothing happened to the stock. This is the KOTAKBANK bug.

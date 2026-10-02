@@ -152,7 +152,7 @@ erDiagram
         date ex_date PK
         text subject PK "NSE wording, verbatim"
         text series
-        text kind "split | bonus | bonus+split | consolidation | other | unparsed"
+        text kind "split | bonus | bonus+split | consolidation | demerger | other | unparsed"
         float factor "divide closes before ex_date by this"
         text company
         date record_date
@@ -330,6 +330,7 @@ Postgres's 65,535 bind-parameter cap).
 | Function | Signature | Notes |
 |---|---|---|
 | `adjustmentFactors` | `(dates, events: { exDate, factor }[]) => number[]` | For each date, the product of factors of events with an ex-date **strictly after** it. The ex-date already trades post-split. |
+| `demergerFactor` | `(dates, opens, closes, exDate) => number \| null` | A demerger's factor from prices: last close before the ex-date ÷ ex-date open (NSE's special pre-open session). Matches TradingView. `null` (no adjustment) when it can't be priced honestly. |
 | `findUnexplainedJumps` | `(dates, closes, factors) => { date, from, to }[]` | Moves beyond 30% either way that survive adjustment — a missing or misread split. |
 
 ### `src/ingest/symbol-changes.ts` — ticker renames
@@ -344,7 +345,7 @@ Postgres's 65,535 bind-parameter cap).
 
 | Function | Signature | Notes |
 |---|---|---|
-| `classifyAction` | `(subject: string) => { kind, factor }` | Reads NSE's free-text subject. Split "From Rs 5 To Re 1" → 5; bonus "a:b" → (a+b)/b; combined events multiply; consolidation → <1; dividends/rights → `other`, 1. Unreadable share-count wording → `unparsed`, `null` — never 1. |
+| `classifyAction` | `(subject: string) => { kind, factor }` | Reads NSE's free-text subject. Split "From Rs 5 To Re 1" → 5; bonus "a:b" → (a+b)/b; combined events multiply; consolidation → <1; dividends/rights → `other`, 1. Demergers → `demerger`, 1 (ratio derived from prices at compute time). Unreadable share-count wording → `unparsed`, `null` — never 1. |
 | `parseExDate` | `(raw) => string \| null` | `14-Jan-2026` → `2026-01-14`; NSE's `-` → `null`. |
 | `fetchCorporateActions` | `(from, to, deps?) => Promise<ok \| error>` | Whole market for an ex-date range in one request. Non-JSON or non-list responses are errors, never "no actions". |
 | `ingestCorporateActions` | `(from, to, deps?) => Promise<{ stored, unparsed, skipped }>` | Upserts into `corporate_actions`; idempotent. |

@@ -65,6 +65,24 @@ describe("classifyAction", () => {
       .toEqual({ kind: "other", factor: 1 });
   });
 
+  // A demerger's ratio is not in the text; it is worked out from prices at
+  // compute time (see demergerFactor). Factor 1 here means "nothing from text".
+  test("a demerger is recognised in every wording NSE uses", () => {
+    for (const s of [
+      "Demerger",
+      "Scheme Of Demerger",
+      "Merger/Demerger",
+      "Scheme Of Arrangement In The Nature Of Demerger",
+      "Scheme Of Arrangement Of Demerger",
+    ]) {
+      expect(classifyAction(s)).toEqual({ kind: "demerger", factor: 1 });
+    }
+  });
+
+  test("a demerger combined with a split or bonus is unparsed", () => {
+    expect(classifyAction("Bonus 1:1/Demerger")).toEqual({ kind: "unparsed", factor: null });
+  });
+
   test("dividends and meetings are recorded as other, factor 1", () => {
     expect(classifyAction("Dividend - Rs 2.50 Per Share")).toEqual({ kind: "other", factor: 1 });
     expect(classifyAction("Annual General Meeting")).toEqual({ kind: "other", factor: 1 });

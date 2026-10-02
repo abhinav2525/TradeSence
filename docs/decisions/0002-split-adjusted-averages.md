@@ -49,6 +49,8 @@ affected because it never fully forgets an old price; it only fades it ~1% a day
    - split and bonus on the same day → factors multiply (BAJFINANCE 2025: 5 × 2 = **10**)
    - consolidation "From Re 1 To Rs 10" → **0.1** (a reverse split)
    - dividends, meetings, rights issues → **1** (share count unchanged)
+   - demergers → worked out from prices, added later in
+     [0004](0004-demerger-adjustment.md)
 3. **The averages are computed on adjusted prices** (`computeIndicators`, using
    `src/indicators/adjust.ts`), then converted back into the rupees that day traded
    at. So each stored average is in the same units as its `close`, and the breadth
@@ -74,9 +76,11 @@ affected because it never fully forgets an old price; it only fades it ~1% a day
 - **Adjusting at compute time, not in storage**, follows the project's rule "store
   everything, filter at query time": if a factor is ever wrong, fixing the row and
   re-running `bun run indicators` (~5 s) repairs all ten years. Nothing to re-download.
-- **Rights issues and demergers are not adjusted**, matching TradingView, which
-  adjusts for splits only. That keeps our numbers comparable with the chart you
-  check against.
+- **Rights issues are not adjusted**, matching TradingView, which adjusts for splits
+  only. That keeps our numbers comparable with the chart you check against.
+  *(Correction, 2026-10-02: this first said demergers weren't adjusted "matching
+  TradingView". That was never checked, and it was wrong: TradingView does adjust
+  demergers. Fixed in [0004](0004-demerger-adjustment.md).)*
 
 ## What we found while doing it
 
@@ -103,8 +107,8 @@ bonus that affects the dashboard is handled.
 Across the **whole market**, 487 of 729 big overnight jumps are explained. The other
 242 are outside NIFTY 50 and don't affect the dashboard today, since averages are only
 computed for members. They fall into three groups:
-- **Genuine moves:** real crashes and rallies, and demergers (e.g. ABFRL 2025), which
-  we deliberately don't adjust.
+- **Genuine moves:** real crashes and rallies. (Demergers such as ABFRL 2025 were
+  also in this group; they're adjusted now, see [0004](0004-demerger-adjustment.md).)
 - **ETF unit splits** (GOLDADD, HDFC/ICICI/UTI index ETFs…): NSE's *equities*
   corporate-actions feed doesn't list ETFs.
 - **Renamed companies:** the feed files the event under the new symbol, while the old

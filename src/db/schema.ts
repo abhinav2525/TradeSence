@@ -84,8 +84,10 @@ export const corporateActions = pgTable(
     exDate: date("ex_date").notNull(),
     subject: text("subject").notNull(), // NSE's own text, verbatim
     series: text("series").notNull(),
-    kind: text("kind").notNull(), // split | bonus | bonus+split | consolidation | other | unparsed
-    factor: doublePrecision("factor"), // null only when kind = 'unparsed'
+    kind: text("kind").notNull(), // split | bonus | bonus+split | consolidation | demerger | other | unparsed
+    // null only when kind = 'unparsed'. For a demerger this is 1: NSE gives no
+    // ratio, so it is derived from prices at compute time (docs/decisions/0004).
+    factor: doublePrecision("factor"),
     company: text("company"),
     recordDate: date("record_date"),
   },

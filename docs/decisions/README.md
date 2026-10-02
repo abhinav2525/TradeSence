@@ -16,6 +16,7 @@ to the table below in the same change.
 | [0001](0001-nightly-schedule-launchd.md) | 2026-10-02 | Data went stale because the nightly job was never scheduled | launchd agent, Mon–Fri 19:30 IST |
 | [0002](0002-split-adjusted-averages.md) | 2026-10-02 | KOTAKBANK showed "below" its 200 SMA/EMA while TradingView showed "above" — splits and bonuses were poisoning the averages | Adjust with NSE's own corporate-actions feed, at compute time |
 | [0003](0003-renamed-symbols-lose-history.md) | 2026-10-02 | Renamed stocks (TATACONSUM, SHRIRAMFIN, ETERNAL) lose their history before the rename | Stitch old symbols on at compute time, from NSE's symbol-change list |
+| [0004](0004-demerger-adjustment.md) | 2026-10-02 | Demergers (RELIANCE, ITC, TMPV, HINDUNILVR) were never adjusted; TMPV's 200 EMA ~7.5% too high | Ratio from prices (last close ÷ ex-date open), matches TradingView |
 
 Older decisions, made before this log existed, are recorded in `CLAUDE.md` under
 "Design decisions that are load-bearing" and "Gotchas that will bite you".

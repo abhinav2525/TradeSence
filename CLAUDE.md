@@ -132,6 +132,10 @@ added to `@theme` must be added there too, or `cn()` silently drops it.
   ([0002](docs/decisions/0002-split-adjusted-averages.md)); stored averages are scaled
   back into each day's own rupees, so `close` vs MA queries need no adjustment logic.
   **Never write adjusted prices into `daily_prices`.**
+- Demergers carry **no ratio** in NSE's text or bhavcopy. `demergerFactor` derives it
+  as last close ÷ ex-date open, which matches TradingView exactly for RELIANCE 2023
+  ([0004](docs/decisions/0004-demerger-adjustment.md)). Stored `factor` is 1 for
+  `kind = 'demerger'`; the real one exists only at compute time.
 - Corporate-action `subject` is free text in ~30 wordings, including abbreviations
   (`Fv Splt Frm Rs 10 To Re 1`). `classifyAction` must return `unparsed` — never factor
   1 — for share-count wording it cannot read. A new wording goes into
