@@ -128,7 +128,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 
 | | |
 |---|---|
-| **What** | `/` Breadth, `/advance-decline`, `/crossings`, `/screener` and `/stock/[symbol]` (Report Card), queried live from Postgres on every page view |
+| **What** | `/` Breadth, `/advance-decline`, `/crossings`, `/screener`, `/stock/[symbol]` (Report Card) and `/learn` (glossary), queried live from Postgres on every page view |
 | **Run** | Development: `bun run dev`. Production: `bun run build && bun run start` (port 3000) |
 | **Automated?** | Pages always show the latest data, but the server is started by hand and stops when the Mac restarts |
 | **Needs** | Postgres running (`brew services start postgresql@14`, starts at login) |

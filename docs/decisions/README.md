@@ -24,6 +24,7 @@ to the table below in the same change.
 | [0009](0009-screener.md) | 2026-10-02 | Screener needed a volume ratio splits can't fake, a gap-proof crossing rule, and a filter that agrees with what it displays | Stored 20-session `vol_ratio` (split/bonus-scaled, never demerger); crossings as on the Crossings page; filter on the displayed value |
 | [0010](0010-shadcn-date-picker.md) | 2026-10-02 | The session selector was the browser's plain date box; shadcn's CLI then generated Tailwind v3 syntax that v4 ignores | shadcn Date Picker (Popover + Calendar) with month/year jumps; `[--var]` rewritten to `(--var)` |
 | [0011](0011-stock-report-card.md) | 2026-10-02 | A beginner had no way to see how risky one stock is, or what a bad stretch would cost | `/stock/[symbol]`: five lights relative to the NIFTY 50, rupee risk calculator, all from the stored adjusted moves; checked against TradingView |
+| [0012](0012-explaining-terms.md) | 2026-10-02 | Buyers had no way to learn what SMA, McClellan, Net advances and the other terms mean | One glossary file feeds ⓘ popovers on every page and `/learn` pages, each with a worked example and today's real number |
 | [Research 0001](../research/0001-does-breadth-predict.md) | 2026-10-02 | *(study, TODO item 2)* Does breadth predict the NIFTY 50? | Very weak 200-SMA breadth (<20%) was followed by a higher index 6 months later 5/5 times; >80% has no edge. Small sample |
 
 Research studies (questions answered with data, not problems fixed) live in

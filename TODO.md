@@ -81,6 +81,7 @@ Prerequisites first, or whole-market numbers will be wrong:
   for history.
 
 ## Nice-to-haves (old item 8) — c
+- [ ] Learn pages: small diagrams for SMA vs EMA and for a drawdown (decision 0012).
 - [ ] Volume/turnover anomalies vs the 20-day baseline (`vol_ratio` exists now).
 - [ ] New 52-week highs vs lows. Apply the split/bonus/demerger adjustment
   (`change_pct`) and the lineage, as the Report Card does.
@@ -114,3 +115,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Screener page (old item 5): 0009
 - [x] shadcn date picker: 0010
 - [x] Stock Report Card + Risk Calculator: 0011
+- [x] Every term explained: ⓘ popovers + `/learn` pages: 0012

@@ -11,8 +11,8 @@ plus that percentage charted since 2020, on the index's real membership each day
 pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
 A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
 near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators/risk.ts`:
-the beginner's Report Card and risk calculator) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
-whipsaw across an average). New pages are specified in `docs/design/HANDOFF.md`.
+the beginner's Report Card and risk calculator) `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+whipsaw across an average) and `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
 before making changes; this file covers only what the code cannot tell you. (README
@@ -112,6 +112,11 @@ current on each day, so `computeIndicators` follows `symbol_changes` back throug
 ([0003](docs/decisions/0003-renamed-symbols-lose-history.md)). Any new per-member
 history query (52-week highs, A/D line…) must go through the lineage too, or a renamed
 member's history silently starts at its rename.
+
+**Every term is explained once, in `src/lib/glossary.ts`.** A new metric, tile or card
+title needs a glossary entry and a `<Term>` before it ships; `tests/glossary.test.ts`
+checks completeness. Never put `<Term>` inside a `<Link>` or button
+([0012](docs/decisions/0012-explaining-terms.md)).
 
 **Symbols with a null average are excluded from breadth, not counted as "below".**
 Otherwise every backfill opens with a fabricated bearish reading.

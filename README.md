@@ -367,6 +367,16 @@ Postgres's 65,535 bind-parameter cap).
 | `stockReport` | `(symbol, date?) => { kind: "unknown" \| "no-data" \| "ok" }` | Assembles a `StockReport` as of a date: checks, horizons, adjusted price, drawdown, events, dividends. |
 | `supportedStocks` | `() => { symbol, current }[]` | Every symbol ever in the NIFTY 50 since 2020, current members first. |
 
+### `src/lib/glossary.ts`, `src/components/Term.tsx` and `src/query/glossary-live.ts` — explaining terms
+
+| Function | Signature | Notes |
+|---|---|---|
+| `GLOSSARY`, `TOPICS` | `Record<TermId, GlossaryEntry>`, `Topic[]` | Every term in the app, once: short definition, how to read it, explanation, formula, worked example, mistakes, related terms, where to see it (decision 0012). |
+| `isTermId` / `termHref` | `(s) => s is TermId` / `(id) => "/learn/<id>"` | Checks a URL segment against the fixed id list (so `__proto__` is rejected). |
+| `todayLine` | `(today?) => string \| null` | Drops placeholder values ("—", "Not enough history") so a popover never says "Today: —". |
+| `Term` | `<Term id today?>label</Term>` | The label plus an ⓘ popover. Never inside a `<Link>` or button. `Readout` tiles take `term:` and pass their value as `today`. |
+| `liveExample` | `(id) => Promise<string \| null>` | One real sentence about the latest session for `/learn/<id>`, from the pages' own queries; null when there's no data, never throws. |
+
 ### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
 
 | Function | Signature | Notes |
