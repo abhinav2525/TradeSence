@@ -43,6 +43,13 @@
       "when": 1790930034100,
       "tag": "0005_cooing_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790937664282,
+      "tag": "0006_black_klaw",
+      "breakpoints": true
     }
   ]
 }

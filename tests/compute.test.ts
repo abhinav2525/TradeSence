@@ -384,3 +384,25 @@ describe("computeIndicators: volume vs its 20-session normal (vol_ratio)", () =>
     expect(v[24]!).toBeCloseTo(1, 9);
   });
 });
+
+describe("computeIndicators: turnover", () => {
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+    await db.delete(schema.symbolChanges);
+  });
+
+  test("is stored per session and joined across a rename", async () => {
+    const rows = synthetic("X", 4).map((r, i) => ({ ...r, symbol: i < 2 ? "OLDT" : "NEWT", turnover: 1e9 + i }));
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "NEWT", addedOn: "2020-01-01", removedOn: null });
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDT", newSymbol: "NEWT", changedOn: rows[2]!.tradeDate, company: null });
+    await computeIndicators();
+    const got = (await db.select().from(schema.dailyIndicators).where(eq(schema.dailyIndicators.symbol, "NEWT")))
+      .sort((a, b) => (a.tradeDate < b.tradeDate ? -1 : 1))
+      .map((r) => r.turnover);
+    expect(got).toEqual([1e9, 1e9 + 1, 1e9 + 2, 1e9 + 3]);
+  });
+});

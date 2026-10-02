@@ -59,8 +59,8 @@ export async function computeIndicators(
   for (const symbol of symbols) {
     const lineage = symbolLineage(symbol, renames);
 
-    const prices = await db.execute<{ trade_date: string; open: number; close: number; volume: number }>(
-      sql`select trade_date, open, close, volume
+    const prices = await db.execute<{ trade_date: string; open: number; close: number; volume: number; turnover: number }>(
+      sql`select trade_date, open, close, volume, turnover
           from daily_prices
           where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
           order by trade_date asc`,
@@ -137,6 +137,7 @@ export async function computeIndicators(
       ema200: e200[i],
       changePct: move[i],
       volRatio: volRatio[i],
+      turnover: Number(prices[i]!.turnover),
     }));
 
     for (let i = 0; i < rows.length; i += CHUNK) {
@@ -152,6 +153,7 @@ export async function computeIndicators(
             ema200: sql`excluded.ema_200`,
             changePct: sql`excluded.change_pct`,
             volRatio: sql`excluded.vol_ratio`,
+            turnover: sql`excluded.turnover`,
           },
         });
     }

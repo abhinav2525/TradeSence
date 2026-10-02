@@ -68,6 +68,9 @@ export const dailyIndicators = pgTable(
     // Volume ÷ mean of the 20 prior sessions, in split/bonus-adjusted share
     // units (never demerger-adjusted). For the Screener (decision 0009).
     volRatio: doublePrecision("vol_ratio"),
+    // ₹ traded that session (bhavcopy turnover, both formats in rupees), on the
+    // rename-joined series. For the Report Card's liquidity check (decision 0011).
+    turnover: doublePrecision("turnover"),
   },
   (t) => [primaryKey({ columns: [t.tradeDate, t.symbol] })],
 );
