@@ -8,6 +8,7 @@ import {
 import { formatDate, signed } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
 import { cn } from "@/lib/utils";
+import Term from "@/components/Term";
 
 export type NetPoint = { date: string; net: number };
 type LinePoint = NetPoint & { line: number };
@@ -46,7 +47,7 @@ export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; 
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
         <div>
-          <h2 className="text-heading text-foreground">Advance/decline line</h2>
+          <h2 className="text-heading text-foreground"><Term id="ad-line">Advance/decline line</Term></h2>
           <p className="mt-0.5 text-[12px] tabular-nums text-muted-foreground">
             {visible[0] ? `Cumulative net advances, ${formatDate(visible[0].date)} – ${formatDate(last!.date)}` : "No sessions"}
           </p>

@@ -76,6 +76,7 @@ export default async function Page({
     ? [
         {
           label: "Percentile",
+          term: "percentile",
           value: percentile.toFixed(1),
           badge:
             percentile <= 10
@@ -92,6 +93,7 @@ export default async function Page({
         },
         {
           label: "Five-session change",
+          term: "five-session-change",
           value: delta === null ? "—" : signed(delta),
           unit: delta === null ? undefined : "pts",
           direction: delta === null || Math.round(delta) === 0 ? undefined : delta > 0 ? "up" : "down",
@@ -102,6 +104,7 @@ export default async function Page({
         },
         {
           label: "Average since 2020",
+          term: "breadth",
           value: average.toFixed(0),
           unit: "%",
           fill: average / 100,
@@ -109,6 +112,7 @@ export default async function Page({
         },
         {
           label: "One-year range",
+          term: "breadth",
           value: `${yearLo.toFixed(0)}–${yearHi.toFixed(0)}`,
           unit: "%",
           range: { lo: yearLo, hi: yearHi, now: point.pctAbove },

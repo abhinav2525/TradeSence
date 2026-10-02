@@ -66,6 +66,7 @@ export default async function Page({
     ? [
         {
           label: "McClellan",
+          term: "mcclellan",
           value: p.mcclellan === null ? "—" : signed(p.mcclellan, 1),
           badge:
             p.mcclellan === null
@@ -84,6 +85,7 @@ export default async function Page({
           const delta = now !== null && before !== null ? now - before : null;
           return {
             label: "Summation index",
+            term: "summation-index",
             value: now === null ? "—" : signed(now),
             badge:
               delta === null
@@ -98,6 +100,7 @@ export default async function Page({
         })(),
         {
           label: "10-day advancing share",
+          term: "advancing-share-10d",
           value: p.adv10 === null ? "—" : p.adv10.toFixed(1),
           unit: p.adv10 === null ? undefined : "%",
           fill: p.adv10 === null ? undefined : p.adv10 / 100,
@@ -105,6 +108,7 @@ export default async function Page({
         },
         {
           label: "Advancing sessions",
+          term: "advancers-decliners",
           value: String(last20.filter((s) => s.net > 0).length),
           unit: `of ${last20.length}`,
           sub: `More risers than fallers, last ${last20.length} sessions`,

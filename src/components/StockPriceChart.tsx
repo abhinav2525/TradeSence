@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "rec
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { formatDate, formatPrice } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
+import Term from "@/components/Term";
 
 type Point = { date: string; close: number; sma200: number | null };
 
@@ -19,7 +20,7 @@ export default function StockPriceChart({ data, selectedDate }: { data: Point[];
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
         <div>
-          <h2 className="text-heading text-foreground">Price and its 200-day average</h2>
+          <h2 className="text-heading text-foreground"><Term id="adjusted-prices">Price and its 200-day average</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
             {data[0] ? `${formatDate(data[0].date)} – ${formatDate(data.at(-1)!.date)}` : "No sessions"}
           </p>

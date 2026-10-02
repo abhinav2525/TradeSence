@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/query/breadth";
+import Term from "@/components/Term";
 
 type Props = {
   title: string;
@@ -33,7 +34,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
             className={cn("size-2 rounded-full", tone === "up" ? "bg-up" : "bg-down")}
           />
           <h2 className="text-heading text-foreground">
-            {title} {maLabel}
+            {title} <Term id="ma-50-200">{maLabel}</Term>
           </h2>
         </div>
         <Badge variant={tone}>

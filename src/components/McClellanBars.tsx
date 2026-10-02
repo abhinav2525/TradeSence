@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/chart";
 import { formatDate, signed } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
+import Term from "@/components/Term";
 
 export type OscPoint = { date: string; value: number };
 
@@ -30,7 +31,7 @@ export default function McClellanBars({ data }: { data: OscPoint[] }) {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
         <div>
-          <h2 className="text-heading text-foreground">McClellan oscillator</h2>
+          <h2 className="text-heading text-foreground"><Term id="mcclellan">McClellan oscillator</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">Last {data.length} sessions, ratio-adjusted</p>
         </div>
         <div className="flex items-center gap-4 text-[12px] text-foreground-2">

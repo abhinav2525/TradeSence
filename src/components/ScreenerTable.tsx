@@ -10,6 +10,7 @@ import VolumeTrack from "@/components/VolumeTrack";
 import { formatPrice, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ScreenerRow } from "@/query/screener";
+import { GLOSSARY } from "@/lib/glossary";
 
 const head = "h-9 px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const pctText = (v: number | null) => (v === null ? "—" : `${signed(v, 2)}%`);
@@ -52,11 +53,11 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Day</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>{maLabel}</TableHead>
               <TableHead className={cn(head, "text-right")}>{view === "near" ? "Gap now" : view === "above" ? "Above by" : "Below by"}</TableHead>
-              <TableHead className={cn(head, "text-right")}>Volume vs 20d</TableHead>
+              <TableHead className={cn(head, "text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
               <TableHead className={cn(head, "hidden text-right md:table-cell")}>
                 {view === "near" ? "5 sessions ago" : `${side} for`}
               </TableHead>
-              <TableHead className={cn(head, "hidden pr-5 md:table-cell")}>Past crossings</TableHead>
+              <TableHead className={cn(head, "hidden pr-5 md:table-cell")} title={GLOSSARY.whipsaw.short}>Past crossings</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

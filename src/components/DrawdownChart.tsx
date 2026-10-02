@@ -4,6 +4,7 @@ import { Area, AreaChart, CartesianGrid, ReferenceDot, XAxis, YAxis } from "rech
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { formatDate } from "@/lib/format";
 import { dateTicks } from "@/lib/ticks";
+import Term from "@/components/Term";
 
 type Point = { date: string; pct: number };
 
@@ -19,7 +20,7 @@ export default function DrawdownChart({ data, trough }: { data: Point[]; trough:
   return (
     <div>
       <div className="px-5 pb-2 pt-4">
-        <h2 className="text-heading text-foreground">How far below its high</h2>
+        <h2 className="text-heading text-foreground"><Term id="drawdown">How far below its high</Term></h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">% below the highest close so far, every session</p>
       </div>
       <ChartContainer config={config} className="aspect-auto h-[220px] w-full px-2 pb-3">

@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { MA_LABELS, adjacentSessions, resolveSession, type MaKind } from "@/query/breadth";
 import { HISTORY_START } from "@/ingest/nifty50-history";
 import { NEAR_PCT, isNear, percentile, screenerOn, volumeAtLeast, type ScreenerRow } from "@/query/screener";
+import { GLOSSARY } from "@/lib/glossary";
+import Term from "@/components/Term";
 
 export const dynamic = "force-dynamic";
 
@@ -90,12 +92,14 @@ export default async function Page({
   const tiles: Tile[] = [
     {
       label: "Crossed above today",
+      term: "crossing",
       value: String(above.length),
       badge: strong(above) ? { text: `${strong(above)} on ≥2× volume`, tone: "up" } : undefined,
       sub: above.length ? names(above.map((r) => r.symbol)) : "None",
     },
     {
       label: "Crossed below today",
+      term: "crossing",
       value: String(below.length),
       badge: strong(below) ? { text: `${strong(below)} on ≥2× volume`, tone: "down" } : undefined,
       sub: below.length
@@ -106,11 +110,13 @@ export default async function Page({
     },
     {
       label: `Within ${NEAR_PCT}% of the line`,
+      term: "near-the-line",
       value: String(near.length),
       sub: `${nearBelow.length} just below it, ${nearAbove.length} just above it`,
     },
     {
       label: "Median volume, today's crossers",
+      term: "volume-ratio",
       value: crossRatios.length ? percentile(crossRatios, 50).toFixed(1) : "—",
       unit: crossRatios.length ? "×" : undefined,
       sub: "Against each stock's 20-session average",
@@ -222,7 +228,7 @@ export default async function Page({
           </Card>
 
           <div className="mt-2">
-            <h2 className="text-heading text-foreground">Near the line</h2>
+            <h2 className="text-heading text-foreground"><Term id="near-the-line">Near the line</Term></h2>
             <p className="mt-0.5 text-[12px] text-muted-foreground">Within {NEAR_PCT}% of the {label}, closest first</p>
           </div>
           <div className="grid gap-4 xl:grid-cols-2">
@@ -256,7 +262,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
               <TableHead className={cn(head, "pl-5")}>Symbol</TableHead>
               <TableHead className={cn(head, "text-right")}>Gap now</TableHead>
               <TableHead className={cn(head, "text-right")}>5 sessions ago</TableHead>
-              <TableHead className={cn(head, "pr-5 text-right")}>Volume vs 20d</TableHead>
+              <TableHead className={cn(head, "pr-5 text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { formatDate, formatDayMonth, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Term from "@/components/Term";
 
 export type NetBar = { date: string; advancing: number; declining: number; net: number };
 
@@ -40,7 +41,7 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
   return (
     <Card className={cn("flex flex-col gap-6 p-5 sm:p-6 md:flex-row", className)}>
       <div className="flex flex-col md:w-[44%]">
-        <p className="text-eyebrow uppercase text-muted-foreground">Net advances</p>
+        <p className="text-eyebrow uppercase text-muted-foreground"><Term id="net-advances" today={`${signed(net)} (${advancing} rose, ${declining} fell)`}>Net advances</Term></p>
         <p className="mt-4 text-display tabular-nums text-foreground">{signed(net)}</p>
         <p className="mt-3 text-[13px] leading-5 text-foreground-2">
           {advancing} {plural(advancing, "constituent", "constituents")} rose, {declining} fell
@@ -72,7 +73,7 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
 
       <div className="flex min-w-0 flex-1 flex-col md:border-l md:pl-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-heading text-foreground">Last {recent.length} sessions</h2>
+          <h2 className="text-heading text-foreground"><Term id="advancers-decliners">Last {recent.length} sessions</Term></h2>
           <span className="text-[12px] tabular-nums text-muted-foreground">
             {up} of {recent.length} advancing
           </span>

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/chart";
 import { formatDate, formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Term from "@/components/Term";
 
 export type AreaPoint = { date: string; pct: number; above: number; total: number };
 
@@ -52,7 +53,7 @@ export default function BreadthArea({ data, selectedDate }: Props) {
     <div>
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
         <div>
-          <h2 className="text-heading text-foreground">Breadth over time</h2>
+          <h2 className="text-heading text-foreground"><Term id="breadth">Breadth over time</Term></h2>
           <p className="mt-0.5 text-[12px] tabular-nums text-muted-foreground">
             {visible[0] ? `${formatDate(visible[0].date)} – ${formatDate(visible.at(-1)!.date)}` : "No sessions"}
           </p>

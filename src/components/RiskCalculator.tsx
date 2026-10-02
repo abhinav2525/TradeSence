@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { HorizonKey } from "@/indicators/risk";
 import type { HorizonPair } from "@/query/stock-report";
 import { HORIZON_LABELS as LABEL, parseAmount } from "@/lib/report-card";
+import Term from "@/components/Term";
 
 const ORDER: HorizonKey[] = ["1w", "1m", "3m", "1y"];
 
@@ -41,7 +42,7 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
     <Card>
       <div className="flex flex-wrap items-end justify-between gap-4 px-5 pb-2 pt-4">
         <div>
-          <h2 className="text-heading text-foreground">What could a bad stretch cost?</h2>
+          <h2 className="text-heading text-foreground"><Term id="stretches">What could a bad stretch cost?</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
             Every overlapping {l.one} in {symbol}&apos;s history since {formatDate(firstDate)}{stock ? ` (${stock.windows.toLocaleString("en-IN")} of them)` : ""}
           </p>

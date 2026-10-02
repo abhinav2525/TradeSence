@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { formatDate, formatInt } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import Term from "@/components/Term";
 
 export type Bin = { from: number; to: number; count: number };
 
@@ -35,7 +36,7 @@ export default function BreadthHero({
   return (
     <Card className={cn("flex flex-col gap-6 p-5 sm:p-6 md:flex-row", className)}>
       <div className="flex flex-col md:w-[44%]">
-        <p className="text-eyebrow uppercase text-muted-foreground">Above the {maLabel}</p>
+        <p className="text-eyebrow uppercase text-muted-foreground"><Term id="breadth" today={`${pct.toFixed(0)}%`}>Above the {maLabel}</Term></p>
         <p className="mt-4 text-display text-foreground">
           {pct.toFixed(0)}
           <span className="ml-1 text-[0.45em] font-medium tracking-normal text-muted-foreground">%</span>
@@ -67,7 +68,7 @@ export default function BreadthHero({
 
       <div className="flex min-w-0 flex-1 flex-col md:border-l md:pl-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-heading text-foreground">Where today sits</h2>
+          <h2 className="text-heading text-foreground"><Term id="percentile" today={percentile.toFixed(1)}>Where today sits</Term></h2>
           <span className="text-[12px] tabular-nums text-muted-foreground">{formatInt(sessions)} sessions</span>
         </div>
         <p className="mt-1 text-[12px] leading-4 text-foreground-2">{rarity}</p>
