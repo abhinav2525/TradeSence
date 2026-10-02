@@ -88,7 +88,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | 50 SMA, 200 SMA and 200 EMA, plus each day's % move (`change_pct`, for Advance/Decline), for every NIFTY 50 member, past and present, on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
+| **What** | 50 SMA, 200 SMA and 200 EMA, plus each day's % move (`change_pct`, for Advance/Decline) and volume vs its 20-session normal (`vol_ratio`, for the Screener), for every NIFTY 50 member, past and present, on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
 | **Reads** | `daily_prices`, `corporate_actions`, `symbol_changes`, `index_members` |
 | **Writes** | `daily_indicators` (~158,000 rows), fully recomputed each time (~5 s) |
 | **Nightly** | ✅ after pipelines 1–3 |
@@ -128,7 +128,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 
 | | |
 |---|---|
-| **What** | `/` Breadth, `/advance-decline` and `/crossings`, queried live from Postgres on every page view |
+| **What** | `/` Breadth, `/advance-decline`, `/crossings` and `/screener`, queried live from Postgres on every page view |
 | **Run** | Development: `bun run dev`. Production: `bun run build && bun run start` (port 3000) |
 | **Automated?** | Pages always show the latest data, but the server is started by hand and stops when the Mac restarts |
 | **Needs** | Postgres running (`brew services start postgresql@14`, starts at login) |

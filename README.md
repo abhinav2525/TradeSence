@@ -355,6 +355,16 @@ Postgres's 65,535 bind-parameter cap).
 | `deriveAdvanceDecline` | `(rows) => AdPoint[]` | Net, RANA ((A−D)÷(A+D)×1,000; 0 when nothing moved), McClellan (EMA19 − EMA39 of RANA), summation index, A/D line, 10-day advancing share. Restarts after a data gap. |
 | `advanceDeclineSeries` | `(indexName?) => Promise<AdPoint[]>` | Both of the above. |
 
+### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
+
+| Function | Signature | Notes |
+|---|---|---|
+| `volumeRatios` | `(dates, volumes, shareFactors, window = 20) => (number \| null)[]` | Volume ÷ mean of the 20 prior sessions (today excluded), in split/bonus-adjusted share units, never demerger-adjusted. Restarts after a gap. Stored as `vol_ratio`. |
+| `readSymbol` | `(rows) => SymbolReading \| null` | Cross above/below (consecutive sessions, both with an average, no gap), sessions on the other side before it, distance from the average now and 5 sessions ago. |
+| `volumeAtLeast` | `(ratio, min) => boolean` | Judged on the displayed one-decimal value, so "2.0×" passes "≥2×". |
+| `crosserBadge` / `percentile` | | "Calm crosser" ≤ p25, "Busy" ≥ p75 of today's members' past crossings. |
+| `screenerOn` | `(ma, date, indexName?) => Promise<{ date, rows }>` | Every member on the date, read against the chosen average. |
+
 ### `src/ingest/symbol-changes.ts` — ticker renames
 
 | Function | Signature | Notes |

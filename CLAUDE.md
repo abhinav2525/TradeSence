@@ -9,7 +9,8 @@ bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
 plus that percentage charted since 2020, on the index's real membership each day. Other
 pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
-A/D line) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
+near the line) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
 whipsaw across an average). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
@@ -127,7 +128,8 @@ check to a default.
 **`sql.raw` appears exactly twice**, in the `column()` helpers of `src/query/breadth.ts`
 and `src/query/crossings.ts`. Each is safe only because `MA_COLUMNS` is a fixed map, and
 the `ma` search param is gated by an `isMaKind` of three strict comparisons, which is
-duplicated in every page (`src/app/page.tsx`, `crossings/page.tsx`, `advance-decline/page.tsx`).
+duplicated in every page (`src/app/page.tsx`, `crossings/`, `advance-decline/`, `screener/`).
+The Screener avoids a third `sql.raw` by selecting all three averages; prefer that.
 Any new page or caller must validate the same way.
 
 **Layout is a fixed sidebar beside a scrolling document.** From `lg` up, `SiteNav` is a

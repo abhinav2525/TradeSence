@@ -4,10 +4,16 @@ import { MA_LABELS, type MaKind } from "@/query/breadth";
 
 const ORDER: MaKind[] = ["sma200", "ema200", "sma50"];
 
-type Props = { base: "/" | "/crossings"; ma: MaKind; date?: string };
+type Props = {
+  base: "/" | "/crossings" | "/screener";
+  ma: MaKind;
+  date?: string;
+  /** Other already-validated params to keep when switching average, e.g. "&view=below". */
+  extra?: string;
+};
 
 /** A segmented control: the selected average sits on a raised thumb. */
-export default function MaTabs({ base, ma, date }: Props) {
+export default function MaTabs({ base, ma, date, extra = "" }: Props) {
   return (
     <div
       className="inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5"
@@ -19,7 +25,7 @@ export default function MaTabs({ base, ma, date }: Props) {
         return (
           <Link
             key={k}
-            href={`${base}?ma=${k}${date ? `&date=${date}` : ""}`}
+            href={`${base}?ma=${k}${date ? `&date=${date}` : ""}${extra}`}
             prefetch
             role="tab"
             aria-selected={active}

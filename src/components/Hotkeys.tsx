@@ -16,11 +16,12 @@ const BASE: Record<Section, string> = {
   breadth: "/",
   "advance-decline": "/advance-decline",
   crossings: "/crossings",
+  screener: "/screener",
 };
 
 /**
  * Keyboard navigation, because this is a readout you check repeatedly: arrows
- * step sessions, 1-3 switch the average, b/a/c switch page, t flips the theme.
+ * step sessions, 1-3 switch the average, b/a/c/s switch page, t flips the theme.
  * Ignored while typing so the date field still works normally.
  */
 export default function Hotkeys({ ma, prev, next, page }: Props) {
@@ -46,6 +47,7 @@ export default function Hotkeys({ ma, prev, next, page }: Props) {
       if (e.key === "b") return go(`/?ma=${ma}`);
       if (e.key === "a") return go(`/advance-decline?ma=${ma}`);
       if (e.key === "c") return go(`/crossings?ma=${ma}`);
+      if (e.key === "s") return go(`/screener?ma=${ma}`);
       if (e.key === "t") {
         e.preventDefault();
         toggleTheme();

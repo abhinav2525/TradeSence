@@ -46,8 +46,8 @@ on current winners and flatters any backtested signal.
 - ~~"Overbought" from breadth > 80%~~ — research 0001 found no edge; don't build.
 
 ## 5. Screener — a, c
-- [ ] Crossed above 200 DMA today with ≥ 2× average volume; "closest to
-  crossing" list.
+- [x] **Done 2026-10-02** — `/screener` (decision 0009): crossed above/below any
+  average with a volume filter (default ≥2×), and "near the line" lists.
 
 ## 6. Nightly digest — a
 - [ ] After ingest, push a summary of breadth changes, new crossings and
