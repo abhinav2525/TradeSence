@@ -23,6 +23,11 @@ same change as the fix: the problem, the options, the decision, and *why*. Write
 plain language — the owner reads these instead of the code — and add a row to
 `docs/decisions/README.md`. Do this unprompted.
 
+**`docs/design/` holds the design system and the specs for upcoming screens.** Read
+`docs/design/system/README.md` before any UI work. Building Advance/Decline, Screener
+or Signals: start from `docs/design/HANDOFF.md` and match the mockups in
+`docs/design/mockups/` (sample data only; never copy their numbers or their CSS).
+
 **This is Next.js 16 — APIs differ from training data.** Read the relevant guide in
 `node_modules/next/dist/docs/` before writing framework code. `next dev` rewrites the
 Next.js block at the top of `AGENTS.md`; commit that change rather than reverting it.
@@ -41,6 +46,8 @@ bun run db:generate && bun run db:migrate      # schema change -> migration -> a
 bun run ingest:nifty50                         # membership since 2020, from the CSV
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:symbol-changes                  # NSE ticker renames; one file
+bun run ingest:indices 2020-01-01 2026-10-02   # every NSE index, daily; ~12 min
+bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
@@ -130,6 +137,9 @@ added to `@theme` must be added there too, or `cn()` silently drops it.
   naively that becomes year 20 AD and Postgres rejects it mid-backfill.
 - Bhavcopy dates are honest, but NSE's *52-week high/low* file is **off by one** — the
   file labelled day D holds data through D−1. Not used here; remember it if you add it.
+- The index file `ind_close_all_DDMMYYYY.csv` writes its date **month-first** on a few
+  days (6, 10, 11 April 2023: `04-06-2023`). The parser accepts the requested day in
+  either order and rejects any other date.
 - Prices are **unadjusted** for splits/bonuses, and `prev_close` is not adjusted on
   the ex-date either. Averages are adjusted at compute time from `corporate_actions`
   ([0002](docs/decisions/0002-split-adjusted-averages.md)); stored averages are scaled

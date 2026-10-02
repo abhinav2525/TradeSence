@@ -264,6 +264,8 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:nifty50` | Load NIFTY 50 membership since 2020 from `src/ingest/nifty50-history.csv` (replaces the table; refuses a file that isn't 50 members every day) |
 | `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
 | `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
+| `bun run ingest:indices <start> <end>` | Load daily closes of every NSE index (resumable) |
+| `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |

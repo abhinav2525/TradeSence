@@ -6,6 +6,7 @@
  * idempotent, so running it twice costs nothing.
  */
 import { backfill } from "./backfill";
+import { ingestIndexDays } from "./index-prices";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -23,6 +24,11 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 const tally = await backfill(iso(start), iso(end), { delayMs: 700 });
 console.log(`[nightly] ingest:`, JSON.stringify(tally));
+
+// Index closes for the same days (only days the price step confirmed as trading).
+const indices = await ingestIndexDays(iso(start), iso(end), { delayMs: 300 });
+console.log(`[nightly] index closes:`, JSON.stringify(indices));
+if (indices.error > 0) console.warn(`[nightly] WARNING ${indices.error} day(s) of index closes not loaded; retried tomorrow`);
 
 // Splits and bonuses, a month back (late filings) and a month ahead (announced
 // ex-dates). A failure here is loud but not fatal: the window overlaps, so the

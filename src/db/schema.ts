@@ -119,6 +119,24 @@ export const symbolChanges = pgTable(
   ],
 );
 
+/**
+ * Daily open/high/low/close of every NSE index (NIFTY 50, Next 50, 500, …),
+ * from NSE's ind_close_all file. Stores all indices, like daily_prices stores
+ * all stocks. Used to measure what the index did after a breadth reading.
+ */
+export const indexPrices = pgTable(
+  "index_prices",
+  {
+    tradeDate: date("trade_date").notNull(),
+    indexName: text("index_name").notNull(), // as NSE writes it, e.g. "Nifty 50"
+    open: doublePrecision("open"),
+    high: doublePrecision("high"),
+    low: doublePrecision("low"),
+    close: doublePrecision("close").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.tradeDate, t.indexName] })],
+);
+
 /** One row per attempted ingest. Drives both idempotency and backfill resume. */
 export const ingestLog = pgTable(
   "ingest_log",

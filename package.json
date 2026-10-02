@@ -13,11 +13,13 @@
     "db:studio": "drizzle-kit studio",
     "ingest:day": "bun run src/ingest/cli-day.ts",
     "ingest:backfill": "bun run src/ingest/cli-backfill.ts",
+    "ingest:indices": "bun run src/ingest/cli-indices.ts",
     "ingest:nifty50": "bun run src/ingest/cli-nifty50.ts",
     "ingest:corporate-actions": "bun run src/ingest/cli-corporate-actions.ts",
     "ingest:symbol-changes": "bun run src/ingest/cli-symbol-changes.ts",
     "indicators": "bun run src/indicators/cli.ts",
-    "ingest:nightly": "bun run src/ingest/cli-nightly.ts"
+    "ingest:nightly": "bun run src/ingest/cli-nightly.ts",
+    "research:forward-returns": "bun run src/research/cli-forward-returns.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.3.3",
