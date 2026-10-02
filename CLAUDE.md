@@ -14,6 +14,12 @@ plus that percentage charted over ten years. A second page, `/crossings`
 before making changes; this file covers only what the code cannot tell you. (README
 predates `/crossings` and does not document it yet.)
 
+**`docs/decisions/` is the project's memory — keep it current.** Every problem hit
+(bug, wrong data, ops issue, design choice) gets its own numbered file there in the
+same change as the fix: the problem, the options, the decision, and *why*. Write it in
+plain language — the owner reads these instead of the code — and add a row to
+`docs/decisions/README.md`. Do this unprompted.
+
 **This is Next.js 16 — APIs differ from training data.** Read the relevant guide in
 `node_modules/next/dist/docs/` before writing framework code. `next dev` rewrites the
 Next.js block at the top of `AGENTS.md`; commit that change rather than reverting it.

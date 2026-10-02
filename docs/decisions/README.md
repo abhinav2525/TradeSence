@@ -1,0 +1,19 @@
+# Decision log
+
+Every problem this project has hit, written down so nobody has to remember it.
+Each file answers four questions in plain language:
+
+1. **Problem** — what went wrong, and how we noticed.
+2. **Options** — what we could have done.
+3. **Decision** — what we did.
+4. **Why** — why that option and not the others, and what would make us revisit it.
+
+Add a new file for every new problem (next number, short name), and add a line
+to the table below in the same change.
+
+| # | Date | Problem | Decision |
+|---|------|---------|----------|
+| [0001](0001-nightly-schedule-launchd.md) | 2026-10-02 | Data went stale because the nightly job was never scheduled | launchd agent, Mon–Fri 19:30 IST |
+
+Older decisions, made before this log existed, are recorded in `CLAUDE.md` under
+"Design decisions that are load-bearing" and "Gotchas that will bite you".
