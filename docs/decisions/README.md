@@ -19,6 +19,7 @@ to the table below in the same change.
 | [0004](0004-demerger-adjustment.md) | 2026-10-02 | Demergers (RELIANCE, ITC, TMPV, HINDUNILVR) were never adjusted; TMPV's 200 EMA ~7.5% too high | Ratio from prices (last close ÷ ex-date open), matches TradingView |
 | [0005](0005-point-in-time-membership.md) | 2026-10-02 | History used today's 50 stocks for every year (survivorship bias); member list also stale (WIPRO → BSE) | Real membership since 2020 in a hand-checked CSV from NSE press releases, verified 50 every day |
 | [0006](0006-nifty50-index-closes.md) | 2026-10-02 | No NIFTY 50 index data for the study; then 3 NSE files (April 2023) wrote dates month-first and failed to load | New `index_prices` pipeline from NSE's daily index file; accept the requested day in either date order, reject any other date |
+| [0007](0007-weekend-trading-sessions.md) | 2026-10-02 | 10 weekend sessions (Budget days, Diwali Muhurat, NSE special Saturdays) were never loaded because the downloader skipped weekends | Fetch every calendar day; an ordinary weekend is recorded as a holiday |
 | [Research 0001](../research/0001-does-breadth-predict.md) | 2026-10-02 | *(study, TODO item 2)* Does breadth predict the NIFTY 50? | Very weak 200-SMA breadth (<20%) was followed by a higher index 6 months later 5/5 times; >80% has no edge. Small sample |
 
 Research studies (questions answered with data, not problems fixed) live in

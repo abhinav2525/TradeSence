@@ -56,7 +56,7 @@ flowchart LR
 | **What** | Downloads NSE's end-of-day file for every trading day and stores every NSE equity close (the whole market, not just the 50) |
 | **Source** | `nsearchives.nseindia.com` bhavcopy, in two formats (UDiFF from 2024, legacy before) |
 | **Writes** | `daily_prices`, `ingest_log` |
-| **Nightly** | The last 7 days. Days already loaded are skipped without a download, so a missed night fills itself in |
+| **Nightly** | The last 7 calendar days, **weekends included**: NSE trades on some (Budget days, Diwali Muhurat), [0007](decisions/0007-weekend-trading-sessions.md). Days already loaded are skipped without a download, so a missed night fills itself in |
 | **By hand** | `bun run ingest:day <date> [--force]`, `bun run ingest:backfill <start> <end>` |
 | **Code** | `src/ingest/bhavcopy.ts`, `ingest-day.ts`, `backfill.ts` |
 

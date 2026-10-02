@@ -100,6 +100,10 @@ current on each day, so `computeIndicators` follows `symbol_changes` back throug
 history query (52-week highs, A/D line…) must go through the lineage too, or a renamed
 member's history silently starts at its rename.
 
+**Weekends are fetched.** NSE trades on some (Budget days, Diwali Muhurat, special DR
+sessions); `daysBetween` includes every calendar day and a weekend 404 is a holiday
+([0007](docs/decisions/0007-weekend-trading-sessions.md)).
+
 **Symbols with a null average are excluded from breadth, not counted as "below".**
 Otherwise every backfill opens with a fabricated bearish reading.
 

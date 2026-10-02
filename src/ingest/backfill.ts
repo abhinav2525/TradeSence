@@ -1,23 +1,24 @@
 import { ingestDay, type IngestResult } from "./ingest-day";
 
 /**
- * Every weekday in [startIso, endIso], inclusive.
+ * Every calendar day in [startIso, endIso], inclusive — weekends included.
  *
- * Weekends are skipped because NSE never publishes on them — that removes ~30%
- * of requests. Exchange holidays are not filtered: they are rarer, the calendar
- * shifts year to year, and the fetcher already records a 404 as a holiday.
+ * Weekends used to be skipped to save requests, but NSE trades on some of
+ * them: Union Budget days (Sat 1 Feb 2025, Sun 1 Feb 2026), Diwali Muhurat
+ * sessions and special DR-test Saturdays. Skipping them silently lost 10
+ * sessions since 2016 (decision 0007). An ordinary weekend 404s and is
+ * recorded as a holiday, exactly like an exchange holiday.
  *
  * All arithmetic is in UTC so that a local DST transition cannot drop or
  * duplicate a day.
  */
-export function weekdaysBetween(startIso: string, endIso: string): string[] {
+export function daysBetween(startIso: string, endIso: string): string[] {
   const out: string[] = [];
   const cur = new Date(`${startIso}T00:00:00Z`);
   const end = new Date(`${endIso}T00:00:00Z`);
 
   while (cur.getTime() <= end.getTime()) {
-    const dow = cur.getUTCDay(); // 0 Sun .. 6 Sat
-    if (dow !== 0 && dow !== 6) out.push(cur.toISOString().slice(0, 10));
+    out.push(cur.toISOString().slice(0, 10));
     cur.setUTCDate(cur.getUTCDate() + 1);
   }
   return out;
@@ -50,7 +51,7 @@ export async function backfill(
 ): Promise<{ ok: number; holiday: number; skipped: number; error: number }> {
   const delayMs = opts.delayMs ?? 1000;
   const ingest = opts.ingest ?? ingestDay;
-  const days = weekdaysBetween(startIso, endIso);
+  const days = daysBetween(startIso, endIso);
   const tally = { ok: 0, holiday: 0, skipped: 0, error: 0 };
 
   for (let i = 0; i < days.length; i++) {
