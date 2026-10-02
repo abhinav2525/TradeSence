@@ -170,6 +170,12 @@ added to `@theme` must be added there too, or `cn()` silently drops it.
   1 — for share-count wording it cannot read. A new wording goes into
   `tests/corporate-actions.test.ts` first.
 
+**shadcn components arrive in Tailwind v3 syntax.** `components.json` uses the `"default"`
+style, so `bunx shadcn add` writes `h-[--cell-size]`, which Tailwind v4 silently ignores.
+Rewrite every `[--var]` to `(--var)` in what it generates, and answer **no** when it asks to
+overwrite `button.tsx` (customised for the design system).
+([0010](docs/decisions/0010-shadcn-date-picker.md))
+
 **Header validation must list every column the parser reads.** `at()` returns `-1` for a
 missing column and `f[-1]` is `undefined`; the old code turned that into `0` and would
 have written zeroed prices silently on the next NSE rename.

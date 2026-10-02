@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/DatePicker";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type Props = {
   /** The page whose sessions this steps through. */
   base?: string;
+  /** Other already-validated params to keep when moving, e.g. "&view=below". */
+  extra?: string;
   ma: string;
   date: string | null;
   requested: string | null;
@@ -20,7 +22,7 @@ type Props = {
 const stepClass =
   "inline-flex size-8 items-center justify-center rounded-[8px] text-foreground-2 transition-colors";
 
-export default function DateNav({ base = "/", ma, date, requested, snapped, prev, next, min, max }: Props) {
+export default function DateNav({ base = "/", extra = "", ma, date, requested, snapped, prev, next, min, max }: Props) {
   const step = (target: string | null, dir: "prev" | "next") => {
     const Icon = dir === "prev" ? ChevronLeft : ChevronRight;
     const label = dir === "prev" ? "Previous session" : "Next session";
@@ -37,7 +39,7 @@ export default function DateNav({ base = "/", ma, date, requested, snapped, prev
     }
     return (
       <Link
-        href={`${base}?ma=${ma}&date=${target}`}
+        href={`${base}?ma=${ma}&date=${target}${extra}`}
         prefetch
         rel={dir}
         aria-label={label}
@@ -54,26 +56,7 @@ export default function DateNav({ base = "/", ma, date, requested, snapped, prev
       <div className="inline-flex items-center gap-0.5 rounded-md border bg-card p-0.5 shadow-card">
         {step(prev, "prev")}
 
-        {/* a plain GET form keeps this page a server component and puts the
-            selected session in the URL, so a view can be bookmarked */}
-        <form method="get" action={base} className="flex items-center gap-1">
-          <input type="hidden" name="ma" value={ma} />
-          <label htmlFor="date" className="sr-only">
-            Session date
-          </label>
-          <input
-            type="date"
-            id="date"
-            name="date"
-            defaultValue={date ?? undefined}
-            min={min ?? undefined}
-            max={max ?? undefined}
-            className="h-8 rounded-[8px] border border-input bg-transparent px-2 font-mono text-[12px] tabular-nums text-foreground"
-          />
-          <Button type="submit" size="sm" className="h-8 rounded-[8px] px-3">
-            Go
-          </Button>
-        </form>
+        <DatePicker base={base} ma={ma} date={date} min={min} max={max} extra={extra} />
 
         {step(next, "next")}
       </div>

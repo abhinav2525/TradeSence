@@ -22,6 +22,7 @@ to the table below in the same change.
 | [0007](0007-weekend-trading-sessions.md) | 2026-10-02 | 10 weekend sessions (Budget days, Diwali Muhurat, NSE special Saturdays) were never loaded because the downloader skipped weekends | Fetch every calendar day; an ordinary weekend is recorded as a holiday |
 | [0008](0008-measuring-a-days-move.md) | 2026-10-02 | Advance/Decline needs each stock's daily move, but NSE's `prev_close` is wrong on split/demerger days and blind to renames | Store the move from the adjusted, rename-joined series (`change_pct`); gap rule moved to one module |
 | [0009](0009-screener.md) | 2026-10-02 | Screener needed a volume ratio splits can't fake, a gap-proof crossing rule, and a filter that agrees with what it displays | Stored 20-session `vol_ratio` (split/bonus-scaled, never demerger); crossings as on the Crossings page; filter on the displayed value |
+| [0010](0010-shadcn-date-picker.md) | 2026-10-02 | The session selector was the browser's plain date box; shadcn's CLI then generated Tailwind v3 syntax that v4 ignores | shadcn Date Picker (Popover + Calendar) with month/year jumps; `[--var]` rewritten to `(--var)` |
 | [Research 0001](../research/0001-does-breadth-predict.md) | 2026-10-02 | *(study, TODO item 2)* Does breadth predict the NIFTY 50? | Very weak 200-SMA breadth (<20%) was followed by a higher index 6 months later 5/5 times; >80% has no edge. Small sample |
 
 Research studies (questions answered with data, not problems fixed) live in

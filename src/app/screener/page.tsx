@@ -15,6 +15,7 @@ import {
 import { formatDate, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { MA_LABELS, adjacentSessions, resolveSession, type MaKind } from "@/query/breadth";
+import { HISTORY_START } from "@/ingest/nifty50-history";
 import { NEAR_PCT, isNear, percentile, screenerOn, volumeAtLeast, type ScreenerRow } from "@/query/screener";
 
 export const dynamic = "force-dynamic";
@@ -141,13 +142,14 @@ export default async function Page({
             <MaTabs base="/screener" ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}`} />
             <DateNav
               base="/screener"
+              extra={`&view=${view}&vol=${vol}`}
               ma={ma}
               date={date}
               requested={wanted ?? null}
               snapped={Boolean(wanted && date && date !== wanted)}
               prev={nav.prev}
               next={nav.next}
-              min={null}
+              min={HISTORY_START}
               max={latest}
             />
           </>
