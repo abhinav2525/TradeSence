@@ -79,3 +79,115 @@ export function currentDrawdownPct(line: LinePoint[]): number | null {
 export function closesToMoves(rows: { date: string; close: number }[]): MovePoint[] {
   return rows.map((r, i) => ({ date: r.date, changePct: i === 0 ? null : (r.close / rows[i - 1]!.close - 1) * 100 }));
 }
+
+export const HORIZONS = { "1w": 5, "1m": 21, "3m": 63, "1y": 250 } as const;
+export type HorizonKey = keyof typeof HORIZONS;
+
+export type Bin = { from: number; to: number; count: number };
+export type HorizonStats = {
+  sessions: number;
+  windows: number;
+  p10: number;
+  median: number;
+  worst: number;
+  worstStart: string;
+  shareNegative: number;
+  bins: Bin[];
+};
+
+const quantile = (sorted: number[], q: number) => {
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos);
+  return sorted[lo]! + (sorted[Math.ceil(pos)]! - sorted[lo]!) * (pos - lo);
+};
+
+/** Twenty equal-width bins over the observed range, for the calculator's histogram. */
+function binsOf(values: number[]): Bin[] {
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const width = (hi - lo) / 20 || 1;
+  const bins = Array.from({ length: 20 }, (_, i) => ({ from: lo + i * width, to: lo + (i + 1) * width, count: 0 }));
+  for (const v of values) bins[Math.min(19, Math.floor((v - lo) / width))]!.count += 1;
+  return bins;
+}
+
+/**
+ * Every `sessions`-long stretch in the history (overlapping), as % returns.
+ * Null with less than three horizons of history: too few stretches to say
+ * what "typical" looks like.
+ */
+export function horizonStats(line: LinePoint[], sessions: number): HorizonStats | null {
+  if (line.length < 3 * sessions) return null;
+  const rets: { r: number; start: string }[] = [];
+  for (let i = sessions; i < line.length; i++) {
+    const a = line[i - sessions]!;
+    const b = line[i]!;
+    if (a.segment !== b.segment) continue;
+    rets.push({ r: (b.level / a.level - 1) * 100, start: a.date });
+  }
+  if (rets.length === 0) return null;
+  const sorted = rets.map((x) => x.r).sort((x, y) => x - y);
+  const worst = rets.reduce((w, x) => (x.r < w.r ? x : w));
+  return {
+    sessions,
+    windows: rets.length,
+    p10: quantile(sorted, 0.1),
+    median: quantile(sorted, 0.5),
+    worst: worst.r,
+    worstStart: worst.start,
+    shareNegative: (rets.filter((x) => x.r < 0).length / rets.length) * 100,
+    bins: binsOf(sorted),
+  };
+}
+
+/** % change over the last `sessions` sessions, if they're all in one segment. */
+export function periodReturn(line: LinePoint[], sessions: number): number | null {
+  const end = line.at(-1);
+  const start = line.at(-1 - sessions);
+  if (!end || !start || start.segment !== end.segment) return null;
+  return (end.level / start.level - 1) * 100;
+}
+
+export const VOL_WINDOW = 250;
+export const VOL_MIN = 60;
+
+/** Sample std. dev. of the last 250 daily moves (%); null with under 60. */
+export function dailyVolatility(moves: (number | null)[]): number | null {
+  const xs = moves.filter((m): m is number => m !== null).slice(-VOL_WINDOW);
+  if (xs.length < VOL_MIN) return null;
+  const mean = xs.reduce((s, x) => s + x, 0) / xs.length;
+  return Math.sqrt(xs.reduce((s, x) => s + (x - mean) ** 2, 0) / (xs.length - 1));
+}
+
+/** % of `all` at or below `value`. */
+export function percentRank(value: number, all: number[]): number {
+  return all.length === 0 ? 0 : (all.filter((x) => x <= value).length / all.length) * 100;
+}
+
+export type Light = "green" | "amber" | "red";
+
+/** Every light's cut-off, in one place (decision 0011). */
+export const THRESHOLDS = {
+  strength: { green: 67, red: 33 }, // percentile among members
+  ratio: { green: 1.2, amber: 1.8 }, // × the NIFTY 50 (bumpiness, worst fall)
+  liquidityCrore: { green: 100, amber: 10 },
+  liquiditySessions: 20,
+} as const;
+
+export function trendLight(close: number, sma50: number | null, sma200: number | null): Light | null {
+  if (sma50 === null || sma200 === null) return null;
+  const n = Number(close > sma50) + Number(close > sma200);
+  return n === 2 ? "green" : n === 1 ? "amber" : "red";
+}
+
+export function strengthLight(pct: number): Light {
+  return pct >= THRESHOLDS.strength.green ? "green" : pct <= THRESHOLDS.strength.red ? "red" : "amber";
+}
+
+export function ratioLight(ratio: number): Light {
+  return ratio <= THRESHOLDS.ratio.green ? "green" : ratio <= THRESHOLDS.ratio.amber ? "amber" : "red";
+}
+
+export function liquidityLight(crore: number): Light {
+  return crore >= THRESHOLDS.liquidityCrore.green ? "green" : crore >= THRESHOLDS.liquidityCrore.amber ? "amber" : "red";
+}
