@@ -31,7 +31,7 @@
 1. **A split or demerger inside the window** (KOTAKBANK Jan 2026, TMPV Oct 2025) must not appear as a drawdown, a bad month or a price-chart cliff. Pinned in Task 4 (DB test, split day) and Task 2 (line from `change_pct`).
 2. **A renamed stock** (ETERNAL, history under ZOMATO) must show its full history, events and turnover from before the rename. Pinned in Task 1 (turnover across a rename) and Task 4 (events across lineage).
 3. **A stock with short history** (new listing: fewer than 3×250 sessions) must say "not enough history yet" for `1y` instead of computing from a handful of windows. Pinned in Task 3.
-4. **A symbol in the URL that isn't a supported stock, or has odd characters** (`/stock/foo`, `/stock/M&M`, `/stock/../x`) must 404 or resolve correctly, never error or reach SQL raw. Pinned in Task 4 (`stockReport` returns null for unknown) and Task 6 (page uses `notFound()`; `M&M` and `BAJAJ-AUTO` URL-decode correctly).
+4. **A symbol in the URL that isn't a supported stock, or has odd characters** (`/stock/foo`, `/stock/M&M`, `/stock/../x`) must 404 or resolve correctly, never error or reach SQL raw. Pinned in Task 4 (`stockReport` returns `{ kind: "unknown" }`) and Task 5 (the page validates the symbol, calls `notFound()`, and the curl check covers `M&M`, `BAJAJ-AUTO`, `nope` and a path-traversal attempt).
 5. **A date after the stock left the index** (YESBANK in 2026) must still show the card with "Left the NIFTY 50 on …", ranking Strength against the members on that date. Pinned in Task 4.
 
 ---
