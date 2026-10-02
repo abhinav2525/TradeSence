@@ -354,7 +354,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "right-now", term: "Right now (expected range)", topic: "Risk",
     short: "How jumpy the stock has been lately compared with its usual year, and the range a normal week moves in. Recent days count more than older ones.",
     read: "Green: as calm as usual or calmer. Amber: up to 1.5× jumpier. Red: more than 1.5× jumpier than its usual year.",
-    what: "Calm and wild spells come in runs: after a few big days, more big days are likely. This light compares the stock's recent swings with its last year and turns them into a range for a normal week. The card also says how often real weeks stayed inside that range, so you can see whether it fits this stock.",
+    what: "Calm and wild spells come in runs: after a few big days, more big days are likely. This light compares the stock's recent swings with its last year and turns them into a range for a normal week. The card also says how often, over the last 2 years, a real week stayed inside the range the method gave at the start of that week, so you can see whether it fits this stock.",
     calc: {
       plain: "Each day's move is squared and blended into a running average in which yesterday's estimate keeps 94% of the weight (J.P. Morgan's RiskMetrics, 1996). Its square root is today's typical daily move; times √5 gives a week.",
       exact: "σ²(today) = 0.94 × σ²(yesterday) + 0.06 × move²\nweek = σ × √5\nlight = σ ÷ std. dev. of the last 250 moves",
@@ -386,15 +386,16 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   },
   "crash-episodes": {
     id: "crash-episodes", term: "In crashes (market breaks)", topic: "Risk",
-    short: "How much further the stock fell after past market crashes began, against the NIFTY 50, and whether it was back 6 months later. A crash: under 20% of NIFTY 50 stocks above their 200-day average.",
-    read: "Green: fell up to 1.2× the NIFTY's fall. Amber: up to 1.8×. Red: more. No light with fewer than 3 past crashes.",
-    what: "When most of the index breaks down together, you find out which stocks hold up. For each past crash, the card measures the stock's lowest point in the following 3 months against the NIFTY's, and checks where it was 6 months on. A crash still under way isn't counted until 3 months have passed.",
+    short: "How far the stock fell in past market crashes, from its high before each one, against the NIFTY 50 in the same crash. A crash: under 20% of NIFTY 50 stocks above their 200-day average.",
+    read: "Green: fell up to 1.2× as much as the NIFTY, crash for crash. Amber: up to 1.8×. Red: more. No light with fewer than 3 past crashes.",
+    what: "When most of the index breaks down together, you find out which stocks hold up. For each past crash, the card measures the stock's fall from its high in the 3 months before to its low in the 3 months after, against the NIFTY's fall in the same crash, and checks where it was 6 months on. A crash still under way isn't counted until 3 months have passed.",
     calc: {
-      plain: "A crash starts on a day 200-day breadth falls below 20%; weak days within 10 sessions of each other are one crash (as in research 0001). Fall = the lowest close in the next 63 sessions ÷ the start day's close, minus 1.",
+      plain: "A crash starts on a day 200-day breadth falls below 20%; weak days within 10 sessions are one crash (as in research 0001), and crashes whose 3-month windows overlap are merged. Fall = the low in the 63 sessions after the start ÷ the high in the 63 sessions before it, minus 1. The light is the median, across crashes, of the stock's fall ÷ the NIFTY's.",
+      exact: "fall = min(level, start … start+63) ÷ max(level, start−63 … start) − 1\nlight = median over crashes of (stock fall ÷ NIFTY fall)",
     },
-    example: "Three crashes: the stock fell 15%, 9% and 20% (median 15%); the NIFTY fell 10%, 6% and 12% (median 10%). 15 ÷ 10 = 1.5×: amber.",
+    example: "Three crashes: the stock fell 30%, 9% and 24%; the NIFTY fell 20%, 6% and 12%. Crash for crash that is 1.5×, 1.5× and 2.0×: the median is 1.5×, amber.",
     mistakes: [
-      "Reading it as the whole crash. It measures the fall after breadth had already collapsed, so the drop before that day isn't in it.",
+      "Comparing it with the Worst fall light. That one is the deepest fall in the whole history; this one compares each market crash with the NIFTY's fall in the same crash.",
       "Treating a handful of crashes as proof. Since 2020 there have been only about 5; the card always says how many.",
       "Expecting the next crash to look like the last ones.",
     ],

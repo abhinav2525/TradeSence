@@ -127,7 +127,7 @@ async function build(id: TermId): Promise<string | null> {
         case "bad-days": { const c = r.badDays.capture; return c === null ? null
           : `Over the last ${c.sessions} sessions, when the NIFTY fell 1% ${SHOWCASE} usually fell ${(c.down / 100).toFixed(1)}%; its beta was ${c.beta.toFixed(2)}.`; }
         case "crash-episodes": { const c = r.crashes; return c.episodes.length === 0 || c.medianStock === null || c.medianNifty === null ? null
-          : `In ${c.episodes.length} market crashes since ${c.episodes[0]!.start.slice(0, 4)}, ${SHOWCASE} fell a further ${Math.abs(c.medianStock).toFixed(0)}% at the median after each began (NIFTY 50: ${Math.abs(c.medianNifty).toFixed(0)}%).`; }
+          : `In ${c.episodes.length} market crashes since ${c.episodes[0]!.start.slice(0, 4)}, ${SHOWCASE} fell a median ${Math.abs(c.medianStock).toFixed(0)}% from its high before each one (NIFTY 50: ${Math.abs(c.medianNifty).toFixed(0)}%).`; }
         default: { const e = r.events.find((x) => x.kind !== "rename"); return e ? `${SHOWCASE}: ${e.text.replace(/\s+/g, " ")} (${formatDate(e.date)}).` : null; }
       }
     }

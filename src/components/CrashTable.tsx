@@ -13,7 +13,7 @@ export default function CrashTable({ crashes, className }: { crashes: StockRepor
     <Card className={cn("flex flex-col", className)}>
       <div className="border-b px-5 py-3.5">
         <h2 className="text-heading text-foreground"><Term id="crash-episodes">In past market crashes</Term></h2>
-        <p className="mt-0.5 text-[12px] text-muted-foreground">Lowest point in the 3 months after each crash began</p>
+        <p className="mt-0.5 text-[12px] text-muted-foreground">From the high in the 3 months before each crash to the low in the 3 months after</p>
       </div>
       {rows.length === 0 ? (
         <p className="px-5 py-6 text-[13px] text-muted-foreground">No completed market crash in this stock's history yet.</p>
@@ -42,7 +42,7 @@ export default function CrashTable({ crashes, className }: { crashes: StockRepor
         </div>
       )}
       <p className="mt-auto border-t px-5 py-3 text-[12px] text-muted-foreground">
-        A crash: fewer than 20% of NIFTY 50 stocks above their 200-day average.
+        A crash: fewer than 20% of NIFTY 50 stocks above their 200-day average. Back in 6 months: above its price on the day the crash began.
         {crashes.ongoing ? ` One began on ${formatDate(crashes.ongoing)} and counts once 3 months have passed.` : ""}
       </p>
     </Card>

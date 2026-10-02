@@ -112,7 +112,7 @@ export type Crashes = {
   ongoing: string | null; // the latest start with under 63 sessions since: mentioned, not counted
   medianStock: number | null;
   medianNifty: number | null;
-  ratio: number | null; // medianStock ÷ medianNifty; null if the NIFTY's median fall is 0
+  ratio: number | null; // median of each crash's stock ÷ NIFTY fall; null if the NIFTY fell in none
   backCount: number;
   backOf: number;
 };
@@ -123,14 +123,21 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[Math.floor(mid)]! : (s[mid - 1]! + s[mid]!) / 2;
 };
 
-/** Lowest level in the next 63 sessions vs the start, in % (0 if never below); null across a gap or past the data. */
-function fallAfter(line: LinePoint[], i: number | undefined): number | null {
+/**
+ * The crash's fall on one line: from the highest level in the 63 sessions up to
+ * the start to the lowest in the 63 after it, in % (≤ 0). Null without 63
+ * sessions either side, or across a gap. Measured from the pre-crash high
+ * because breadth usually breaks near the bottom: from the trigger day itself
+ * the NIFTY's fall is near zero, and dividing by it paints noise red.
+ */
+function crashFall(line: LinePoint[], i: number | undefined): number | null {
   if (i === undefined) return null;
-  const end = i + CRASH_FALL_SESSIONS;
-  if (end > line.length - 1 || line[end]!.segment !== line[i]!.segment) return null;
-  let low = 0;
-  for (let k = i + 1; k <= end; k++) low = Math.min(low, (line[k]!.level / line[i]!.level - 1) * 100);
-  return low;
+  const from = i - CRASH_FALL_SESSIONS, to = i + CRASH_FALL_SESSIONS;
+  if (from < 0 || to > line.length - 1 || line[from]!.segment !== line[to]!.segment) return null;
+  let peak = -Infinity, low = Infinity;
+  for (let k = from; k <= i; k++) peak = Math.max(peak, line[k]!.level);
+  for (let k = i; k <= to; k++) low = Math.min(low, line[k]!.level);
+  return Math.min(0, (low / peak - 1) * 100);
 }
 
 function backAfter(line: LinePoint[], i: number): boolean | null {
@@ -140,16 +147,20 @@ function backAfter(line: LinePoint[], i: number): boolean | null {
 }
 
 /**
- * Each completed market crash (200-SMA breadth < 20%, research 0001's episodes):
- * the stock's and the NIFTY's fall over the next 3 months, and whether the stock
- * was back 6 months on. `breadth` must stop at the chosen date (no hindsight).
+ * Each completed market crash (200-SMA breadth < 20%, research 0001's episodes,
+ * then merged when their 3-month windows overlap, so one fall counts once):
+ * the stock's and the NIFTY's fall from the pre-crash high, and whether the
+ * stock was back 6 months on. The light is the median of each crash's own
+ * stock ÷ NIFTY ratio. `breadth` must stop at the chosen date (no hindsight).
  */
 export function crashEpisodes(
   breadth: { date: string; pctAbove: number }[],
   stock: LinePoint[],
   nifty: LinePoint[],
 ): Crashes {
-  const starts = findEpisodes(breadth.map((b) => b.pctAbove), (p) => p < CRASH_BREADTH, MERGE_GAP);
+  const found = findEpisodes(breadth.map((b) => b.pctAbove), (p) => p < CRASH_BREADTH, MERGE_GAP);
+  const starts: number[] = [];
+  for (const b of found) if (starts.length === 0 || b - starts.at(-1)! > CRASH_FALL_SESSIONS) starts.push(b);
   const sIdx = new Map(stock.map((p, i) => [p.date, i]));
   const nIdx = new Map(nifty.map((p, i) => [p.date, i]));
   const episodes: CrashEpisode[] = [];
@@ -158,14 +169,20 @@ export function crashEpisodes(
     const start = breadth[b]!.date;
     if (b + CRASH_FALL_SESSIONS > breadth.length - 1) { ongoing = start; continue; }
     const si = sIdx.get(start);
-    const stockFall = fallAfter(stock, si);
-    const niftyFall = fallAfter(nifty, nIdx.get(start));
+    const stockFall = crashFall(stock, si);
+    const niftyFall = crashFall(nifty, nIdx.get(start));
     if (stockFall === null || niftyFall === null) continue;
     episodes.push({ start, stockFall, niftyFall, back: backAfter(stock, si!) });
   }
-  const medianStock = episodes.length ? median(episodes.map((e) => e.stockFall)) : null;
-  const medianNifty = episodes.length ? median(episodes.map((e) => e.niftyFall)) : null;
-  const ratio = medianStock !== null && medianNifty !== null && medianNifty < -NOISE_PCT ? medianStock / medianNifty : null;
+  const ratios = episodes.filter((e) => e.niftyFall < -NOISE_PCT).map((e) => e.stockFall / e.niftyFall);
   const known = episodes.filter((e) => e.back !== null);
-  return { episodes, ongoing, medianStock, medianNifty, ratio, backCount: known.filter((e) => e.back).length, backOf: known.length };
+  return {
+    episodes,
+    ongoing,
+    medianStock: episodes.length ? median(episodes.map((e) => e.stockFall)) : null,
+    medianNifty: episodes.length ? median(episodes.map((e) => e.niftyFall)) : null,
+    ratio: ratios.length ? median(ratios) : null,
+    backCount: known.filter((e) => e.back).length,
+    backOf: known.length,
+  };
 }

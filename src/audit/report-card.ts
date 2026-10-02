@@ -108,22 +108,32 @@ function capture(l: Pt[], nifty: { d: string; c: number }[]) {
 
 function crashes(l: Pt[], nifty: { d: string; c: number }[], upto: string) {
   const b = breadthAll.filter((x) => x.d <= upto);
-  const starts: number[] = []; let last = -Infinity;
-  b.forEach((x, i) => { if (x.pct < 20) { if (i - last - 1 > 10) starts.push(i); last = i; } });
+  const raw: number[] = []; let last = -Infinity;
+  b.forEach((x, i) => { if (x.pct < 20) { if (i - last - 1 > 10) raw.push(i); last = i; } });
+  const starts: number[] = []; for (const i of raw) if (!starts.length || i - starts[starts.length - 1]! > 63) starts.push(i);
   const si = new Map(l.map((p, i) => [p.d, i])), ni = new Map(nifty.map((x, i) => [x.d, i]));
+  // high in the 63 sessions up to the start → low in the 63 after
+  const fall = (lv: (k: number) => number, seg: (k: number) => number, i: number | undefined, len: number) => {
+    if (i === undefined || i < 63 || i + 63 > len - 1 || seg(i - 63) !== seg(i + 63)) return null;
+    let hi = -Infinity, lo = Infinity;
+    for (let k = i - 63; k <= i; k++) hi = Math.max(hi, lv(k));
+    for (let k = i; k <= i + 63; k++) lo = Math.min(lo, lv(k));
+    return Math.min(0, (lo / hi - 1) * 100);
+  };
   const eps: { start: string; s: number; n: number; back: boolean | null }[] = []; let ongoing: string | null = null;
   for (const i of starts) {
     const start = b[i]!.d;
     if (i + 63 > b.length - 1) { ongoing = start; continue; }
-    const j = si.get(start), k = ni.get(start);
-    if (j === undefined || k === undefined || j + 63 > l.length - 1 || l[j + 63]!.seg !== l[j]!.seg || k + 63 > nifty.length - 1) continue;
-    let s = 0, n = 0;
-    for (let x = 1; x <= 63; x++) { s = Math.min(s, (l[j + x]!.level / l[j]!.level - 1) * 100); n = Math.min(n, (nifty[k + x]!.c / nifty[k]!.c - 1) * 100); }
-    const back = j + 126 <= l.length - 1 && l[j + 126]!.seg === l[j]!.seg ? (l[j + 126]!.level / l[j]!.level - 1) * 100 >= -1e-9 : null;
+    const j = si.get(start);
+    const s = fall((k) => l[k]!.level, (k) => l[k]!.seg, j, l.length);
+    const n = fall((k) => nifty[k]!.c, () => 0, ni.get(start), nifty.length);
+    if (s === null || n === null) continue;
+    const back = j! + 126 <= l.length - 1 && l[j! + 126]!.seg === l[j!]!.seg ? (l[j! + 126]!.level / l[j!]!.level - 1) * 100 >= -1e-9 : null;
     eps.push({ start, s, n, back });
   }
   const med = (xs: number[]) => { const v = [...xs].sort((p, q) => p - q), h = v.length / 2; return v.length % 2 ? v[Math.floor(h)]! : (v[h - 1]! + v[h]!) / 2; };
-  return { eps, ongoing, ms: eps.length ? med(eps.map((e) => e.s)) : null, mn: eps.length ? med(eps.map((e) => e.n)) : null };
+  const ratios = eps.filter((e) => e.n < -1e-9).map((e) => e.s / e.n);
+  return { eps, ongoing, ms: eps.length ? med(eps.map((e) => e.s)) : null, mn: eps.length ? med(eps.map((e) => e.n)) : null, ratio: ratios.length ? med(ratios) : null };
 }
 
 const [{ d: latest }] = await db.execute<{ d: string }>(sql`select max(trade_date)::text d from daily_prices`);
@@ -209,6 +219,12 @@ for (const m of members) {
   if (cr.ongoing !== r.crashes.ongoing) mism.push(`${m} crash ongoing: mine=${cr.ongoing} app=${r.crashes.ongoing}`);
   cmp(m, "crash median stock", cr.ms, r.crashes.medianStock); cmp(m, "crash median NIFTY", cr.mn, r.crashes.medianNifty);
   cmp(m, "crash back", cr.eps.filter((e) => e.back).length, r.crashes.backCount);
+  cmp(m, "crash ratio", cr.ratio, r.crashes.ratio);
+  cr.eps.forEach((e, i) => {
+    const x = r.crashes.episodes[i];
+    cmp(m, `crash ${e.start} stock fall`, e.s, x?.stockFall); cmp(m, `crash ${e.start} NIFTY fall`, e.n, x?.niftyFall);
+    if (e.back !== (x?.back ?? null)) mism.push(`${m} crash ${e.start} back: mine=${e.back} app=${x?.back}`);
+  });
 }
 console.log(`session ${today} · ${members.length} members · ${checked} numbers compared · ${mism.length} mismatches`);
 for (const x of mism) console.log("  ✗", x);

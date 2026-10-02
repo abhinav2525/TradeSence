@@ -1,6 +1,7 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { stockReport, supportedStocks } from "../src/query/stock-report";
+import { checksOf } from "../src/components/StockChecks";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
 
@@ -171,7 +172,7 @@ describe("stockReport", () => {
     const c = r.report.crashes;
     expect(c.episodes.map((e) => e.start)).toEqual([d(300), d(450), d(600)]);
     expect(c.ongoing).toBe(d(790));
-    expect(c.ratio!).toBeCloseTo((90 / 99 - 1) / (1050 / 1089 - 1), 9); // 2.54×
+    expect(c.ratio!).toBeCloseTo((90 / 110 - 1) / (1050 / 1100 - 1), 9); // from the 110 / 1,100 high before each crash: 4.0×
     expect(c.light).toBe("red");
     expect(c).toMatchObject({ backCount: 3, backOf: 3 });
   });
@@ -197,6 +198,10 @@ describe("stockReport", () => {
     expect(n.ratio!).toBeCloseTo(1, 1);
     expect(n.weekPct!).toBeCloseTo(Math.sqrt(5), 1);
     expect(n.hit).toEqual({ inside: 375, of: 375 }); // weeks start 0..394, but σ only exists from day 20: 375
+    // the hit rate judged each past week by the range known THEN, not today's range (review finding)
+    const sentence = checksOf(r.report).find((c) => c.label === "Right now")!.sentence;
+    expect(sentence).toContain("stayed inside the range this method gave at the time");
+    expect(sentence).not.toContain("inside this range");
   });
 
   test("Bad days: a stock that moves 2× the NIFTY falls 2% when it falls 1%: red", async () => {

@@ -64,7 +64,7 @@ export function checksOf(r: StockReport): Check[] {
     n.weekPct === null || n.ratio === null
       ? "Not enough history yet: this needs a year of daily moves."
       : `A normal week: up or down about ${n.weekPct.toFixed(1)}% (about ${rupees(n.weekPct)} on ₹10,000). ${n.ratio <= 1 ? "Calmer" : "Jumpier"} than its usual year.${
-          n.hit ? ` In the last 2 years, ${Math.round((n.hit.inside / n.hit.of) * 10)} in 10 week-long stretches stayed inside this range (of ${formatInt(n.hit.of)}).` : ""
+          n.hit ? ` In the last 2 years, ${Math.round((n.hit.inside / n.hit.of) * 10)} in 10 weeks stayed inside the range this method gave at the time (of ${formatInt(n.hit.of)} overlapping weeks).` : ""
         }`;
 
   const c = r.badDays.capture;
@@ -77,7 +77,7 @@ export function checksOf(r: StockReport): Check[] {
   const crashSentence =
     k.episodes.length < THRESHOLDS.crashMinEpisodes || k.medianStock === null || k.medianNifty === null
       ? `${k.episodes.length === 0 ? "No completed market crash in its history yet" : `Only ${k.episodes.length} completed market ${k.episodes.length === 1 ? "crash" : "crashes"} in its history`}: not enough to judge.${ongoingNote}`
-      : `In ${k.episodes.length} crashes since ${k.episodes[0]!.start.slice(0, 4)}, after each one began it fell a further ${abs0(k.medianStock)}% at the median (NIFTY ${abs0(k.medianNifty)}%)${
+      : `In ${k.episodes.length} crashes since ${k.episodes[0]!.start.slice(0, 4)} it fell a median ${abs0(k.medianStock)}% from its high before each one (NIFTY ${abs0(k.medianNifty)}%)${
           k.backOf ? ` and was back 6 months later in ${k.backCount} of ${k.backOf}` : ""
         }.${ongoingNote}`;
 

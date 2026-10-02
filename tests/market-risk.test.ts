@@ -82,52 +82,57 @@ describe("marketCapture", () => {
 });
 
 
-describe("crashEpisodes", () => {
-  const N = 200;
-  const breadthWith = (low: number[]) => Array.from({ length: N }, (_, i) => ({ date: d(i), pctAbove: low.includes(i) ? 10 : 60 }));
-  const lineWith = (base: number, dips: Record<number, number>, from = 0, gapAt?: number): LinePoint[] =>
-    Array.from({ length: N - from }, (_, k) => {
+describe("crashEpisodes (peak before → trough after, decision 0014)", () => {
+  const breadthWith = (n: number, low: number[]) => Array.from({ length: n }, (_, i) => ({ date: d(i), pctAbove: low.includes(i) ? 10 : 60 }));
+  const lineWith = (n: number, base: number, at: Record<number, number>, from = 0, gapAt?: number): LinePoint[] =>
+    Array.from({ length: n - from }, (_, k) => {
       const i = k + from;
-      return { date: d(i), level: dips[i] ?? base, segment: gapAt !== undefined && i >= gapAt ? 1 : 0 };
+      return { date: d(i), level: at[i] ?? base, segment: gapAt !== undefined && i >= gapAt ? 1 : 0 };
     });
-  const dip = (s: number, xs: number[]) => Object.fromEntries(xs.map((x, k) => [s + k, x]));
-  const stock = lineWith(100, dip(50, [99, 95, 90, 95, 99]));
-  const nifty = lineWith(1000, dip(50, [990, 970, 950, 970, 990]));
 
-  test("measures the fall from the start day's close over the next 63 sessions, and 6 months on", () => {
-    const c = crashEpisodes(breadthWith([50, 51, 52, 53, 54]), stock, nifty);
+  test("measures from the high in the 63 sessions before the start to the low in the 63 after", () => {
+    // a 110 high 30 sessions before the crash; a 90 low 2 sessions after it
+    const stock = lineWith(260, 100, { 40: 110, 72: 90 });
+    const nifty = lineWith(260, 1000, { 40: 1100, 72: 950 });
+    const c = crashEpisodes(breadthWith(260, [70]), stock, nifty);
     expect(c.episodes).toHaveLength(1);
-    expect(c.episodes[0]!.start).toBe(d(50));
-    expect(c.episodes[0]!.stockFall).toBeCloseTo((90 / 99 - 1) * 100, 9);
-    expect(c.episodes[0]!.niftyFall).toBeCloseTo((950 / 990 - 1) * 100, 9);
-    expect(c.episodes[0]!.back).toBe(true);
-    expect(c.ratio).toBeCloseTo((90 / 99 - 1) / (950 / 990 - 1), 9);
-    expect(c).toMatchObject({ ongoing: null, backCount: 1, backOf: 1 });
+    expect(c.episodes[0]!.stockFall).toBeCloseTo((90 / 110 - 1) * 100, 9);
+    expect(c.episodes[0]!.niftyFall).toBeCloseTo((950 / 1100 - 1) * 100, 9);
+    expect(c.ratio!).toBeCloseTo((90 / 110 - 1) / (950 / 1100 - 1), 9);
+    expect(c.episodes[0]!.back).toBe(true); // 100 at session 196 ≥ 100 on the start day
   });
-  test("weak days within 10 sessions are one crash; further apart, two", () => {
-    expect(crashEpisodes(breadthWith([50, 51, 52, 60, 61, 62, 80]), stock, nifty).episodes.map((e) => e.start)).toEqual([d(50), d(80)]);
+  test("crashes whose 3-month windows overlap are one crash; further apart, two", () => {
+    const flat = lineWith(400, 100, {}), nf = lineWith(400, 1000, {});
+    expect(crashEpisodes(breadthWith(400, [70, 100]), flat, nf).episodes.map((e) => e.start)).toEqual([d(70)]);
+    expect(crashEpisodes(breadthWith(400, [70, 140]), flat, nf).episodes.map((e) => e.start)).toEqual([d(70), d(140)]);
+  });
+  test("the light is the median of each crash's own ratio, not a ratio of medians", () => {
+    // stock falls 10, 40, 20; NIFTY 5, 20, 40 → per-crash 2×, 2×, 0.5× → median 2× (ratio of medians would say 1×)
+    const starts = [70, 200, 330];
+    const s: Record<number, number> = {}, n: Record<number, number> = {};
+    [90, 60, 80].forEach((v, k) => (s[starts[k]! + 2] = v));
+    [950, 800, 600].forEach((v, k) => (n[starts[k]! + 2] = v));
+    const c = crashEpisodes(breadthWith(520, starts), lineWith(520, 100, s), lineWith(520, 1000, n));
+    expect(c.episodes).toHaveLength(3);
+    expect(c.ratio!).toBeCloseTo(2, 9);
   });
   test("a crash with under 63 sessions since its start is ongoing, not counted", () => {
-    const c = crashEpisodes(breadthWith([180]), stock, nifty);
-    expect(c.episodes).toHaveLength(0);
-    expect(c.ongoing).toBe(d(180));
-    expect(c.ratio).toBeNull();
+    const c = crashEpisodes(breadthWith(200, [180]), lineWith(200, 100, {}), lineWith(200, 1000, {}));
+    expect(c).toMatchObject({ episodes: [], ongoing: d(180), ratio: null });
   });
   test("'back' is unknown until 126 sessions have passed", () => {
-    const c = crashEpisodes(breadthWith([100]), stock, nifty);
+    const c = crashEpisodes(breadthWith(200, [100]), lineWith(200, 100, {}), lineWith(200, 1000, {}));
     expect(c.episodes[0]!.back).toBeNull();
     expect(c).toMatchObject({ backCount: 0, backOf: 0 });
   });
-  test("skipped when the stock has no data on the start day, or a gap cuts the window", () => {
-    expect(crashEpisodes(breadthWith([50]), lineWith(100, {}, 60), nifty).episodes).toHaveLength(0);
-    expect(crashEpisodes(breadthWith([50]), lineWith(100, {}, 0, 70), nifty).episodes).toHaveLength(0);
+  test("skipped without 63 sessions of the stock before the start, or with a gap in the window", () => {
+    const nifty = lineWith(260, 1000, { 72: 900 });
+    expect(crashEpisodes(breadthWith(260, [70]), lineWith(260, 100, {}, 30), nifty).episodes).toHaveLength(0);
+    expect(crashEpisodes(breadthWith(260, [70]), lineWith(260, 100, {}, 0, 50), nifty).episodes).toHaveLength(0);
   });
-  test("a stock that never dips below its start has a fall of 0", () => {
-    const c = crashEpisodes(breadthWith([50]), lineWith(100, {}), nifty);
-    expect(c.episodes[0]!.stockFall).toBe(0);
-    expect(c.ratio!).toBeCloseTo(0, 9); // 0 ÷ a negative is −0 in JavaScript; close-to avoids that trap
-  });
-  test("no ratio when the NIFTY didn't fall", () => {
-    expect(crashEpisodes(breadthWith([50]), stock, lineWith(1000, {})).ratio).toBeNull();
+  test("a crash the NIFTY didn't fall in has no ratio of its own", () => {
+    const c = crashEpisodes(breadthWith(260, [70]), lineWith(260, 100, { 72: 90 }), lineWith(260, 1000, {}));
+    expect(c.episodes).toHaveLength(1);
+    expect(c.ratio).toBeNull();
   });
 });

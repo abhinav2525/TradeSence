@@ -31,7 +31,7 @@ The owner asked for these as **lights**, using **proven formulas only**, with a 
 |---|---|---|---|---|---|---|
 | **Right now** | Unusually jumpy now? | Recent volatility (RiskMetrics, λ = 0.94) ÷ its own last-year volatility | ≤ 1.0× | ≤ 1.5× | > 1.5× | under a year (250) of daily moves |
 | **Bad days** | Falls harder on bad days? | **Down capture**: its average move on NIFTY-down days ÷ the NIFTY's, last 250 sessions | ≤ 100% | ≤ 120% | > 120% | under 120 sessions alongside the NIFTY |
-| **In crashes** | How did it do in crashes? | Median further fall in the 3 months after each crash began ÷ the NIFTY's | ≤ 1.2× | ≤ 1.8× | > 1.8× | under 3 completed crashes, or the NIFTY didn't fall |
+| **In crashes** | How did it do in crashes? | Each crash's fall (high in the 3 months before → low in the 3 months after) ÷ the NIFTY's fall in the same crash; the light is the median of those ratios | ≤ 1.2× | ≤ 1.8× | > 1.8× | under 3 completed crashes, or the NIFTY fell in none |
 
 **Why these cut-offs:**
 - **1.0 / 1.5 for Right now**: 1.0 means "as usual". 1.5× its normal swing is a clearly
@@ -57,6 +57,9 @@ All of these live in one place: `THRESHOLDS` in `src/indicators/risk.ts`.
   - Days within 10 sessions are one crash. That is research 0001's exact rule; the code
     (`findEpisodes`) now lives in one shared file, so the study and the card can never
     count crashes differently.
+  - Crashes whose 3-month windows overlap are merged, so one fall is never counted twice.
+    Since 2020 that leaves three: March 2020 (NIFTY −38%), May 2022 (−15%) and
+    February 2025 (−11%).
   - A crash counts only once 3 months have passed. Today's (from 1 Oct 2026) is mentioned,
     not counted.
   - A table under the calculator lists every crash.
@@ -70,13 +73,39 @@ demergers and renames are handled.
   RiskMetrics: the method assumes moves average zero and blends in each move *squared*, so
   a steady +0.5% reads as ±0.5%. That is the published definition. The test now checks
   this, and the code follows the spec.
-- **"Fell a median 3% in 5 crashes" read like the whole crash.** COVID was −30%. The
-  measure is the fall *after* breadth had already collapsed, which is what the spec defines
-  and what matters to someone looking at the screen on that day. The wording now says "fell
-  a further 3% at the median after each one began", and the Learn page lists reading it as
-  the whole crash as a common mistake.
+- **"Fell a median 3% in 5 crashes" read like the whole crash** (COVID was −30%). The
+  first fix was wording; the independent review then showed the measure itself was wrong
+  (below).
 - **The audit's breadth rebuild was placed before the variables it uses** (a type error).
   It was moved; the logic is unchanged.
+
+## Found by the independent review (fixed)
+
+A fresh reviewer checked the whole change. It confirmed the maths of all three formulas,
+no hindsight, the gap and split handling, and that the audit is independent. It found
+two important problems:
+
+- **The crash light divided by almost nothing.**
+  - The first version measured each crash from the day breadth fell below 20%. That day
+    is usually near the bottom, so the NIFTY's *further* fall was tiny: −27%, −3%, −0.4%,
+    −2% and 0%, a median of −2%.
+  - Dividing by 2% turned small differences into huge ratios: **24 of 50 stocks were
+    red**. INFY was red at 3.9× even though it fell *less* than the NIFTY in COVID.
+  - Two "crashes" also overlapped, counting one fall twice.
+  - **Fix:** measure each crash from the stock's high in the 3 months before to its low in
+    the 3 months after; merge overlapping crashes; and compare stock with NIFTY **crash by
+    crash** (the median of each crash's own ratio, never a ratio of two unrelated medians).
+  - **Now:** 20 green, 25 amber, 2 red, 3 no light. INFY is amber at 1.8× (it fell 34%,
+    27% and 30% against the NIFTY's 38%, 15% and 11%). KOTAKBANK is green at 0.85×.
+  - This changes the definition in the approved spec. It is recorded here and in the
+    branch summary for the owner.
+- **"7 in 10 weeks stayed inside this range" misdescribed the check.** Each past week was
+  judged with the range known *at that time*, not today's. Now: "7 in 10 weeks stayed
+  inside the range this method gave at the time (of 495 overlapping weeks)".
+
+Both were fixed with tests that failed first. The audit now also compares every crash's
+own falls, its "back" answer and the light's ratio. The same deliberate bug (a 62-day
+window) now shows 8 mismatches instead of 1.
 
 ## Checks
 
@@ -92,9 +121,10 @@ demergers and renames are handled.
   - short histories get no light.
   - Suite: 298 tests pass.
 - **Independent audit** (`bun run audit:report-card`, decision 0013):
-  - It recomputes every new number from raw prices, rebuilding breadth itself.
-  - **0 mismatches** on 1 Oct 2026, 23 Mar 2020, 17 Jun 2022 and 4 Jun 2024 (1,250 numbers
-    per date).
+  - It recomputes every new number from raw prices, rebuilding breadth itself, and checks
+    each crash's falls one by one.
+  - **0 mismatches** on 1 Oct 2026, 23 Mar 2020, 17 Jun 2022 and 4 Jun 2024 (1,300 to 1,592
+    numbers per date).
   - Proved sensitive by breaking the app on purpose: λ = 0.95 gave 128 mismatches; a 62-day
     crash window gave 1. Both were caught, then reverted.
 - **Browser:** 8 lights (four per row on a laptop, two on a phone, no sideways scroll); the
@@ -104,9 +134,9 @@ demergers and renames are handled.
 
   | Stock | Beta | Down / up capture | Right now | Crash ratio |
   |---|---|---|---|---|
-  | KOTAKBANK | 0.98 | 81% / 100% | 0.93× | 1.54× |
-  | RELIANCE | 0.97 | 116% / 110% | 0.95× | 2.08× |
-  | INFY | 0.65 | 89% / 60% | 1.01× | 3.86× |
+  | KOTAKBANK | 0.98 | 81% / 100% | 0.93× | 0.85× |
+  | RELIANCE | 0.97 | 116% / 110% | 0.95× | 1.12× |
+  | INFY | 0.65 | 89% / 60% | 1.01× | 1.78× |
 
 - **TradingView: not compared yet.** Its data service refused every request on 2 Oct 2026
   (rate limit, HTTP 429), so no claim of matching TradingView is made. Do it with the
@@ -115,7 +145,7 @@ demergers and renames are handled.
 
 ## What the numbers don't prove
 
-- **About 5 crashes since 2020** is a small sample. The card always says how many.
+- **Three crashes since 2020** is a small sample. The card always says how many.
 - **The weekly range** is a typical range, not a limit. About 1 week in 3 should end outside
   it, which is why the card shows how often weeks actually stayed inside.
 - **Lights are relative to the NIFTY 50 or to the stock's own past.** They describe
