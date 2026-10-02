@@ -5,6 +5,7 @@
  * splits, demergers and renames can't fake a move.
  * Spec: docs/superpowers/specs/2026-10-02-report-card-three-lights-design.md.
  */
+import { MERGE_GAP, findEpisodes } from "./episodes";
 import { NOISE_PCT, type LinePoint, type MovePoint } from "./risk";
 
 export const EWMA_LAMBDA = 0.94; // J.P. Morgan RiskMetrics (1996), daily data
@@ -99,4 +100,72 @@ export function marketCapture(
   if (varM === 0 || up.length === 0 || down.length === 0) return null;
   const ratio = (xs: typeof pairs) => (mean(xs.map((p) => p.s)) / mean(xs.map((p) => p.m))) * 100;
   return { beta: cov / varM, up: ratio(up), down: ratio(down), sessions: pairs.length };
+}
+
+export const CRASH_BREADTH = 20; // % of NIFTY 50 members above their 200-day SMA
+export const CRASH_FALL_SESSIONS = 63; // 3 months
+export const CRASH_BACK_SESSIONS = 126; // 6 months
+
+export type CrashEpisode = { start: string; stockFall: number; niftyFall: number; back: boolean | null };
+export type Crashes = {
+  episodes: CrashEpisode[]; // oldest first
+  ongoing: string | null; // the latest start with under 63 sessions since: mentioned, not counted
+  medianStock: number | null;
+  medianNifty: number | null;
+  ratio: number | null; // medianStock ÷ medianNifty; null if the NIFTY's median fall is 0
+  backCount: number;
+  backOf: number;
+};
+
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = s.length / 2;
+  return s.length % 2 ? s[Math.floor(mid)]! : (s[mid - 1]! + s[mid]!) / 2;
+};
+
+/** Lowest level in the next 63 sessions vs the start, in % (0 if never below); null across a gap or past the data. */
+function fallAfter(line: LinePoint[], i: number | undefined): number | null {
+  if (i === undefined) return null;
+  const end = i + CRASH_FALL_SESSIONS;
+  if (end > line.length - 1 || line[end]!.segment !== line[i]!.segment) return null;
+  let low = 0;
+  for (let k = i + 1; k <= end; k++) low = Math.min(low, (line[k]!.level / line[i]!.level - 1) * 100);
+  return low;
+}
+
+function backAfter(line: LinePoint[], i: number): boolean | null {
+  const end = i + CRASH_BACK_SESSIONS;
+  if (end > line.length - 1 || line[end]!.segment !== line[i]!.segment) return null;
+  return (line[end]!.level / line[i]!.level - 1) * 100 >= -NOISE_PCT;
+}
+
+/**
+ * Each completed market crash (200-SMA breadth < 20%, research 0001's episodes):
+ * the stock's and the NIFTY's fall over the next 3 months, and whether the stock
+ * was back 6 months on. `breadth` must stop at the chosen date (no hindsight).
+ */
+export function crashEpisodes(
+  breadth: { date: string; pctAbove: number }[],
+  stock: LinePoint[],
+  nifty: LinePoint[],
+): Crashes {
+  const starts = findEpisodes(breadth.map((b) => b.pctAbove), (p) => p < CRASH_BREADTH, MERGE_GAP);
+  const sIdx = new Map(stock.map((p, i) => [p.date, i]));
+  const nIdx = new Map(nifty.map((p, i) => [p.date, i]));
+  const episodes: CrashEpisode[] = [];
+  let ongoing: string | null = null;
+  for (const b of starts) {
+    const start = breadth[b]!.date;
+    if (b + CRASH_FALL_SESSIONS > breadth.length - 1) { ongoing = start; continue; }
+    const si = sIdx.get(start);
+    const stockFall = fallAfter(stock, si);
+    const niftyFall = fallAfter(nifty, nIdx.get(start));
+    if (stockFall === null || niftyFall === null) continue;
+    episodes.push({ start, stockFall, niftyFall, back: backAfter(stock, si!) });
+  }
+  const medianStock = episodes.length ? median(episodes.map((e) => e.stockFall)) : null;
+  const medianNifty = episodes.length ? median(episodes.map((e) => e.niftyFall)) : null;
+  const ratio = medianStock !== null && medianNifty !== null && medianNifty < -NOISE_PCT ? medianStock / medianNifty : null;
+  const known = episodes.filter((e) => e.back !== null);
+  return { episodes, ongoing, medianStock, medianNifty, ratio, backCount: known.filter((e) => e.back).length, backOf: known.length };
 }

@@ -3,6 +3,7 @@
  * index do over the next 1 / 3 / 6 months? Pure helpers; the runner is
  * cli-forward-returns.ts. Results: docs/research/0001-does-breadth-predict.md.
  */
+export { findEpisodes } from "../indicators/episodes";
 
 export const HORIZONS = [
   { key: "1m", label: "1 month", sessions: 21 },
@@ -50,21 +51,3 @@ export function summarize(values: number[]): Summary {
   };
 }
 
-/**
- * Start indices of episodes: runs of days meeting `test`. A run that resumes
- * within `mergeGap` days of the last qualifying day is the same episode.
- *
- * This is what keeps the study honest: 51 weak days in March 2020 are one
- * event, and counting them as 51 independent signals would overstate the
- * evidence fifty-fold.
- */
-export function findEpisodes(pct: number[], test: (p: number) => boolean, mergeGap: number): number[] {
-  const starts: number[] = [];
-  let last = -Infinity;
-  for (let i = 0; i < pct.length; i++) {
-    if (!test(pct[i]!)) continue;
-    if (i - last - 1 > mergeGap) starts.push(i);
-    last = i;
-  }
-  return starts;
-}

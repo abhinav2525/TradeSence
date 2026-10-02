@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
-import { adjustedLine, type MovePoint } from "../src/indicators/risk";
-import { ewmaVolatility, rangeHitRate, marketCapture } from "../src/indicators/market-risk";
+import { adjustedLine, type LinePoint, type MovePoint } from "../src/indicators/risk";
+import { crashEpisodes, ewmaVolatility, rangeHitRate, marketCapture } from "../src/indicators/market-risk";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
 const lineOf = (pcts: (number | null)[]) => adjustedLine(pcts.map((changePct, i) => ({ date: d(i), changePct })));
@@ -78,5 +78,56 @@ describe("marketCapture", () => {
   });
   test("under 120 sessions: no answer", () => {
     expect(marketCapture(nifty.slice(0, 100), nifty)).toBeNull();
+  });
+});
+
+
+describe("crashEpisodes", () => {
+  const N = 200;
+  const breadthWith = (low: number[]) => Array.from({ length: N }, (_, i) => ({ date: d(i), pctAbove: low.includes(i) ? 10 : 60 }));
+  const lineWith = (base: number, dips: Record<number, number>, from = 0, gapAt?: number): LinePoint[] =>
+    Array.from({ length: N - from }, (_, k) => {
+      const i = k + from;
+      return { date: d(i), level: dips[i] ?? base, segment: gapAt !== undefined && i >= gapAt ? 1 : 0 };
+    });
+  const dip = (s: number, xs: number[]) => Object.fromEntries(xs.map((x, k) => [s + k, x]));
+  const stock = lineWith(100, dip(50, [99, 95, 90, 95, 99]));
+  const nifty = lineWith(1000, dip(50, [990, 970, 950, 970, 990]));
+
+  test("measures the fall from the start day's close over the next 63 sessions, and 6 months on", () => {
+    const c = crashEpisodes(breadthWith([50, 51, 52, 53, 54]), stock, nifty);
+    expect(c.episodes).toHaveLength(1);
+    expect(c.episodes[0]!.start).toBe(d(50));
+    expect(c.episodes[0]!.stockFall).toBeCloseTo((90 / 99 - 1) * 100, 9);
+    expect(c.episodes[0]!.niftyFall).toBeCloseTo((950 / 990 - 1) * 100, 9);
+    expect(c.episodes[0]!.back).toBe(true);
+    expect(c.ratio).toBeCloseTo((90 / 99 - 1) / (950 / 990 - 1), 9);
+    expect(c).toMatchObject({ ongoing: null, backCount: 1, backOf: 1 });
+  });
+  test("weak days within 10 sessions are one crash; further apart, two", () => {
+    expect(crashEpisodes(breadthWith([50, 51, 52, 60, 61, 62, 80]), stock, nifty).episodes.map((e) => e.start)).toEqual([d(50), d(80)]);
+  });
+  test("a crash with under 63 sessions since its start is ongoing, not counted", () => {
+    const c = crashEpisodes(breadthWith([180]), stock, nifty);
+    expect(c.episodes).toHaveLength(0);
+    expect(c.ongoing).toBe(d(180));
+    expect(c.ratio).toBeNull();
+  });
+  test("'back' is unknown until 126 sessions have passed", () => {
+    const c = crashEpisodes(breadthWith([100]), stock, nifty);
+    expect(c.episodes[0]!.back).toBeNull();
+    expect(c).toMatchObject({ backCount: 0, backOf: 0 });
+  });
+  test("skipped when the stock has no data on the start day, or a gap cuts the window", () => {
+    expect(crashEpisodes(breadthWith([50]), lineWith(100, {}, 60), nifty).episodes).toHaveLength(0);
+    expect(crashEpisodes(breadthWith([50]), lineWith(100, {}, 0, 70), nifty).episodes).toHaveLength(0);
+  });
+  test("a stock that never dips below its start has a fall of 0", () => {
+    const c = crashEpisodes(breadthWith([50]), lineWith(100, {}), nifty);
+    expect(c.episodes[0]!.stockFall).toBe(0);
+    expect(c.ratio!).toBeCloseTo(0, 9); // 0 ÷ a negative is −0 in JavaScript; close-to avoids that trap
+  });
+  test("no ratio when the NIFTY didn't fall", () => {
+    expect(crashEpisodes(breadthWith([50]), stock, lineWith(1000, {})).ratio).toBeNull();
   });
 });

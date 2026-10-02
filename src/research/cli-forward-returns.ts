@@ -12,9 +12,9 @@ import { breadthSeries, MA_LABELS, type MaKind } from "../query/breadth";
 import {
   BUCKETS, HORIZONS, bucketOf, findEpisodes, forwardReturn, summarize, type Summary,
 } from "./forward-returns";
+import { MERGE_GAP } from "../indicators/episodes";
 
 const INDEX = "Nifty 50";
-const MERGE_GAP = 10; // sessions: a dip that recovers for under two weeks is the same episode
 
 const closesByDate = new Map(
   (await db.execute<{ d: string; close: number }>(
