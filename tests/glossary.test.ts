@@ -1,5 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import { GLOSSARY, TOPICS, isTermId, termHref, type TermId } from "../src/lib/glossary";
+import { todayLine } from "../src/lib/glossary";
 
 const entries = Object.values(GLOSSARY);
 
@@ -52,4 +53,11 @@ describe("the glossary", () => {
     expect(isTermId("__proto__")).toBe(false);
     expect(termHref("net-advances")).toBe("/learn/net-advances");
   });
+});
+
+test("todayLine drops placeholders so the popover never says 'Today: —'", () => {
+  expect(todayLine("−24: 13 rose, 37 fell")).toBe("−24: 13 rose, 37 fell");
+  for (const p of [undefined, "", "  ", "—", "-", "Not enough history", "Not available for today"]) {
+    expect(todayLine(p)).toBeNull();
+  }
 });

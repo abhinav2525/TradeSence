@@ -362,3 +362,10 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     seeIt: { label: "KOTAKBANK's report card", href: "/stock/KOTAKBANK" },
   },
 };
+
+/** The popover's "Today:" text, or null when the page only has a placeholder. */
+export function todayLine(today: string | undefined): string | null {
+  const t = (today ?? "").trim();
+  if (!t || t === "—" || t === "-" || /^Not (enough|available)/i.test(t)) return null;
+  return t;
+}
