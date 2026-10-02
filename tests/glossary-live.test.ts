@@ -65,4 +65,18 @@ describe("liveExample wording on real-looking data", () => {
     expect(s).toContain("OLDCO");
     expect(s).not.toContain("NEWCO");
   });
+
+  test("whipsaw only ranks today's members, by rate (an ex-member is never named)", async () => {
+    await db.insert(schema.indexMembers).values([
+      { indexName: "NIFTY50", symbol: "OLDCO", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTY50", symbol: "EXCO", addedOn: "2020-01-01", removedOn: day(290) },
+    ]);
+    const rows = [];
+    for (let i = 0; i < 300; i++) rows.push({ tradeDate: day(i), symbol: "OLDCO", close: i % 50 < 25 ? 110 : 90, sma50: 100, sma200: 100, ema200: 100, changePct: null, volRatio: null, turnover: null });
+    for (let i = 0; i < 290; i++) rows.push({ tradeDate: day(i), symbol: "EXCO", close: 110, sma50: 100, sma200: 100, ema200: 100, changePct: null, volRatio: null, turnover: null });
+    for (let i = 0; i < rows.length; i += 500) await db.insert(schema.dailyIndicators).values(rows.slice(i, i + 500));
+    const s = await liveExample("whipsaw");
+    expect(s).toContain("OLDCO");
+    expect(s).not.toContain("EXCO");
+  });
 });

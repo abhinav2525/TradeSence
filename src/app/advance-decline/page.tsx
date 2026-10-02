@@ -108,6 +108,7 @@ export default async function Page({
         },
         {
           label: "Advancing sessions",
+          today: null,
           term: "advancers-decliners",
           value: String(last20.filter((s) => s.net > 0).length),
           unit: `of ${last20.length}`,

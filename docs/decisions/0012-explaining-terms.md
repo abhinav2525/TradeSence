@@ -43,7 +43,7 @@ that, the numbers are noise to the people the product is for.
   there for anyone who wants the full story.
 - **A real example from today** makes an abstract formula concrete ("On 1 Oct 2026: −24
   (13 rose, 37 fell)") — and because it uses the pages' own queries, it can't disagree
-  with what's on screen.
+  with what's on screen (one exception, below: the Crossings "Calmest" tile).
 
 ## Problems met while building it
 
@@ -58,6 +58,26 @@ that, the numbers are noise to the people the product is for.
   page). The shortcut handler now ignores keys while focus is inside a popover.
 - **`/learn/__proto__` and `/learn/constructor`** would have matched built-in object
   properties with a naive lookup. Term ids are checked against a fixed list; both 404.
+
+## Found by the independent review (fixed)
+
+A fresh reviewer checked the whole change, including every glossary explanation against
+the code that computes it (all correct). No critical problems. Fixed, each with a test that
+failed first:
+
+- **"Today:" showed long-run numbers as if they were today's.** The "Average since 2020"
+  tile's ⓘ said "Breadth… Today: 52%" on a day when breadth was 16%. A tile now only feeds
+  "Today:" when it *is* the term's current reading; "Average since 2020", "One-year range",
+  "Advancing sessions" and the four Crossings tiles show no "Today:" line.
+- **The whipsaw example named an ex-member** (GAIL, which left the index years ago) as the
+  calmest stock, just because it had fewer sessions to cross in. It now ranks only today's
+  members, by crossings per year: "ONGC… about 3.0 times a year".
+
+Deferred (small, in the branch summary and TODO): "Today:" on a past date should say the
+session's date; `/learn/ema` has no live example yet; the ⓘ is a small tap target on
+phones; a few constants (1%, 'Nifty 50') are repeated in the live examples; errors in a
+live example are hidden rather than logged. The Crossings page's own "Calmest" tile still
+includes ex-members (older behaviour, not changed here).
 
 ## Checks
 

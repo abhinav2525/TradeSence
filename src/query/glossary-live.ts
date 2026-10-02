@@ -82,10 +82,23 @@ async function build(id: TermId): Promise<string | null> {
       return top ? `On ${formatDate(d)}, ${top.symbol} traded the heaviest volume against its normal: ${top.volRatio!.toFixed(1)}×.` : null;
     }
     case "whipsaw": {
-      const s = (await crossingStats("sma200")).filter((c) => c.sessions >= WHIPSAW_MIN_SESSIONS);
+      // Today's members only, ranked by rate: an ex-member (or a stock with a short
+      // history) would otherwise look "calm" just for having fewer sessions to cross in.
+      const d = await resolveSession("sma200");
+      if (!d) return null;
+      const current = new Set((await db.execute<{ symbol: string }>(sql`
+        select symbol from index_members
+        where added_on <= ${d} and (removed_on is null or removed_on > ${d})`)).map((r) => r.symbol));
+      const perYear = (c: { crossings: number; sessions: number }) => (c.crossings / c.sessions) * 250;
+      const s = (await crossingStats("sma200"))
+        .filter((c) => current.has(c.symbol) && c.sessions >= WHIPSAW_MIN_SESSIONS)
+        .sort((a, b) => perYear(a) - perYear(b));
       if (s.length === 0) return null;
-      const sorted = [...s].sort((a, b) => a.crossings - b.crossings);
-      return `Since 2020, ${sorted[0]!.symbol} crossed its 200-day SMA the fewest times (${sorted[0]!.crossings}) and ${sorted.at(-1)!.symbol} the most (${sorted.at(-1)!.crossings}).`;
+      const rate = (c: (typeof s)[number]) => `about ${perYear(c).toFixed(1)} times a year`;
+      const lo = s[0]!, hi = s.at(-1)!;
+      return lo === hi
+        ? `Among today's members, ${lo.symbol} has crossed its 200-day SMA ${rate(lo)} since 2020.`
+        : `Among today's members, ${lo.symbol} has crossed its 200-day SMA least often since 2020 (${rate(lo)}) and ${hi.symbol} most often (${rate(hi)}).`;
     }
     case "sma": case "ema": case "ma-50-200": case "trend-check": case "relative-strength":
     case "volatility": case "drawdown": case "liquidity": case "stretches": case "adjusted-prices": {

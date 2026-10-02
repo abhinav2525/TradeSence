@@ -2,6 +2,7 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Term from "@/components/Term";
 import type { TermId } from "@/lib/glossary";
+import { tileToday } from "@/lib/tile-today";
 import { cn } from "@/lib/utils";
 
 type Tone = "up" | "down" | "neutral";
@@ -10,6 +11,8 @@ export type Tile = {
   label: string;
   /** Adds an ⓘ beside the label that explains it; the tile's value is its "today". */
   term?: TermId;
+  /** The ⓘ's "Today:" line. Defaults to the value; null for tiles that aren't the term's current reading. */
+  today?: string | null;
   value: string;
   /** Small trailing unit: "%", "pts". */
   unit?: string;
@@ -43,14 +46,14 @@ export default function Readout({ tiles, className }: { tiles: Tile[]; className
   );
 }
 
-function StatTile({ label, term, value, unit, sub, direction, badge, fill, fillTone = "neutral", range }: Tile) {
+function StatTile({ label, term, today, value, unit, sub, direction, badge, fill, fillTone = "neutral", range }: Tile) {
   const Arrow = direction === "up" ? ArrowUpRight : ArrowDownRight;
   return (
     <div className="flex min-w-0 flex-col rounded-lg border bg-card p-4 shadow-card">
       <div className="flex items-center justify-between gap-2">
         {term ? (
           <p className="min-w-0 text-[12px] font-medium text-muted-foreground">
-            <Term id={term} today={`${value}${unit ? (/^[%×]/.test(unit) ? unit : ` ${unit}`) : ""}`}>{label}</Term>
+            <Term id={term} today={tileToday({ value, unit, today })}>{label}</Term>
           </p>
         ) : (
           <p className="truncate text-[12px] font-medium text-muted-foreground">{label}</p>

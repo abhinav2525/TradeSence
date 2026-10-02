@@ -43,6 +43,16 @@ Why each finished item was built the way it was: `docs/decisions/`.
 
 ---
 
+## Explain-terms polish (deferred from the decision 0012 review) — n
+- [ ] Crossings page "Calmest"/"Median" tiles include ex-members (YESBANK, 0 crossings):
+  rank today's members by rate, as `/learn/whipsaw` now does.
+- [ ] Popover "Today:" on a past date (`?date=`) should name the session ("On 23 Mar 2020:").
+- [ ] `/learn/ema`: add a live example (KOTAKBANK's 200 EMA).
+- [ ] Bigger ⓘ tap target on phones (16 px now; 24 px minimum); cap popover height in landscape.
+- [ ] Live examples: share `NEAR_PCT` and the index name; log errors instead of hiding them;
+  breadth-thrust sentence should say whether a thrust fired.
+- [ ] Learn pages keep the reader's average (`ma`) instead of resetting to the 200 SMA.
+
 ## Report Card polish (deferred from the decision 0011 review) — n
 - [ ] Strength can read "stronger than 100% of the members": `percentRank` counts the
   stock itself. Rank among peers only, or say "Nth of M".

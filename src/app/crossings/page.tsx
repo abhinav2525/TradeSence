@@ -52,6 +52,7 @@ export default async function CrossingsPage({
           tiles={[
             {
               label: "Busiest",
+              today: null,
               term: "whipsaw",
               value: String(busiest.crossings),
               badge: { text: busiest.symbol, tone: "down" },
@@ -63,6 +64,7 @@ export default async function CrossingsPage({
             },
             {
               label: "Median",
+              today: null,
               term: "whipsaw",
               value: String(median),
               fill: busiest.crossings ? median / busiest.crossings : 0,
@@ -70,6 +72,7 @@ export default async function CrossingsPage({
             },
             {
               label: "Calmest",
+              today: null,
               term: "whipsaw",
               value: String(calmest?.crossings ?? 0),
               badge: calmest ? { text: calmest.symbol, tone: "up" } : undefined,
@@ -79,6 +82,7 @@ export default async function CrossingsPage({
             },
             {
               label: "Total crossings",
+              today: null,
               term: "whipsaw",
               value: formatInt(total),
               sub: `Every constituent, vs the ${label}`,

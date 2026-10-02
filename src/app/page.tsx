@@ -104,6 +104,7 @@ export default async function Page({
         },
         {
           label: "Average since 2020",
+          today: null,
           term: "breadth",
           value: average.toFixed(0),
           unit: "%",
@@ -112,6 +113,7 @@ export default async function Page({
         },
         {
           label: "One-year range",
+          today: null,
           term: "breadth",
           value: `${yearLo.toFixed(0)}–${yearHi.toFixed(0)}`,
           unit: "%",

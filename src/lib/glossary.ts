@@ -253,7 +253,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     short: "How often a stock has crossed back and forth over its average. Frequent crossers are noisy; a cross from a calm stock means more.",
     read: "Calm crosser: few past crossings. Busy: many. Typical: in between, compared with the other members.",
     what: "Some stocks trend cleanly; others flip-flop around their average. Knowing which is which tells you how much to trust a fresh cross.",
-    calc: { plain: "Count the crossings since 2020. \"Calm\" is at or below the 25th percentile of today's members, \"Busy\" at or above the 75th." },
+    calc: { plain: "Count the crossings since 2020, while each stock was in the index. \"Calm\" is at or below the 25th percentile of today's members, \"Busy\" at or above the 75th." },
     example: "A stock with 29 crossings when most members have 40 to 60 is a calm crosser.",
     mistakes: ["Reading \"Busy\" as strong. It means the price keeps flip-flopping around its average."],
     related: ["crossing"],
