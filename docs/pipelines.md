@@ -145,6 +145,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Used by** | The forward-return study ([research 0001](research/0001-does-breadth-predict.md)), and later the divergence signal (TODO item 4) |
 | **Code** | `src/ingest/index-prices.ts` |
 | **Checked** | Month-end NIFTY 50 closes match TradingView exactly (7 of 7 checked) |
+| **Why** | [0006](decisions/0006-nifty50-index-closes.md) (source choice, and NSE's month-first dates) |
 
 ## 8. One-time setup and backfills
 
