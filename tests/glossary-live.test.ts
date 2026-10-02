@@ -79,4 +79,10 @@ describe("liveExample wording on real-looking data", () => {
     expect(s).toContain("OLDCO");
     expect(s).not.toContain("EXCO");
   });
+  test("the three new lights have live sentences for the showcase stock (or null, never a placeholder)", async () => {
+    for (const id of ["right-now", "bad-days", "crash-episodes"] as const) {
+      const s = await liveExample(id);
+      expect(s === null || !/undefined|NaN|null/.test(s)).toBe(true);
+    }
+  });
 });

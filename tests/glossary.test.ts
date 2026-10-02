@@ -38,6 +38,7 @@ describe("the glossary", () => {
     for (const id of ["sma", "ema", "breadth", "net-advances", "mcclellan", "summation-index", "ad-line", "rana", "drawdown", "volume-ratio"]) {
       expect(isTermId(id)).toBe(true);
     }
+    for (const id of ["right-now", "bad-days", "crash-episodes"]) expect(isTermId(id)).toBe(true);
   });
 
   test("text uses a true minus, never a hyphen before a digit", () => {

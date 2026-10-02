@@ -2,7 +2,7 @@ import LightDot from "@/components/LightDot";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatInt, ordinal, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Light } from "@/indicators/risk";
+import { THRESHOLDS, type Light } from "@/indicators/risk";
 import type { StockReport } from "@/query/stock-report";
 import { LIGHTS_DISCLAIMER } from "@/lib/report-card";
 import Term from "@/components/Term";
@@ -13,7 +13,7 @@ const abs0 = (v: number) => Math.abs(v).toFixed(0);
 
 type Check = { label: string; term: TermId; light: Light | null; figure: string; sentence: string };
 
-/** The five checks, each one figure, one light and one plain sentence from the report's numbers. */
+/** The eight checks, each one figure, one light and one plain sentence from the report's numbers. */
 export function checksOf(r: StockReport): Check[] {
   const t = r.trend;
   const trendSentence =
@@ -58,12 +58,38 @@ export function checksOf(r: StockReport): Check[] {
           l.light === "green" ? "easy to buy and sell." : l.light === "amber" ? "thinner trading, so large orders can move the price." : "thin trading, so getting in and out can be costly."
         }`;
 
+  const n = r.rightNow;
+  const rupees = (pctMove: number) => `₹${formatInt(Math.round(pctMove * 100))}`; // on ₹10,000
+  const nowSentence =
+    n.weekPct === null || n.ratio === null
+      ? "Not enough history yet: this needs a year of daily moves."
+      : `A normal week: up or down about ${n.weekPct.toFixed(1)}% (about ${rupees(n.weekPct)} on ₹10,000). ${n.ratio <= 1 ? "Calmer" : "Jumpier"} than its usual year.${
+          n.hit ? ` In the last 2 years, ${Math.round((n.hit.inside / n.hit.of) * 10)} in 10 week-long stretches stayed inside this range (of ${formatInt(n.hit.of)}).` : ""
+        }`;
+
+  const c = r.badDays.capture;
+  const badSentence = !c
+    ? "Not enough sessions alongside the NIFTY 50 yet."
+    : `When the NIFTY falls 1%, it usually falls ${(c.down / 100).toFixed(1)}%. When it rises 1%, this rises ${(c.up / 100).toFixed(1)}%. Beta ${c.beta.toFixed(2)}.`;
+
+  const k = r.crashes;
+  const ongoingNote = k.ongoing ? ` A new episode began on ${formatDate(k.ongoing)}; it counts once 3 months have passed.` : "";
+  const crashSentence =
+    k.episodes.length < THRESHOLDS.crashMinEpisodes || k.medianStock === null || k.medianNifty === null
+      ? `${k.episodes.length === 0 ? "No completed market crash in its history yet" : `Only ${k.episodes.length} completed market ${k.episodes.length === 1 ? "crash" : "crashes"} in its history`}: not enough to judge.${ongoingNote}`
+      : `In ${k.episodes.length} crashes since ${k.episodes[0]!.start.slice(0, 4)}, after each one began it fell a further ${abs0(k.medianStock)}% at the median (NIFTY ${abs0(k.medianNifty)}%)${
+          k.backOf ? ` and was back 6 months later in ${k.backCount} of ${k.backOf}` : ""
+        }.${ongoingNote}`;
+
   return [
     { label: "Trend", term: "trend-check", light: t.light, figure: t.sma200 === null ? "—" : pct((r.close / t.sma200 - 1) * 100), sentence: trendSentence },
     { label: "Strength", term: "relative-strength", light: s.light, figure: s.percentile === null ? "—" : ordinal(s.percentile), sentence: strengthSentence },
     { label: "Bumpiness", term: "volatility", light: b.light, figure: b.ratio === null ? "—" : `${b.ratio.toFixed(1)}×`, sentence: bumpSentence },
     { label: "Worst fall", term: "drawdown", light: w.light, figure: ws ? `${signed(ws.depthPct, 0)}%` : "—", sentence: fallSentence },
     { label: "Liquidity", term: "liquidity", light: l.light, figure: crore === null ? "—" : `₹${formatInt(crore)} cr`, sentence: liqSentence },
+    { label: "Right now", term: "right-now", light: n.light, figure: n.ratio === null ? "—" : `${n.ratio.toFixed(1)}×`, sentence: nowSentence },
+    { label: "Bad days", term: "bad-days", light: r.badDays.light, figure: c ? `${c.down.toFixed(0)}%` : "—", sentence: badSentence },
+    { label: "In crashes", term: "crash-episodes", light: k.light, figure: k.light === null || k.ratio === null ? "—" : `${k.ratio.toFixed(1)}×`, sentence: crashSentence },
   ];
 }
 
@@ -88,7 +114,7 @@ export function LightSummary({ checks, className }: { checks: Check[]; className
 
 export default function StockChecks({ checks, className }: { checks: Check[]; className?: string }) {
   return (
-    <div className={cn("grid gap-4 md:grid-cols-2 xl:grid-cols-5", className)}>
+    <div className={cn("grid grid-cols-2 gap-4 lg:grid-cols-4", className)}>
       {checks.map((c) => (
         <Card key={c.label} className="flex flex-col p-4">
           <div className="flex items-center justify-between gap-2">

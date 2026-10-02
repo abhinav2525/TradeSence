@@ -14,7 +14,7 @@ const IDS = [
   "breadth", "percentile", "five-session-change",
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
   "crossing", "whipsaw", "volume-ratio", "near-the-line",
-  "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices",
+  "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
 ] as const;
 
 export type TermId = (typeof IDS)[number];
@@ -348,6 +348,57 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     example: "With 2,461 month-long stretches, the 246th worst return is the \"1 in 10\".",
     mistakes: ["Counting the stretches as independent. Neighbouring stretches overlap almost entirely, so there's less evidence than the count suggests."],
     related: ["drawdown", "volatility"],
+    seeIt: { label: "Report card", href: "/stock" },
+  },
+  "right-now": {
+    id: "right-now", term: "Right now (expected range)", topic: "Risk",
+    short: "How jumpy the stock has been lately compared with its usual year, and the range a normal week moves in. Recent days count more than older ones.",
+    read: "Green: as calm as usual or calmer. Amber: up to 1.5× jumpier. Red: more than 1.5× jumpier than its usual year.",
+    what: "Calm and wild spells come in runs: after a few big days, more big days are likely. This light compares the stock's recent swings with its last year and turns them into a range for a normal week. The card also says how often real weeks stayed inside that range, so you can see whether it fits this stock.",
+    calc: {
+      plain: "Each day's move is squared and blended into a running average in which yesterday's estimate keeps 94% of the weight (J.P. Morgan's RiskMetrics, 1996). Its square root is today's typical daily move; times √5 gives a week.",
+      exact: "σ²(today) = 0.94 × σ²(yesterday) + 0.06 × move²\nweek = σ × √5\nlight = σ ÷ std. dev. of the last 250 moves",
+    },
+    example: "A typical day of ±1.8% makes a normal week about ±1.8% × 2.24 ≈ ±4.0%: about ±₹400 on ₹10,000. If its usual year was ±1.2% a day, the ratio is 1.5×: amber.",
+    mistakes: [
+      "Reading the range as a limit. About 1 week in 3 should end outside it, and the worst weeks end far outside.",
+      "Thinking calm means safe. Calm spells end, often suddenly.",
+    ],
+    related: ["volatility", "stretches"],
+    seeIt: { label: "Report card", href: "/stock" },
+  },
+  "bad-days": {
+    id: "bad-days", term: "Bad days (down capture and beta)", topic: "Risk",
+    short: "How much of the NIFTY 50's falls the stock takes on the market's down days. 120% means that when the NIFTY falls 1%, it usually falls 1.2%.",
+    read: "Green: 100% or less. Amber: up to 120%. Red: more than 120%. Beta, shown small, is the same idea over all days.",
+    what: "Some stocks drop harder than the market on bad days; others hold up better. Down capture looks only at the days the NIFTY 50 fell, up capture at the days it rose. Beta is the textbook measure over all days: how much the stock moves for each 1% the NIFTY moves.",
+    calc: {
+      plain: "Over the last 250 sessions: the stock's average move on the NIFTY's down days ÷ the NIFTY's average move on those days. Up capture does the same on up days.",
+      exact: "down capture = mean(stock | NIFTY < 0) ÷ mean(NIFTY | NIFTY < 0) × 100\nbeta = Cov(stock, NIFTY) ÷ Var(NIFTY)",
+    },
+    example: "On the NIFTY's down days it fell 0.8% on average and the stock fell 1.0%: down capture 125%, red. If on up days the NIFTY rose 0.7% and the stock 0.63%, up capture is 90%.",
+    mistakes: [
+      "Assuming a low beta means the stock can't fall. It describes typical days, not crashes: see In crashes.",
+      "Comparing captures measured over different periods.",
+    ],
+    related: ["crash-episodes", "volatility"],
+    seeIt: { label: "Report card", href: "/stock" },
+  },
+  "crash-episodes": {
+    id: "crash-episodes", term: "In crashes (market breaks)", topic: "Risk",
+    short: "How much further the stock fell after past market crashes began, against the NIFTY 50, and whether it was back 6 months later. A crash: under 20% of NIFTY 50 stocks above their 200-day average.",
+    read: "Green: fell up to 1.2× the NIFTY's fall. Amber: up to 1.8×. Red: more. No light with fewer than 3 past crashes.",
+    what: "When most of the index breaks down together, you find out which stocks hold up. For each past crash, the card measures the stock's lowest point in the following 3 months against the NIFTY's, and checks where it was 6 months on. A crash still under way isn't counted until 3 months have passed.",
+    calc: {
+      plain: "A crash starts on a day 200-day breadth falls below 20%; weak days within 10 sessions of each other are one crash (as in research 0001). Fall = the lowest close in the next 63 sessions ÷ the start day's close, minus 1.",
+    },
+    example: "Three crashes: the stock fell 15%, 9% and 20% (median 15%); the NIFTY fell 10%, 6% and 12% (median 10%). 15 ÷ 10 = 1.5×: amber.",
+    mistakes: [
+      "Reading it as the whole crash. It measures the fall after breadth had already collapsed, so the drop before that day isn't in it.",
+      "Treating a handful of crashes as proof. Since 2020 there have been only about 5; the card always says how many.",
+      "Expecting the next crash to look like the last ones.",
+    ],
+    related: ["breadth", "drawdown"],
     seeIt: { label: "Report card", href: "/stock" },
   },
   "adjusted-prices": {

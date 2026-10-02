@@ -5,6 +5,7 @@ import DateNav from "@/components/DateNav";
 import StockChecks, { LightSummary, checksOf } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
 import RiskCalculator from "@/components/RiskCalculator";
+import CrashTable from "@/components/CrashTable";
 import StockPriceChart from "@/components/StockPriceChart";
 import DrawdownChart from "@/components/DrawdownChart";
 import StockEvents from "@/components/StockEvents";
@@ -103,6 +104,7 @@ export default async function Page({
         <LightSummary checks={checks} />
         <StockChecks checks={checks} />
         <RiskCalculator symbol={symbol} horizons={r.horizons} initial={h} firstDate={r.firstDate} />
+        <CrashTable crashes={r.crashes} />
         <Card>
           <StockPriceChart data={r.price} selectedDate={r.requested ? r.date : null} />
           <CardFooter>Adjusted for splits, bonuses and demergers, in the rupees of {formatDate(r.date)}.</CardFooter>

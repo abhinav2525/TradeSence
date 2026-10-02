@@ -101,7 +101,8 @@ async function build(id: TermId): Promise<string | null> {
         : `Among today's members, ${lo.symbol} has crossed its 200-day SMA least often since 2020 (${rate(lo)}) and ${hi.symbol} most often (${rate(hi)}).`;
     }
     case "sma": case "ema": case "ma-50-200": case "trend-check": case "relative-strength":
-    case "volatility": case "drawdown": case "liquidity": case "stretches": case "adjusted-prices": {
+    case "volatility": case "drawdown": case "liquidity": case "stretches": case "adjusted-prices":
+    case "right-now": case "bad-days": case "crash-episodes": {
       const res = await stockReport(SHOWCASE);
       if (res.kind !== "ok") return null;
       const r = res.report;
@@ -121,6 +122,12 @@ async function build(id: TermId): Promise<string | null> {
         case "liquidity": return r.liquidity.medianCrore === null ? null
           : `About ₹${formatInt(Math.round(r.liquidity.medianCrore))} crore of ${SHOWCASE} changes hands on a typical day.`;
         case "stretches": { const m = r.horizons["1m"].stock; return m ? `${SHOWCASE} has ${formatInt(m.windows)} month-long stretches since ${formatDate(r.firstDate)}; 1 in 10 lost more than ${Math.abs(m.p10).toFixed(1)}%.` : null; }
+        case "right-now": return r.rightNow.weekPct === null || r.rightNow.ratio === null ? null
+          : `${SHOWCASE} on ${on}: a normal week is up or down about ${r.rightNow.weekPct.toFixed(1)}%, ${r.rightNow.ratio.toFixed(1)}× as jumpy as its usual year.`;
+        case "bad-days": { const c = r.badDays.capture; return c === null ? null
+          : `Over the last ${c.sessions} sessions, when the NIFTY fell 1% ${SHOWCASE} usually fell ${(c.down / 100).toFixed(1)}%; its beta was ${c.beta.toFixed(2)}.`; }
+        case "crash-episodes": { const c = r.crashes; return c.episodes.length === 0 || c.medianStock === null || c.medianNifty === null ? null
+          : `In ${c.episodes.length} market crashes since ${c.episodes[0]!.start.slice(0, 4)}, ${SHOWCASE} fell a further ${Math.abs(c.medianStock).toFixed(0)}% at the median after each began (NIFTY 50: ${Math.abs(c.medianNifty).toFixed(0)}%).`; }
         default: { const e = r.events.find((x) => x.kind !== "rename"); return e ? `${SHOWCASE}: ${e.text.replace(/\s+/g, " ")} (${formatDate(e.date)}).` : null; }
       }
     }
