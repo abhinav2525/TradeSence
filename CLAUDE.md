@@ -14,6 +14,9 @@ plus that percentage charted since 2020, on the index's real membership each day
 before making changes; this file covers only what the code cannot tell you. (README
 predates `/crossings` and does not document it yet.)
 
+**`docs/research/` holds data studies** (question, method, results, caveats, what to
+build). Re-run a study's command before quoting its numbers; they change as data grows.
+
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
 

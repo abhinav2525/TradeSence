@@ -26,17 +26,23 @@ Why first: every later item reads the 10-year history, which today is computed
 on current winners and flatters any backtested signal.
 
 ## 2. Forward-return study: does breadth predict? — b → a
-- [ ] When % above 200 DMA was < 20% (or > 80%), what did NIFTY 50 do over the
-  next 1 / 3 / 6 months? Decides which signals are worth building.
+- [x] When % above 200 DMA was < 20% (or > 80%), what did NIFTY 50 do over the
+  next 1 / 3 / 6 months? **Done 2026-10-02** — docs/research/0001. Below 20%:
+  higher 6 months later 5/5 times (+14% avg vs +7.7% normal), but a small sample.
+  Above 80%: no edge.
 
 ## 3. Advance/Decline line + McClellan oscillator — c, a
 - [ ] From `close` vs `prev_close` per member per day. Cheap, standard, new
   instrument on existing data.
 
 ## 4. Signal detectors — a
-- [ ] Breadth thrust (Zweig: < 40% → > 61.5% within 10 days).
-- [ ] Divergence: index at new high while breadth is falling.
-- Build only what item 2 says actually works.
+- [ ] Breadth washout: 200-SMA breadth < 20%, shown with its history (research 0001
+  says this is the one worth building).
+- [ ] Breadth thrust (Zweig: < 40% → > 61.5% within 10 days) — **study it first**,
+  same code as research 0001.
+- [ ] Divergence: index at new high while breadth is falling — study first; index
+  closes now exist (`index_prices`).
+- ~~"Overbought" from breadth > 80%~~ — research 0001 found no edge; don't build.
 
 ## 5. Screener — a, c
 - [ ] Crossed above 200 DMA today with ≥ 2× average volume; "closest to

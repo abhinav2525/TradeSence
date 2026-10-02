@@ -19,5 +19,9 @@ to the table below in the same change.
 | [0004](0004-demerger-adjustment.md) | 2026-10-02 | Demergers (RELIANCE, ITC, TMPV, HINDUNILVR) were never adjusted; TMPV's 200 EMA ~7.5% too high | Ratio from prices (last close ÷ ex-date open), matches TradingView |
 | [0005](0005-point-in-time-membership.md) | 2026-10-02 | History used today's 50 stocks for every year (survivorship bias); member list also stale (WIPRO → BSE) | Real membership since 2020 in a hand-checked CSV from NSE press releases, verified 50 every day |
 
+Research studies (questions answered with data, not problems fixed) live in
+[`docs/research/`](../research/):
+[0001 — Does breadth predict the NIFTY 50?](../research/0001-does-breadth-predict.md)
+
 Older decisions, made before this log existed, are recorded in `CLAUDE.md` under
 "Design decisions that are load-bearing" and "Gotchas that will bite you".
