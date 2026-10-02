@@ -190,6 +190,11 @@ compare with `NOISE_PCT` (`src/indicators/risk.ts`)
 ([0013](docs/decisions/0013-independent-audit-and-rounding.md)). A new Report Card number
 goes into `src/audit/report-card.ts` in the same change.
 
+**Motion goes through the tokens** ([0015](docs/decisions/0015-app-motion.md)). Durations come
+from `--motion-*` in `globals.css` / `MOTION` in `src/lib/motion.ts`; charts spread
+`useChartAnimation()` (a test forbids a literal `isAnimationActive`); big figures go through
+`<CountUp>`; meters get a `grow-*` class. Never animate on hover or while someone types.
+
 **Header validation must list every column the parser reads.** `at()` returns `-1` for a
 missing column and `f[-1]` is `undefined`; the old code turned that into `0` and would
 have written zeroed prices silently on the next NSE rename.

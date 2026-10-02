@@ -68,14 +68,35 @@ One family, Geist, does everything including figures; Geist Mono is only for key
 - Lines are 2px `chart-1`; the area under them is a `chart-1` wash fading from 32% to 2%. Bars are at most 18px thick with 4px rounded ends at the value end, square at the baseline. Active dots are 4px radius with a 2px `card` ring.
 - The breadth chart shades the extremes: 80–100% in `up` at 6%, 0–20% in `down` at 7%. The selected session gets a 1px `foreground` rule at 35% and a 5px dot.
 - Axis text is 11px `muted-foreground` with tabular figures; y ticks read "0% 20% 50% 80% 100%". Values and labels wear text tokens, never the series colour.
-- Every chart has a hover layer: a crosshair and tooltip on the area (date as the heading, then "29 of 49 above · 59.2%"), a per-bar tooltip on bars, a per-bin tooltip on the histogram. Charts never animate.
+- Every chart has a hover layer: a crosshair and tooltip on the area (date as the heading, then "29 of 49 above · 59.2%"), a per-bar tooltip on bars, a per-bin tooltip on the histogram. Charts draw in once on open and morph on a change; hover is instant (see States and motion).
 
 ## States and motion
 
 - Hover: rows and ghost controls move to `raised`; links and inactive segments move from `muted-foreground` to `foreground`.
 - Selected: segments sit on `thumb` with `shadow-thumb`; the active nav item sits on `brand-soft` with a `brand` icon.
 - Disabled: 40% `muted-foreground` and no pointer (the session stepper at either end of history).
-- Motion is colour and opacity transitions only, at Tailwind's default 150ms. `prefers-reduced-motion` cuts them to nothing.
+- Selected segments sit on one sliding pill (`SlidingPill`), which moves to the chosen option; without JavaScript the option keeps its own thumb.
+
+**Motion** (decision 0015). Polished and smooth, never in the way. Four rules:
+
+1. **Only when something opens or changes, never while you read.** Hover, crosshairs and tooltips are instant; nothing loops (the loading shimmer runs only while waiting).
+2. **The final value is the true one.** Figures end exactly on the server-rendered text, which is in the HTML from the first paint and in an `sr-only` copy for screen readers.
+3. **`prefers-reduced-motion` turns it all off**, in CSS and in JavaScript.
+4. **One clock:** `--motion-fast` 150ms, `--motion-base` 300ms, `--motion-slow` 600ms and `--ease-out`; JavaScript reads `MOTION` from `src/lib/motion.ts`.
+
+| Element | On open | On a change | Tool |
+|---|---|---|---|
+| Cards and tiles | Fade and rise 8px, `base`, staggered 40ms (first 8) | none | `.reveal` (on `Card`) |
+| Big figures | Count up from 0, `slow` | Count from the shown value, `base` | `<CountUp text>` |
+| Charts | Draw in, `slow` | Morph, `base` | `useChartAnimation()` |
+| Meters and bars | Grow from 0, `slow` (first screenful of a table only) | Slide, `base` | `.grow-x`, `.grow-x-end`, `.grow-y`, `.grow-y-top`; markers `.fade-in` |
+| Traffic lights | Pop in after their card | Colour fade | `.pop-in` |
+| Pages | New page fades in, `base`; old fades out, `fast`; sidebar still | none (same page) | `<ViewTransition>` in `AppShell` |
+| Switches | | Pill slides, `fast` | `SlidingPill` |
+| Popovers, date picker | Zoom and fade, `fast` | | `tw-animate-css` |
+| Loading | Shimmering page skeleton | | `app/loading.tsx` |
+
+Not animated: the risk calculator's rupee figures (they change as you type).
 
 ## Iconography
 

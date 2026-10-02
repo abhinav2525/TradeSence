@@ -219,6 +219,6 @@ Full rules: `system/README.md`. The ones these screens lean on:
   word. `brand` for single series and selection; `chart-muted` for context.
 - Tables: `table-head` column heads on a sticky `card` header, tabular figures, the true
   minus sign "−", Indian digit grouping, dates as "29 Sep 2026".
-- Charts: no animation, a hover tooltip on every chart, no legend for one series, a
+- Charts: draw in on open and a quick morph on change, never on hover, a hover tooltip on every chart, no legend for one series, a
   legend when colour carries meaning (the oscillator's sign).
 - Copy is plain and exact, and says the caveat when it changes the reading.

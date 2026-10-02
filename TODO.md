@@ -143,3 +143,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Every term explained: ⓘ popovers + `/learn` pages: 0012
 - [x] Independent Report Card audit; Strength rank and flat-month rounding fixed: 0013
 - [x] Report Card lights 6–8 (Right now, Bad days, In crashes): 0014
+- [x] App motion (polished and smooth): 0015
