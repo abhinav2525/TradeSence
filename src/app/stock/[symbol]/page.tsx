@@ -4,7 +4,11 @@ import PageHeader from "@/components/PageHeader";
 import DateNav from "@/components/DateNav";
 import StockChecks, { LightSummary, checksOf } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
-import { Card } from "@/components/ui/card";
+import RiskCalculator from "@/components/RiskCalculator";
+import StockPriceChart from "@/components/StockPriceChart";
+import DrawdownChart from "@/components/DrawdownChart";
+import StockEvents from "@/components/StockEvents";
+import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { stockReport, type StockReport } from "@/query/stock-report";
 import type { HorizonKey } from "@/indicators/risk";
@@ -98,6 +102,20 @@ export default async function Page({
       <div className="flex flex-col gap-4">
         <LightSummary checks={checks} />
         <StockChecks checks={checks} />
+        <RiskCalculator symbol={symbol} horizons={r.horizons} initial={h} firstDate={r.firstDate} />
+        <Card>
+          <StockPriceChart data={r.price} selectedDate={r.requested ? r.date : null} />
+          <CardFooter>Adjusted for splits, bonuses and demergers, in the rupees of {formatDate(r.date)}.</CardFooter>
+        </Card>
+        <div className="grid gap-4 xl:grid-cols-12">
+          <Card className="xl:col-span-8">
+            <DrawdownChart
+              data={r.drawdown}
+              trough={r.worstFall.stock ? { date: r.worstFall.stock.troughDate, pct: r.worstFall.stock.depthPct } : null}
+            />
+          </Card>
+          <StockEvents className="xl:col-span-4" events={r.events} dividends12m={r.dividends12m} date={r.date} />
+        </div>
       </div>
     </AppShell>
   );

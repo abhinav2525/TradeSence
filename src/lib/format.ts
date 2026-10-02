@@ -44,3 +44,10 @@ export function ordinal(n: number): string {
   const suffix = teen ? "th" : ["th", "st", "nd", "rd"][v % 10] ?? "th";
   return `${v}${v % 10 > 3 && !teen ? "th" : suffix}`;
 }
+
+/** Rupees, whole, Indian grouping, true minus: −₹1,820. */
+export function formatRupees(n: number): string {
+  const r = Math.round(n);
+  const s = Math.abs(r).toLocaleString("en-IN");
+  return r < 0 ? `−₹${s}` : `₹${s}`;
+}
