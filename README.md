@@ -200,12 +200,20 @@ request, so if the database is down the server still starts but the page fails t
 
 ## Keep it current
 
-```cron
-30 19 * * 1-5 cd /path/to/tradeSence && /opt/homebrew/bin/bun run ingest:nightly >> /tmp/tradesence.log 2>&1
+```bash
+./ops/install-nightly.sh                                    # install / reinstall
+launchctl kickstart gui/$(id -u)/com.tradesence.nightly     # run it now
+launchctl print gui/$(id -u)/com.tradesence.nightly | grep "last exit"
+tail ~/Library/Logs/tradesence-nightly.log                  # output of each run
+launchctl bootout gui/$(id -u)/com.tradesence.nightly       # uninstall
 ```
 
-`ingest:nightly` re-ingests the last 7 days and recomputes. Every step is idempotent, so
-a missed night heals on the next run. Schedule it after ~7pm IST, once NSE has published.
+This installs a launchd agent (`ops/com.tradesence.nightly.plist`) that runs
+`ingest:nightly` Mon–Fri at 19:30 local time, after NSE publishes. It uses launchd rather
+than cron because a run missed while the Mac is asleep fires on wake. `ingest:nightly`
+re-ingests the last 7 days and recomputes, and every step is idempotent, so a night
+missed while the Mac was off heals on the next run. Postgres must be running (`brew
+services` starts it at login). Re-run the installer if you move the repo or reinstall bun.
 
 ---
 

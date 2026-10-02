@@ -39,6 +39,11 @@ bun run ingest:nightly                         # cron entry point
 Needs local Postgres (`brew services start postgresql@14`) and both `tradesence` and
 `tradesence_test`. `DATABASE_URL` lives in `.env`.
 
+`ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
+today, so a missed night heals on the next run. It runs from a launchd agent
+(`ops/install-nightly.sh`, Mon–Fri 19:30, log in `~/Library/Logs/tradesence-nightly.log`).
+`TODO.md` holds the prioritised roadmap; the survivorship fix (below) is item 1.
+
 ## Design decisions that are load-bearing
 
 **Store everything, filter at query time.** `daily_prices` holds the whole NSE cash

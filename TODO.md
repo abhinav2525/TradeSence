@@ -5,8 +5,8 @@ Roadmap from the 2026-09-30 brainstorm. Goals: (a) trading/decision aid,
 each item unlocks or de-risks the ones below it.
 
 ## 0. Install the nightly cron — all
-- [ ] Schedule `bun run ingest:nightly` (deferred to 2026-09-30).
-  Without fresh data nothing else stays alive.
+- [x] Schedule `bun run ingest:nightly` — launchd agent, Mon–Fri 19:30 IST,
+  installed 2026-10-02 via `ops/install-nightly.sh`.
 
 ## 1. Survivorship fix: historical NIFTY 50 membership — a, b
 - [ ] **Spike:** can we get reliable, machine-readable NIFTY 50
