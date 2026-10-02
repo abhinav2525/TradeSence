@@ -355,6 +355,18 @@ Postgres's 65,535 bind-parameter cap).
 | `deriveAdvanceDecline` | `(rows) => AdPoint[]` | Net, RANA ((A−D)÷(A+D)×1,000; 0 when nothing moved), McClellan (EMA19 − EMA39 of RANA), summation index, A/D line, 10-day advancing share. Restarts after a data gap. |
 | `advanceDeclineSeries` | `(indexName?) => Promise<AdPoint[]>` | Both of the above. |
 
+### `src/indicators/risk.ts` and `src/query/stock-report.ts` — the Report Card
+
+| Function | Signature | Notes |
+|---|---|---|
+| `adjustedLine` | `(moves) => { date, level, segment }[]` | Chains `change_pct` from 100; a null move starts a new segment. The one price line every risk measure uses. |
+| `worstDrawdown` / `drawdownSeries` | `(line) => Drawdown \| null` / `{ date, pct }[]` | Deepest fall from a peak, trough, recovery date (or null) and sessions from peak to recovery; never across a segment. |
+| `horizonStats` | `(line, sessions) => HorizonStats \| null` | Every overlapping stretch: 10th percentile, median, worst (with start), share negative, 20 histogram bins. Null under 3× the horizon. |
+| `dailyVolatility`, `periodReturn`, `percentRank` | | Std. dev. of the last 250 moves (≥ 60 needed); % over N sessions; % of a list at or below a value. |
+| `trendLight`, `strengthLight`, `ratioLight`, `liquidityLight`, `THRESHOLDS` | | Every light's cut-off in one place (decision 0011). |
+| `stockReport` | `(symbol, date?) => { kind: "unknown" \| "no-data" \| "ok" }` | Assembles a `StockReport` as of a date: checks, horizons, adjusted price, drawdown, events, dividends. |
+| `supportedStocks` | `() => { symbol, current }[]` | Every symbol ever in the NIFTY 50 since 2020, current members first. |
+
 ### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
 
 | Function | Signature | Notes |

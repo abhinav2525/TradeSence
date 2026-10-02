@@ -57,6 +57,11 @@ on current winners and flatters any backtested signal.
 - [ ] % above 200 DMA for NIFTY 500 / whole market; show divergence from
   NIFTY 50. Query-only — `daily_prices` already holds the whole market.
 
+## Beginner tools (2026-10-02, from the product review)
+- [x] **Stock Report Card + Risk Calculator** — `/stock/[symbol]`, decision 0011.
+- [ ] Market Weather — one plain-language verdict from breadth, A/D and research 0001.
+- [ ] Strength Leaderboard — relative-strength ranks; study momentum first (like research 0001).
+
 ## 8. Nice-to-haves — c
 - [ ] Relative-strength ranking vs index.
 - [ ] Volume/turnover anomalies vs 20-day baseline.

@@ -10,7 +10,8 @@ members, and serves a page showing how many constituents trade above each averag
 plus that percentage charted since 2020, on the index's real membership each day. Other
 pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
 A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
-near the line) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators/risk.ts`:
+the beginner's Report Card and risk calculator) and `/crossings` (`src/query/crossings.ts`: members ranked by how often they
 whipsaw across an average). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
