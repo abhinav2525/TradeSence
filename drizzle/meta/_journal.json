@@ -36,6 +36,13 @@
       "when": 1790926198127,
       "tag": "0004_striped_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790930034100,
+      "tag": "0005_cooing_hulk",
+      "breakpoints": true
     }
   ]
 }

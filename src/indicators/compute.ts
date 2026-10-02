@@ -2,6 +2,7 @@ import { sql, type SQL } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
 import { segmentByGaps } from "./gaps";
+import { volumeRatios } from "./volume";
 import { adjustmentFactors, demergerFactor, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 import { symbolLineage, type LineageEntry } from "../ingest/symbol-changes";
 
@@ -58,8 +59,8 @@ export async function computeIndicators(
   for (const symbol of symbols) {
     const lineage = symbolLineage(symbol, renames);
 
-    const prices = await db.execute<{ trade_date: string; open: number; close: number }>(
-      sql`select trade_date, open, close
+    const prices = await db.execute<{ trade_date: string; open: number; close: number; volume: number }>(
+      sql`select trade_date, open, close, volume
           from daily_prices
           where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
           order by trade_date asc`,
@@ -89,9 +90,13 @@ export async function computeIndicators(
       const factor = e.kind === "demerger"
         ? demergerFactor(dates, opens, closes, e.ex_date)
         : Number(e.factor);
-      return factor === null ? [] : [{ exDate: e.ex_date, factor }];
+      return factor === null ? [] : [{ exDate: e.ex_date, factor, demerger: e.kind === "demerger" }];
     });
     const factors = adjustmentFactors(dates, events);
+    // Volume is scaled by share-count changes only: a demerger moves the price
+    // but leaves the number of shares alone (decision 0008).
+    const shareFactors = adjustmentFactors(dates, events.filter((e) => !e.demerger));
+    const volRatio = volumeRatios(dates, prices.map((p) => Number(p.volume)), shareFactors);
     const adjusted = closes.map((c, i) => c / factors[i]!);
 
     for (const jump of findUnexplainedJumps(dates, closes, factors)) {
@@ -131,6 +136,7 @@ export async function computeIndicators(
       sma200: s200[i],
       ema200: e200[i],
       changePct: move[i],
+      volRatio: volRatio[i],
     }));
 
     for (let i = 0; i < rows.length; i += CHUNK) {
@@ -145,6 +151,7 @@ export async function computeIndicators(
             sma200: sql`excluded.sma_200`,
             ema200: sql`excluded.ema_200`,
             changePct: sql`excluded.change_pct`,
+            volRatio: sql`excluded.vol_ratio`,
           },
         });
     }

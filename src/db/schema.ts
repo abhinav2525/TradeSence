@@ -65,6 +65,9 @@ export const dailyIndicators = pgTable(
     // joined across renames; null on a segment's first day. bhavcopy's
     // prev_close can't be used: it isn't adjusted on an ex-date.
     changePct: doublePrecision("change_pct"),
+    // Volume ÷ mean of the 20 prior sessions, in split/bonus-adjusted share
+    // units (never demerger-adjusted). For the Screener (decision 0009).
+    volRatio: doublePrecision("vol_ratio"),
   },
   (t) => [primaryKey({ columns: [t.tradeDate, t.symbol] })],
 );

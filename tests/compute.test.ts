@@ -346,3 +346,41 @@ describe("computeIndicators: the day's move (change_pct)", () => {
     expect((await moves("HOLE"))[2]).toBeNull();
   });
 });
+
+describe("computeIndicators: volume vs its 20-session normal (vol_ratio)", () => {
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+    await db.delete(schema.corporateActions);
+    await db.delete(schema.symbolChanges);
+  });
+
+  async function run(symbol: string, rows: ReturnType<typeof synthetic>, action?: { kind: string; factor: number; at: number }) {
+    await db.insert(schema.dailyPrices).values(rows);
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol, addedOn: "2020-01-01", removedOn: null });
+    if (action) {
+      await db.insert(schema.corporateActions).values({
+        symbol, exDate: rows[action.at]!.tradeDate, series: "EQ", subject: action.kind,
+        kind: action.kind, factor: action.factor, company: null, recordDate: null,
+      });
+    }
+    await computeIndicators();
+    return (await db.select().from(schema.dailyIndicators).where(eq(schema.dailyIndicators.symbol, symbol)))
+      .sort((a, b) => (a.tradeDate < b.tradeDate ? -1 : 1))
+      .map((r) => r.volRatio);
+  }
+
+  test("a 1:5 split's fivefold share count is not a volume surge", async () => {
+    const rows = synthetic("SPLITV", 25).map((r, i) => (i >= 22 ? { ...r, volume: 5000, close: r.close / 5, open: r.open / 5 } : r));
+    const v = await run("SPLITV", rows, { kind: "split", factor: 5, at: 22 });
+    expect(v[19]).toBeNull();
+    expect(v[24]!).toBeCloseTo(1, 9);
+  });
+
+  test("a demerger does not scale volume: the share count didn't change", async () => {
+    const rows = synthetic("DEMV", 25).map((r, i) => (i >= 22 ? { ...r, close: 60, open: 60 } : { ...r, close: 100, open: 100 }));
+    const v = await run("DEMV", rows, { kind: "demerger", factor: 1, at: 22 });
+    expect(v[24]!).toBeCloseTo(1, 9);
+  });
+});
