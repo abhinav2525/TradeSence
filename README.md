@@ -366,6 +366,8 @@ Postgres's 65,535 bind-parameter cap).
 | `trendLight`, `strengthLight`, `ratioLight`, `liquidityLight`, `THRESHOLDS` | | Every light's cut-off in one place (decision 0011). |
 | `stockReport` | `(symbol, date?) => { kind: "unknown" \| "no-data" \| "ok" }` | Assembles a `StockReport` as of a date: checks, horizons, adjusted price, drawdown, events, dividends. |
 | `supportedStocks` | `() => { symbol, current }[]` | Every symbol ever in the NIFTY 50 since 2020, current members first. |
+| `rankAmongPeers`, `NOISE_PCT` | `(symbol, value, peers) => { pct, of } \| null` | Strength: % of the *other* members beaten; self removed by symbol, gaps under 1e-9 pts are noise (decision 0013). |
+| `audit:report-card` | `bun run audit:report-card [date]` | `src/audit/report-card.ts`: recomputes every Report Card number from raw prices with no shared code; exits 1 on a mismatch. |
 
 ### `src/lib/glossary.ts`, `src/components/Term.tsx` and `src/query/glossary-live.ts` — explaining terms
 

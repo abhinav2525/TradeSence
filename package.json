@@ -19,7 +19,8 @@
     "ingest:symbol-changes": "bun run src/ingest/cli-symbol-changes.ts",
     "indicators": "bun run src/indicators/cli.ts",
     "ingest:nightly": "bun run src/ingest/cli-nightly.ts",
-    "research:forward-returns": "bun run src/research/cli-forward-returns.ts"
+    "research:forward-returns": "bun run src/research/cli-forward-returns.ts",
+    "audit:report-card": "bun run src/audit/report-card.ts"
   },
   "dependencies": {
     "@radix-ui/react-popover": "^1.1.23",
