@@ -86,6 +86,29 @@ not a forecast. Losses can be larger than anything in this history."*
 - **"92th"** became "92nd" (`ordinal()`).
 - **The date picker had no upper bound**, so `lastDate` was added to the report.
 
+## Found by the independent review (fixed)
+
+A fresh reviewer checked the whole change. It found no critical problems and confirmed
+the maths, no hindsight and the URL safety. Fixed, each with a test that failed first:
+
+- **"Every month" was really every overlapping month-long *stretch***: ten years hold
+  ~2,460 of them, not 120 months. The calculator now says "overlapping month-long
+  stretches (2,461 of them)", so nobody mistakes overlap for independent evidence.
+- **The amount was silently clamped**: ₹500 showed ₹1,000 figures. Now the figures are for
+  exactly what's typed, and an empty box asks for an amount.
+- **Worst fall had no minimum history**: JIOFIN after 12 sessions read "red, 6.9×". It now
+  needs a year (250 sessions), like the other checks need theirs.
+- **Arrow and 1/2/3 keys on the card**: ← → now step that stock's sessions (keeping the
+  horizon), and 1/2/3 do nothing instead of jumping to the list. The key routing is now a
+  tested pure function (`hotkey-target.ts`).
+- **No "not advice" line near the lights**: added ("They are not advice to buy or sell.").
+- **The split test had no split**: replaced with one that has a raw ÷5 drop. It was proved
+  to fail when the adjustment is deliberately broken.
+
+Deferred minor polish is listed in the branch summary: ranking can read "100%", the
+membership line ignores the chosen date, the horizon resets when stepping after a toggle,
+no median or peak/recovery annotation yet, and events aren't de-duplicated across old symbols.
+
 ## Checks
 
 - **Against TradingView (memory: verify before claiming).** M&M's worst fall: the card says

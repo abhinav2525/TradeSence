@@ -78,8 +78,8 @@ export default async function Page({
   const checks = checksOf(r);
   return (
     <AppShell current="stock" ma="sma200" asOf={r.lastDate}>
-      {/* page keys (b a c s t) work here; arrows step via the date nav's links */}
-      <Hotkeys ma="sma200" page="stock" />
+      {/* arrows step this stock's sessions and keep the horizon; 1-3 do nothing here */}
+      <Hotkeys ma="sma200" page="stock" base={base} extra={`&h=${h}`} prev={r.prev} next={r.next} />
       <PageHeader
         eyebrow="NIFTY 50 · Stock"
         title={symbol}

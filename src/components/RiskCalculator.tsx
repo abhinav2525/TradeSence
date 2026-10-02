@@ -6,16 +6,9 @@ import { formatDate, formatRupees } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { HorizonKey } from "@/indicators/risk";
 import type { HorizonPair } from "@/query/stock-report";
+import { HORIZON_LABELS as LABEL, parseAmount } from "@/lib/report-card";
 
-const LABEL: Record<HorizonKey, { one: string; many: string; button: string }> = {
-  "1w": { one: "week", many: "weeks", button: "1 week" },
-  "1m": { one: "month", many: "months", button: "1 month" },
-  "3m": { one: "3-month stretch", many: "3-month stretches", button: "3 months" },
-  "1y": { one: "year", many: "years", button: "1 year" },
-};
 const ORDER: HorizonKey[] = ["1w", "1m", "3m", "1y"];
-const MIN = 1_000;
-const MAX = 10_00_00_000;
 
 type Props = { symbol: string; horizons: Record<HorizonKey, HorizonPair>; initial: HorizonKey; firstDate: string };
 
@@ -27,10 +20,11 @@ type Props = { symbol: string; horizons: Record<HorizonKey, HorizonPair>; initia
 export default function RiskCalculator({ symbol, horizons, initial, firstDate }: Props) {
   const [h, setH] = useState<HorizonKey>(initial);
   const [raw, setRaw] = useState("10000");
-  const amount = Math.min(MAX, Math.max(MIN, Number(raw) || MIN));
+  // exactly what was typed; no amount → no figures, never a silently different amount
+  const amount = parseAmount(raw);
   const { stock, nifty } = horizons[h];
   const l = LABEL[h];
-  const rs = (pct: number) => formatRupees((amount * pct) / 100);
+  const rs = (pct: number) => formatRupees(((amount ?? 0) * pct) / 100);
 
   const pick = (k: HorizonKey) => {
     setH(k);
@@ -49,7 +43,7 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
         <div>
           <h2 className="text-heading text-foreground">What could a bad stretch cost?</h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
-            Every {l.one} in {symbol}&apos;s history since {formatDate(firstDate)}
+            Every overlapping {l.one} in {symbol}&apos;s history since {formatDate(firstDate)}{stock ? ` (${stock.windows.toLocaleString("en-IN")} of them)` : ""}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -58,8 +52,7 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
             <input
               type="number"
               inputMode="numeric"
-              min={MIN}
-              max={MAX}
+              min={1}
               step={1000}
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
@@ -85,7 +78,9 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
         </div>
       </div>
 
-      {!stock ? (
+      {amount === null ? (
+        <p className="px-5 pb-8 pt-4 text-[13px] text-muted-foreground">Type an amount in rupees to see what a bad stretch would have cost.</p>
+      ) : !stock ? (
         <p className="px-5 pb-8 pt-4 text-[13px] text-muted-foreground">Not enough history yet for {l.one}-long stretches.</p>
       ) : (
         <div className="grid gap-6 px-5 pb-5 pt-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
@@ -115,7 +110,7 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
             <div
               className="flex h-36 items-end gap-0.5"
               role="img"
-              aria-label={`Outcomes of ${stock.windows} ${l.many} for ${formatRupees(amount)}: 1 in 10 lost more than ${rs(stock.p10)}.`}
+              aria-label={`Outcomes of ${stock.windows} overlapping ${l.many} for ${formatRupees(amount)}: 1 in 10 lost more than ${rs(stock.p10)}.`}
             >
               {stock.bins.map((b, i) => (
                 <div key={i} className="group relative flex h-full flex-1 items-end">

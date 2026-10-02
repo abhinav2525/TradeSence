@@ -41,9 +41,9 @@ describe("stockReport", () => {
     expect(await stockReport("AAA", "2019-06-01")).toMatchObject({ kind: "no-data", firstDate: d(0) });
   });
 
-  test("builds every check; a 1:5 split day (move ≈ 0 in change_pct) creates no drawdown", async () => {
+  test("builds every check from a steady rise (no fall, green liquidity, every horizon)", async () => {
     await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "AAA", addedOn: "2020-01-01", removedOn: null });
-    // steady +0.1%/day; the split is invisible in change_pct by design (decision 0008)
+    // steady +0.1%/day (the split case has its own test below)
     await seed("AAA", 800, () => 0.1);
     await seedIndex(800);
     const r = await stockReport("AAA");
@@ -55,6 +55,24 @@ describe("stockReport", () => {
     expect(r.report.horizons["1m"].stock!.shareNegative).toBe(0);
   });
 
+  test("a 1:5 split (raw close ÷ 5, flat adjusted move) is no cliff, no drawdown, no bad stretch", async () => {
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "SPL", addedOn: "2020-01-01", removedOn: null });
+    const rows = Array.from({ length: 800 }, (_, i) => {
+      const raw = i < 500 ? 500 : 100; // what bhavcopy says: an 80% "crash" on day 500
+      return { tradeDate: d(i), symbol: "SPL", close: raw, sma50: raw, sma200: raw, ema200: raw, changePct: i === 0 ? null : 0, volRatio: 1, turnover: 2e9 };
+    });
+    for (let i = 0; i < rows.length; i += 500) await db.insert(schema.dailyIndicators).values(rows.slice(i, i + 500));
+    await seedIndex(800);
+    const r = await stockReport("SPL");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    const jumps = r.report.price.slice(1).filter((p, i) => Math.abs(p.close / r.report.price[i]!.close - 1) > 0.3);
+    expect(jumps).toEqual([]);
+    expect(r.report.price[0]!.close).toBeCloseTo(100, 6); // in today's rupees
+    expect(r.report.price[0]!.sma200!).toBeCloseTo(100, 6);
+    expect(r.report.worstFall.stock!.depthPct).toBeCloseTo(0, 9);
+    expect(r.report.horizons["1y"].stock!.worst).toBeCloseTo(0, 9);
+  });
+
   test("short history: 1y is 'not enough' (null) while 1w works", async () => {
     await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "NEW", addedOn: "2020-01-01", removedOn: null });
     await seed("NEW", 100, (i) => (i % 2 ? 1 : -1));
@@ -63,6 +81,9 @@ describe("stockReport", () => {
     if (r.kind !== "ok") throw new Error(r.kind);
     expect(r.report.horizons["1y"].stock).toBeNull();
     expect(r.report.horizons["1w"].stock).not.toBeNull();
+    // a worst fall from 100 sessions isn't a stock's worst fall (JIOFIN after 12 sessions read 6.9×)
+    expect(r.report.worstFall.light).toBeNull();
+    expect(r.report.worstFall.stock).toBeNull();
   });
 
   test("a past member still gets a card, with when it left", async () => {
@@ -101,12 +122,12 @@ describe("stockReport", () => {
 
   test("no look-ahead: a past date ignores later sessions", async () => {
     await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "AAA", addedOn: "2020-01-01", removedOn: null });
-    await seed("AAA", 100, (i) => (i < 80 ? 0.1 : -5)); // crash after session 80
-    await seedIndex(100);
-    const r = await stockReport("AAA", d(79));
+    await seed("AAA", 400, (i) => (i < 300 ? 0.1 : -5)); // crash after session 300
+    await seedIndex(400);
+    const r = await stockReport("AAA", d(299));
     if (r.kind !== "ok") throw new Error(r.kind);
-    expect(r.report.date).toBe(d(79));
-    expect(r.report.lastDate).toBe(d(99)); // for the date picker's upper bound
+    expect(r.report.date).toBe(d(299));
+    expect(r.report.lastDate).toBe(d(399)); // for the date picker's upper bound
     expect(r.report.worstFall.stock!.depthPct).toBeCloseTo(0, 9);
   });
 });

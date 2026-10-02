@@ -4,6 +4,7 @@ import { formatDate, formatInt, ordinal, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Light } from "@/indicators/risk";
 import type { StockReport } from "@/query/stock-report";
+import { LIGHTS_DISCLAIMER } from "@/lib/report-card";
 
 const pct = (v: number, digits = 1) => `${signed(v, digits)}%`;
 const abs0 = (v: number) => Math.abs(v).toFixed(0);
@@ -38,7 +39,9 @@ export function checksOf(r: StockReport): Check[] {
 
   const w = r.worstFall;
   const ws = w.stock;
-  const fallSentence = !ws || ws.depthPct === 0
+  const fallSentence = !ws
+    ? "Not enough history yet: a worst fall needs at least a year of sessions."
+    : ws.depthPct === 0
     ? "No fall from a high in this history."
     : ws.recoveryDate
       ? `Fell ${abs0(ws.depthPct)}% from ${formatDate(ws.peakDate)} to ${formatDate(ws.troughDate)}; took ${Math.max(1, Math.round(ws.sessionsToRecover! / 21))} months to get back.${w.nifty ? ` The NIFTY 50's worst over the same years was ${abs0(w.nifty.depthPct)}%.` : ""}`
@@ -76,6 +79,7 @@ export function LightSummary({ checks, className }: { checks: Check[]; className
       <span className="ml-auto text-[12px] tabular-nums text-muted-foreground">
         {n("green")} green · {n("amber")} amber · {n("red")} red
       </span>
+      <p className="w-full text-[12px] text-muted-foreground">{LIGHTS_DISCLAIMER}</p>
     </Card>
   );
 }

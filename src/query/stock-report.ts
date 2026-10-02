@@ -8,7 +8,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { symbolLineage } from "../ingest/symbol-changes";
 import {
-  HORIZONS, THRESHOLDS, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
+  DRAWDOWN_MIN, HORIZONS, THRESHOLDS, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
   drawdownSeries, horizonStats, liquidityLight, percentRank, periodReturn, ratioLight,
   strengthLight, trendLight, worstDrawdown,
   type Drawdown, type HorizonKey, type HorizonStats, type Light,
@@ -126,7 +126,8 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
   const volRatio = dailyVol !== null && niftyVol ? dailyVol / niftyVol : null;
 
   // Worst fall
-  const ddStock = worstDrawdown(line);
+  // under a year of history, "worst fall" would be read from a handful of sessions
+  const ddStock = line.length >= DRAWDOWN_MIN ? worstDrawdown(line) : null;
   const ddNifty = worstDrawdown(niftyLine);
   const ddRatio = ddStock && ddNifty && ddNifty.depthPct < 0 ? ddStock.depthPct / ddNifty.depthPct : null;
 

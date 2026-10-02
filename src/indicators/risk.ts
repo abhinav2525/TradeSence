@@ -149,6 +149,8 @@ export function periodReturn(line: LinePoint[], sessions: number): number | null
 }
 
 export const VOL_WINDOW = 250;
+/** A worst fall measured over less than a year of sessions isn't a stock's worst fall. */
+export const DRAWDOWN_MIN = 250;
 export const VOL_MIN = 60;
 
 /** Sample std. dev. of the last 250 daily moves (%); null with under 60. */
