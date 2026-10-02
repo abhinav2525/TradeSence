@@ -33,6 +33,20 @@ Why each finished item was built the way it was: `docs/decisions/`.
   50 (3/6/12 months), with trend and liquidity filters. **Study momentum first** (does
   the top ranked third beat the index over 3–6 months in our data?).
 
+### More indicators (from the 2026-10-02 indicator brainstorm)
+Order agreed: beginner Report Card first (being designed now), then these.
+- [ ] **Signal track records (trader)** — a: RSI, breakouts, 52-week highs… each shown with
+  its own history on that stock: how many times it fired, what happened N sessions later,
+  against the base rate of any random day. Always show the sample size; say "too few
+  occasions" under a minimum (data-snooping guard). Same method as research 0001.
+- [ ] **Factor leaderboard (whole index)** — n: rank members by momentum (12-1), low
+  volatility and closeness to the 52-week high, like NSE's Momentum / Low Volatility indices
+  (we store those indices: compare). Overlaps the Strength Leaderboard above: merge them.
+- [ ] **Diversification / "moves with"** — n: correlation between members; "owning HDFCBANK
+  and ICICIBANK isn't diversifying". Needs a portfolio input or a pick-two view.
+- [ ] **Strength within its sector** — n: needs the sector tag (Data to add); sector index
+  closes are already stored.
+
 ### Notifications — a
 - [ ] **Nightly digest** (old item 6): after the nightly run, send a summary of breadth
   changes, new crossings and signals.
