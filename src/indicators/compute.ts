@@ -1,22 +1,14 @@
-import { sql, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { sma, ema } from "./moving-average";
 import { segmentByGaps } from "./gaps";
 import { volumeRatios } from "./volume";
-import { adjustmentFactors, demergerFactor, findUnexplainedJumps, type UnexplainedJump } from "./adjust";
-import { symbolLineage, type LineageEntry } from "../ingest/symbol-changes";
+import { findUnexplainedJumps, type UnexplainedJump } from "./adjust";
+import { loadAdjustedHistory, loadRenames } from "./history";
 
 export { segmentByGaps } from "./gaps";
 
 const CHUNK = 1000;
-
-/** `symbol = s` restricted to the dates that symbol belonged to this company. */
-function inWindow(dateCol: SQL, e: LineageEntry): SQL {
-  const parts = [sql`symbol = ${e.symbol}`];
-  if (e.from) parts.push(sql`${dateCol} >= ${e.from}`);
-  if (e.to) parts.push(sql`${dateCol} < ${e.to}`);
-  return sql`(${sql.join(parts, sql` and `)})`;
-}
 
 /**
  * Recomputes moving averages for every index member and writes them to
@@ -37,6 +29,8 @@ function inWindow(dateCol: SQL, e: LineageEntry): SQL {
  * Renames: a member's history includes every symbol it traded under before
  * (ZOMATO for ETERNAL), each only for the dates it belonged to this company,
  * all written under today's symbol. See docs/decisions/0003.
+ *
+ * Loading and adjustment live in history.ts, shared with the research scripts.
  */
 export async function computeIndicators(
   indexName = "NIFTY50",
@@ -48,55 +42,15 @@ export async function computeIndicators(
     )
   ).map((r) => r.symbol);
 
-  const renames = (
-    await db.execute<{ old_symbol: string; new_symbol: string; changed_on: string }>(
-      sql`select old_symbol, new_symbol, changed_on from symbol_changes`,
-    )
-  ).map((r) => ({ oldSymbol: r.old_symbol, newSymbol: r.new_symbol, changedOn: r.changed_on }));
+  const renames = await loadRenames();
 
   let written = 0;
 
   for (const symbol of symbols) {
-    const lineage = symbolLineage(symbol, renames);
-
-    const prices = await db.execute<{ trade_date: string; open: number; close: number; volume: number; turnover: number }>(
-      sql`select trade_date, open, close, volume, turnover
-          from daily_prices
-          where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
-          order by trade_date asc`,
-    );
-    if (prices.length === 0) continue;
-
-    // NSE files past actions under the company's *current* symbol (UNOMINDA's
-    // 2022 bonus, while it traded as MINDAIND), so today's symbol is not
-    // date-bounded. Older symbols are, in case the ticker was reused. An action
-    // listed under both counts once.
-    const [current, ...older] = lineage;
-    const eventRows = await db.execute<{ ex_date: string; subject: string; kind: string; factor: number }>(
-      sql`select distinct on (ex_date, subject) ex_date, subject, kind, factor
-          from corporate_actions
-          where ((factor is not null and factor <> 1) or kind = 'demerger')
-            and (symbol = ${current!.symbol}
-                 ${older.length ? sql`or ${sql.join(older.map((e) => inWindow(sql`ex_date`, e)), sql` or `)}` : sql``})`,
-    );
-
-    const dates = prices.map((p) => p.trade_date);
-    const opens = prices.map((p) => Number(p.open));
-    const closes = prices.map((p) => Number(p.close));
-
-    // Splits and bonuses carry their factor; a demerger's comes from prices.
-    // One that cannot be priced is left out, and the jump check reports it.
-    const events = eventRows.flatMap((e) => {
-      const factor = e.kind === "demerger"
-        ? demergerFactor(dates, opens, closes, e.ex_date)
-        : Number(e.factor);
-      return factor === null ? [] : [{ exDate: e.ex_date, factor, demerger: e.kind === "demerger" }];
-    });
-    const factors = adjustmentFactors(dates, events);
-    // Volume is scaled by share-count changes only: a demerger moves the price
-    // but leaves the number of shares alone (decision 0008).
-    const shareFactors = adjustmentFactors(dates, events.filter((e) => !e.demerger));
-    const volRatio = volumeRatios(dates, prices.map((p) => Number(p.volume)), shareFactors);
+    const h = await loadAdjustedHistory(symbol, renames);
+    if (!h) continue;
+    const { dates, close: closes, factors, shareFactors } = h;
+    const volRatio = volumeRatios(dates, h.volume, shareFactors);
     const adjusted = closes.map((c, i) => c / factors[i]!);
 
     for (const jump of findUnexplainedJumps(dates, closes, factors)) {
@@ -128,8 +82,8 @@ export async function computeIndicators(
       });
     }
 
-    const rows = prices.map((p, i) => ({
-      tradeDate: p.trade_date,
+    const rows = dates.map((d, i) => ({
+      tradeDate: d,
       symbol,
       close: closes[i]!,
       sma50: s50[i],
@@ -137,7 +91,7 @@ export async function computeIndicators(
       ema200: e200[i],
       changePct: move[i],
       volRatio: volRatio[i],
-      turnover: Number(prices[i]!.turnover),
+      turnover: h.turnover[i]!,
     }));
 
     for (let i = 0; i < rows.length; i += CHUNK) {
