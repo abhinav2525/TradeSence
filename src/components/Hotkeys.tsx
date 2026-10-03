@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { toggleTheme } from "@/components/ThemeToggle";
+import { toggleDensity } from "@/components/DensityToggle";
 import { hotkeyTarget, type HotkeyContext } from "@/components/hotkey-target";
 
 /**
  * Keyboard navigation, because this is a readout you check repeatedly: arrows
- * step sessions, 1-3 switch the average, b/a/c/s/r/g/l switch page, t flips the theme.
+ * step sessions, 1-3 switch the average, b/a/c/s/r/g/l switch page, t flips the theme, d the spacing.
  * Ignored while typing so the date field and the calculator still work normally.
  * Where each key goes lives in hotkey-target.ts (tested).
  */
@@ -24,6 +25,11 @@ export default function Hotkeys({ ma, prev, next, page, base, extra }: HotkeyCon
       if (e.key === "t") {
         e.preventDefault();
         toggleTheme();
+        return;
+      }
+      if (e.key === "d") {
+        e.preventDefault();
+        toggleDensity();
         return;
       }
       const href = hotkeyTarget(e.key, { ma, prev, next, page, base, extra });

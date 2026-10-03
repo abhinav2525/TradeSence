@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, Radar, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import DensityToggle from "@/components/DensityToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -135,7 +136,10 @@ export default function SiteNav({ current, ma, asOf }: Props) {
             </dl>
           </div>
 
-          <ThemeToggle className="w-full" />
+          <div className="flex flex-col gap-1">
+            <ThemeToggle className="w-full" />
+            <DensityToggle className="w-full" />
+          </div>
         </div>
       </aside>
 
@@ -162,6 +166,7 @@ export default function SiteNav({ current, ma, asOf }: Props) {
           })}
         </nav>
         <ThemeToggle compact />
+        <DensityToggle compact />
       </header>
     </>
   );

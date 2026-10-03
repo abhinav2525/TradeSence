@@ -35,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable}`}
+      data-density="compact"
       suppressHydrationWarning
     >
       <head>

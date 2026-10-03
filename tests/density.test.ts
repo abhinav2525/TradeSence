@@ -1,6 +1,8 @@
 import { test, expect, describe } from "bun:test";
 import { readFileSync } from "node:fs";
 import { cn } from "../src/lib/utils";
+import { PREPAINT_SCRIPT } from "../src/lib/prepaint";
+import { toggleDensity } from "../src/components/DensityToggle";
 
 // Density (decision 0020): every size the compact/comfortable switch controls is a
 // --density-* variable, set once per density, read by named Tailwind tokens.
@@ -58,5 +60,54 @@ describe("density tokens", () => {
     expect(cn("text-body-sm", "text-foreground")).toBe("text-body-sm text-foreground");
     expect(cn("text-body-sm", "text-[12px]")).toBe("text-[12px]");
     expect(cn("text-body", "text-body-sm")).toBe("text-body-sm");
+  });
+});
+
+describe("density before first paint", () => {
+  const run = (stored: Record<string, string> | "blocked") => {
+    const attrs: Record<string, string> = {};
+    const document = { documentElement: { classList: { remove() {} }, setAttribute: (k: string, v: string) => { attrs[k] = v; } } };
+    const window = { matchMedia: () => ({ matches: true }) };
+    const localStorage = {
+      getItem: (k: string) => {
+        if (stored === "blocked") throw new Error("blocked");
+        return stored[k] ?? null;
+      },
+    };
+    new Function("document", "window", "localStorage", PREPAINT_SCRIPT)(document, window, localStorage);
+    return attrs["data-density"];
+  };
+  test("a stored comfortable choice is applied", () => expect(run({ density: "comfortable" })).toBe("comfortable"));
+  test("nothing stored leaves the server's compact alone", () => expect(run({})).toBeUndefined());
+  test("junk is ignored", () => expect(run({ density: "wide" })).toBeUndefined());
+  test("blocked storage does not throw", () => expect(run("blocked")).toBeUndefined());
+  test("layout.tsx renders compact on the server", () => {
+    expect(readFileSync("src/app/layout.tsx", "utf8")).toContain('data-density="compact"');
+  });
+});
+
+describe("toggleDensity", () => {
+  test("flips the attribute and remembers it", () => {
+    let attr = "compact";
+    const saved: Record<string, string> = {};
+    const g = globalThis as any;
+    g.document = { documentElement: { getAttribute: () => attr, setAttribute: (_: string, v: string) => { attr = v; } } };
+    g.localStorage = { setItem: (k: string, v: string) => { saved[k] = v; } };
+    try {
+      expect(toggleDensity()).toBe("comfortable");
+      expect(attr).toBe("comfortable");
+      expect(saved.density).toBe("comfortable");
+      expect(toggleDensity()).toBe("compact");
+      g.localStorage = { setItem: () => { throw new Error("blocked"); } };
+      expect(toggleDensity()).toBe("comfortable"); // still switches for this visit
+    } finally {
+      delete g.document;
+      delete g.localStorage;
+    }
+  });
+  test("the d key is wired next to t", () => {
+    const src = readFileSync("src/components/Hotkeys.tsx", "utf8");
+    expect(src).toContain('e.key === "d"');
+    expect(src).toContain("toggleDensity()");
   });
 });
