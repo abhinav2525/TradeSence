@@ -11,7 +11,7 @@ with no build and show what the finished page should look like; they are not app
 |---|---|
 | `advance-decline.html` | Mockup of `/advance-decline` (built) |
 | `screener.html` | Mockup of `/screener` (built) |
-| `signals.html` | Mockup of the Signals & forward returns page (not built yet: no `src/app/signals`) |
+| `signals.html` | Mockup of `/signals` (built in part: the washout card, forward returns and episodes; thrust and divergence cards are not built, decision 0017) |
 | `bundle.css` | Plain-CSS version of the app's component classes (`ts-card`, `ts-badge`…) for the mockups |
 | `screens.css` | Design tokens as CSS variables, the app shell and the widgets these screens add |
 

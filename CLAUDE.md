@@ -50,7 +50,7 @@ Next.js block at the top of `AGENTS.md`; commit that change rather than revertin
 ## Commands
 
 ```bash
-bun run dev                                    # dashboard on :3000
+bun run dev                                    # dashboard on :3000 (next free port if taken; check its output)
 bun test                                       # always against tradesence_test
 bun test tests/breadth.test.ts                 # one file
 bun test --test-name-pattern "idempotent"      # one test by name
@@ -73,6 +73,12 @@ bun run ingest:nightly                         # cron entry point
 
 Needs local Postgres (`brew services start postgresql@14`) and both `tradesence` and
 `tradesence_test`. `DATABASE_URL` lives in `.env`.
+
+**Claude Code tooling** ([0018](docs/decisions/0018-claude-code-guards-and-db-access.md)):
+`.claude/hooks/` blocks `bun test` outside the repo root and edits under `drizzle/`, and
+typechecks after every `.ts`/`.tsx` edit. To look at data, use the `postgres` MCP server
+(`.mcp.json`) rather than throwaway scripts: it connects as `claude_ro`, which can only
+read `tradesence`.
 
 `ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
 today, so a missed night heals on the next run. It runs from a launchd agent
