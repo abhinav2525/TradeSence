@@ -48,7 +48,8 @@ is a later TODO item); reusing the research CLI (it prints Markdown, not data).
   start − 1, in %, for h = 21, 63, 126 (`HORIZONS` from `src/research/forward-returns.ts`).
   **Null** when that session hasn't happened yet, or when the stretch spans a hole in the
   data (`segmentByGaps` / `MAX_GAP_DAYS` from `src/indicators/gaps.ts`). A null is shown as
-  "not yet" (or "—" for a gap) and left out of that horizon's summary.
+  "Not yet" when the horizon runs past the latest session (each episode carries a `pending`
+  flag per horizon), "—" for a gap, and is left out of that horizon's summary.
 - **Status**, from the latest session's breadth `p`:
   - **Active:** `p < 20`.
   - **Watching:** `20 <= p <= 25` (within 5 points, or just recovered).
@@ -72,7 +73,8 @@ on other pages.
    supports." Below: an info callout, "History starts in 2020, on the index's real
    membership each day. Six years hold only a handful of washouts, so read the direction,
    not the decimals."
-2. **Washed-out card** (`WashoutCard`), half width from xl:
+2. **Washed-out card** (`WashoutCard`), full width, the text beside the sparkline from md
+   (a lone half-width card would leave an empty half; amended while planning):
    - Title `<Term id="washout">`; status badge: Active = `down` tone, Watching = neutral,
      Quiet = outline. The word is always shown.
    - Sentence by status, e.g. Active: "16% of NIFTY 50 stocks are above their 200-day SMA,
