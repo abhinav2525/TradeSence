@@ -17,7 +17,6 @@ directly by pages in `src/app/` (mostly `Card`).
 | `chart.tsx` | Recharts wrapper: `ChartContainer`, `ChartTooltip`, `ChartConfig`, legend |
 | `calendar.tsx` | react-day-picker calendar, used only by `DatePicker` (decision 0010) |
 | `popover.tsx` | Radix popover, used by `Term` and `DatePicker` |
-| `tabs.tsx` | Radix tabs; currently imported nowhere (switches use `MaTabs` + `SlidingPill`) |
 
 ## Rules here
 - `bunx shadcn add` writes Tailwind v3 `[--var]`; rewrite each to `(--var)` (see `calendar.tsx`'s `h-(--cell-size)`). Never let it overwrite `button.tsx`. Details: decision 0010 and the root CLAUDE.md.
