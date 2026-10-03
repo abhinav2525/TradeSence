@@ -21,7 +21,7 @@ directly by pages in `src/app/` (mostly `Card`).
 
 ## Rules here
 - `bunx shadcn add` writes Tailwind v3 `[--var]`; rewrite each to `(--var)` (see `calendar.tsx`'s `h-(--cell-size)`). Never let it overwrite `button.tsx`. Details: decision 0010 and the root CLAUDE.md.
-- `chart.tsx` still has one v3 leftover: the tooltip indicator's `border-[--color-border] bg-[--color-bg]`.
+- `tests/tailwind-v4.test.ts` fails on any v3 `utility-[--var]` class left in `src` (decision 0016).
 
 ## See also
 - `docs/decisions/0010-shadcn-date-picker.md`, `docs/decisions/0015-app-motion.md`
