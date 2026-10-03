@@ -17,6 +17,20 @@ describe("liveExample", () => {
     }
   });
 
+  test("washout reads today's 200-day breadth", async () => {
+    await db.insert(schema.indexMembers).values([
+      { indexName: "NIFTY50", symbol: "UPCO", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTY50", symbol: "DOWNCO", addedOn: "2020-01-01", removedOn: null },
+    ]);
+    await db.insert(schema.dailyIndicators).values([
+      { tradeDate: "2026-10-01", symbol: "UPCO", close: 110, sma50: 100, sma200: 100, ema200: 100, changePct: 1, volRatio: 1, turnover: 1e9 },
+      { tradeDate: "2026-10-01", symbol: "DOWNCO", close: 90, sma50: 100, sma200: 100, ema200: 100, changePct: -1, volRatio: 1, turnover: 1e9 },
+    ]);
+    await db.insert(schema.indexPrices).values({ tradeDate: "2026-10-01", indexName: "Nifty 50", close: 24000 });
+    expect(await liveExample("washout")).toBe("On 1 Oct 2026, 50% of NIFTY 50 stocks were above their 200-day SMA: no washout.");
+    expect(await liveExample("episode")).toBeNull(); // no washout yet
+  });
+
   test("net advances and SMA read today's numbers", async () => {
     await db.insert(schema.indexMembers).values([
       { indexName: "NIFTY50", symbol: "KOTAKBANK", addedOn: "2020-01-01", removedOn: null },

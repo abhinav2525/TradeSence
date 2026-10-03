@@ -8,6 +8,8 @@ import { advanceDeclineSeries } from "./advance-decline";
 import { screenerOn } from "./screener";
 import { crossingStats } from "./crossings";
 import { stockReport } from "./stock-report";
+import { signalsData } from "./signals";
+import { pctText } from "../components/signals-copy";
 import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
@@ -63,6 +65,22 @@ async function build(id: TermId): Promise<string | null> {
         case "ad-line": return `${on}: net advances were ${signed(p.net)}; the A/D line adds these up across the range you choose.`;
         default: return p.adv10 === null ? null : `${on}: the 10-day advancing share was ${p.adv10.toFixed(1)}%${p.adv10 < 40 ? ", under 40%: a thrust would need it above 61.5% within 10 sessions" : ""}.`;
       }
+    }
+    case "washout": case "episode": case "forward-return": {
+      const s = await signalsData();
+      const w = s.washout;
+      if (!w || !s.first) return null;
+      if (id === "washout") {
+        const state = w.status === "active" ? "a washout" : w.status === "watching" ? "within 5 pts of the washout line" : "no washout";
+        return `On ${formatDate(w.date)}, ${w.pct.toFixed(0)}% of NIFTY 50 stocks were above their 200-day SMA: ${state}.`;
+      }
+      if (id === "episode") {
+        return w.fired === 0 ? null
+          : `Since ${formatDate(s.first)}, 200-day breadth has fallen under 20% in ${w.fired} separate episode${w.fired === 1 ? "" : "s"}; the latest began on ${formatDate(w.lastStart)}.`;
+      }
+      const six = s.horizons.under.find((h) => h.key === "6m")!;
+      return six.n === 0 ? null
+        : `After the ${six.n} washout${six.n === 1 ? "" : "s"} with six months behind them, the NIFTY 50's median 6-month return was ${pctText(six.median)}, against ${pctText(six.baseline)} for an ordinary day.`;
     }
     case "crossing": case "volume-ratio": case "near-the-line": {
       const d = await resolveSession("sma200");
