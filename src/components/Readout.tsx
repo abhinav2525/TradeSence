@@ -39,7 +39,7 @@ const toneBg: Record<Tone, string> = { up: "bg-up", down: "bg-down", neutral: "b
  */
 export default function Readout({ tiles, className }: { tiles: Tile[]; className?: string }) {
   return (
-    <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", className)}>
+    <div className={cn("grid grid-cols-2 gap-cards", className)}>
       {tiles.map((t) => (
         <StatTile key={t.label} {...t} />
       ))}

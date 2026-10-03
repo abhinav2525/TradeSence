@@ -98,7 +98,7 @@ export function checksOf(r: StockReport): Check[] {
 export function LightSummary({ checks, className }: { checks: Check[]; className?: string }) {
   const n = (x: Light) => checks.filter((c) => c.light === x).length;
   return (
-    <Card className={cn("flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4", className)}>
+    <Card className={cn("flex flex-wrap items-center gap-x-6 gap-y-3 px-card-x py-4", className)}>
       {checks.map((c) => (
         <span key={c.label} className="inline-flex items-center gap-2 text-body-sm text-foreground-2">
           {c.label}

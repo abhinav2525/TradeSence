@@ -35,7 +35,7 @@ export default function BreadthHero({
       : `Only ${(100 - percentile).toFixed(1)}% of sessions closed this strong or stronger.`;
 
   return (
-    <Card className={cn("flex flex-col gap-6 p-5 sm:p-6 md:flex-row", className)}>
+    <Card className={cn("flex flex-col gap-6 px-card-x py-card sm:comfortable:p-6 md:flex-row", className)}>
       <div className="flex flex-col md:w-[44%]">
         <p className="text-eyebrow uppercase text-muted-foreground"><Term id="breadth" today={`${pct.toFixed(0)}%`}>Above the {maLabel}</Term></p>
         <p className="mt-4 text-display text-foreground">

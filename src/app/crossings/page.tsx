@@ -48,7 +48,7 @@ export default async function CrossingsPage({
 
       {busiest && (
         <Readout
-          className="mb-4 lg:grid-cols-4"
+          className="mb-cards lg:grid-cols-4"
           tiles={[
             {
               label: "Busiest",
@@ -91,7 +91,7 @@ export default async function CrossingsPage({
         />
       )}
 
-      <div className="grid gap-4 xl:grid-cols-12">
+      <div className="grid gap-cards xl:grid-cols-12">
         <Card className="self-start xl:col-span-5">
           <CardHeader>
             <div>

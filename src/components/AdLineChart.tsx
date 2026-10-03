@@ -48,7 +48,7 @@ export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; 
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-card-x pb-2 pt-4">
         <div>
           <h2 className="text-heading text-foreground"><Term id="ad-line">Advance/decline line</Term></h2>
           <p className="mt-0.5 text-[12px] tabular-nums text-muted-foreground">
@@ -74,7 +74,7 @@ export default function AdLineChart({ data, selectedDate }: { data: NetPoint[]; 
         </div>
       </div>
 
-      <ChartContainer config={config} className="aspect-auto h-[260px] w-full px-2 pb-3">
+      <ChartContainer config={config} className="aspect-auto h-[calc(260px*var(--density-chart))] w-full px-2 pb-3">
         <LineChart data={visible} margin={{ top: 24, right: 24, bottom: 0, left: 0 }}>
           <CartesianGrid stroke="var(--grid-line)" vertical={false} />
           <XAxis

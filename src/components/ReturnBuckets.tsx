@@ -21,7 +21,7 @@ export default function ReturnBuckets({ data, all, highlight }: { data: BucketBa
   const lo = Math.floor(Math.min(...vals) / 4) * 4;
   const hi = Math.max(4, Math.ceil(Math.max(...vals) / 4) * 4);
   return (
-    <ChartContainer config={config} className="aspect-auto h-[240px] w-full">
+    <ChartContainer config={config} className="aspect-auto h-[calc(240px*var(--density-chart))] w-full">
       <BarChart data={data} margin={{ top: 20, right: 8, bottom: 0, left: 0 }}>
         <CartesianGrid stroke="var(--grid-line)" vertical={false} />
         <XAxis

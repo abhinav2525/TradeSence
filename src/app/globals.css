@@ -123,7 +123,7 @@
   --density-cards: 0.75rem;
   --density-gutter: 1.25rem;
   --density-row-head: 1.75rem;
-  --density-cell-y: 0.3125rem;
+  --density-cell-y: 0.25rem;
   --density-chart: 0.7;
 }
 [data-density="comfortable"] {

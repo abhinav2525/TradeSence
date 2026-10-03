@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import type { ScreenerRow } from "@/query/screener";
 import { GLOSSARY } from "@/lib/glossary";
 
-const head = "h-9 px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
+const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const pctText = (v: number | null) => (v === null ? "—" : `${signed(v, 2)}%`);
 
 type Props = {
@@ -31,7 +31,7 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
   return (
     <div>
       {rows.length > 0 && (
-      <div className="flex items-center justify-end px-5 pb-3">
+      <div className="flex items-center justify-end px-card-x pb-3">
         <label htmlFor="symbol-filter" className="sr-only">Filter by symbol</label>
         <input
           id="symbol-filter"
@@ -43,12 +43,12 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
       </div>
       )}
       {shown.length === 0 ? (
-        <p className="px-5 pb-8 pt-2 text-body-sm text-muted-foreground">{q ? `No symbol matches “${q}”.` : empty}</p>
+        <p className="px-card-x pb-8 pt-2 text-body-sm text-muted-foreground">{q ? `No symbol matches “${q}”.` : empty}</p>
       ) : (
         <Table containerClassName="max-h-[560px] overflow-y-auto" className="tabular-nums">
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(head, "pl-5")}>Symbol</TableHead>
+              <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
               <TableHead className={cn(head, "text-right")}>Close</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Day</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>{maLabel}</TableHead>
@@ -57,42 +57,42 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
               <TableHead className={cn(head, "hidden text-right md:table-cell")}>
                 {view === "near" ? "5 sessions ago" : `${side} for`}
               </TableHead>
-              <TableHead className={cn(head, "hidden pr-5 md:table-cell")} title={GLOSSARY.whipsaw.short}>Past crossings</TableHead>
+              <TableHead className={cn(head, "hidden pr-card-x md:table-cell")} title={GLOSSARY.whipsaw.short}>Past crossings</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {shown.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">{formatPrice(r.close)}</TableCell>
+                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">{formatPrice(r.close)}</TableCell>
                 <TableCell
                   className={cn(
-                    "hidden px-3 py-2.5 text-right text-body-sm sm:table-cell",
+                    "hidden px-3 py-cell text-right text-body-sm sm:table-cell",
                     r.changePct === null ? "text-muted-foreground" : r.changePct > 0 ? "text-up" : r.changePct < 0 ? "text-down" : "text-muted-foreground",
                   )}
                 >
                   {pctText(r.changePct)}
                 </TableCell>
-                <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-muted-foreground sm:table-cell">
+                <TableCell className="hidden px-3 py-cell text-right text-body-sm text-muted-foreground sm:table-cell">
                   {r.ma === null ? "—" : formatPrice(r.ma)}
                 </TableCell>
                 <TableCell
                   className={cn(
-                    "px-3 py-2.5 text-right text-body-sm font-medium",
+                    "px-3 py-cell text-right text-body-sm font-medium",
                     (r.pctFromMa ?? 0) > 0 ? "text-up" : "text-down",
                   )}
                 >
                   {pctText(r.pctFromMa)}
                 </TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">
+                <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">
                   <VolumeTrack ratio={r.volRatio} />
                 </TableCell>
-                <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-foreground-2 md:table-cell">
+                <TableCell className="hidden px-3 py-cell text-right text-body-sm text-foreground-2 md:table-cell">
                   {view === "near"
                     ? pctText(r.gap5)
                     : r.runBefore === null ? "—" : `${r.runBefore} ${r.runBefore === 1 ? "session" : "sessions"}`}
                 </TableCell>
-                <TableCell className="hidden py-2.5 pl-3 pr-5 text-body-sm md:table-cell">
+                <TableCell className="hidden py-cell pl-3 pr-card-x text-body-sm md:table-cell">
                   {r.pastCrossings === null ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (

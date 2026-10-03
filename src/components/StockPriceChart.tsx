@@ -20,7 +20,7 @@ export default function StockPriceChart({ data, selectedDate }: { data: Point[];
   const axis = dateTicks(data.map((p) => p.date), 8);
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-card-x pb-2 pt-4">
         <div>
           <h2 className="text-heading text-foreground"><Term id="adjusted-prices">Price and its 200-day average</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
@@ -32,7 +32,7 @@ export default function StockPriceChart({ data, selectedDate }: { data: Point[];
           <span className="flex items-center gap-1.5"><i className="h-0.5 w-4 border-t border-dashed border-muted-foreground" aria-hidden="true" />200-day average</span>
         </div>
       </div>
-      <ChartContainer config={config} className="aspect-auto h-[260px] w-full px-2 pb-3">
+      <ChartContainer config={config} className="aspect-auto h-[calc(260px*var(--density-chart))] w-full px-2 pb-3">
         <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
           <CartesianGrid stroke="var(--grid-line)" vertical={false} />
           <XAxis dataKey="date" ticks={axis.ticks} tickFormatter={axis.label} tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} tickLine={false} axisLine={false} tickMargin={8} />

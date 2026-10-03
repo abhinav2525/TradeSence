@@ -14,7 +14,7 @@ export default function WashoutCard({
 }: { washout: Washout; recent: SparkPoint[]; first: string; className?: string }) {
   return (
     <Card className={cn("flex flex-col", className)}>
-      <div className="grid gap-4 px-5 pb-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+      <div className="grid gap-4 px-card-x pb-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-heading text-foreground"><Term id="washout">Washed out</Term></h2>

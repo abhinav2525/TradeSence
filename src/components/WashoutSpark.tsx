@@ -16,7 +16,7 @@ export default function WashoutSpark({ data, line }: { data: SparkPoint[]; line:
   const anim = useChartAnimation();
   const top = Math.max(50, Math.ceil(Math.max(...data.map((d) => d.pct), 0) / 10) * 10);
   return (
-    <ChartContainer config={config} className="aspect-auto h-[140px] w-full">
+    <ChartContainer config={config} className="aspect-auto h-[calc(140px*var(--density-chart))] w-full">
       <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
         <XAxis dataKey="date" hide />
         <YAxis

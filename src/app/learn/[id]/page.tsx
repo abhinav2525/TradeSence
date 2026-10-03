@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`p-5 ${className ?? ""}`}>
+    <Card className={`px-card-x py-card ${className ?? ""}`}>
       <h2 className="text-heading text-foreground">{title}</h2>
       <div className="mt-2 text-body-sm leading-5 text-foreground-2">{children}</div>
     </Card>
@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       </Link>
       <PageHeader eyebrow={`Learn · ${e.topic}`} title={e.term} description={e.short} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-cards lg:grid-cols-2">
         <Section title="What it is" className="lg:col-span-2">{e.what}</Section>
         <Section title="How it's calculated">
           <p>{e.calc.plain}</p>

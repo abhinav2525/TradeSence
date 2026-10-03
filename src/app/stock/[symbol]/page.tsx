@@ -100,7 +100,7 @@ export default async function Page({
           />
         }
       />
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-cards">
         <LightSummary checks={checks} />
         <StockChecks checks={checks} />
         <RiskCalculator symbol={symbol} horizons={r.horizons} initial={h} firstDate={r.firstDate} />
@@ -109,7 +109,7 @@ export default async function Page({
           <StockPriceChart data={r.price} selectedDate={r.requested ? r.date : null} />
           <CardFooter>Adjusted for splits, bonuses and demergers, in the rupees of {formatDate(r.date)}.</CardFooter>
         </Card>
-        <div className="grid gap-4 xl:grid-cols-12">
+        <div className="grid gap-cards xl:grid-cols-12">
           <Card className="xl:col-span-8">
             <DrawdownChart
               data={r.drawdown}

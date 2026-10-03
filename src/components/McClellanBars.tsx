@@ -31,7 +31,7 @@ export default function McClellanBars({ data }: { data: OscPoint[] }) {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-2 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-card-x pb-2 pt-4">
         <div>
           <h2 className="text-heading text-foreground"><Term id="mcclellan">McClellan oscillator</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">Last {data.length} sessions, ratio-adjusted</p>
@@ -41,7 +41,7 @@ export default function McClellanBars({ data }: { data: OscPoint[] }) {
           <span className="flex items-center gap-1.5"><i className="size-2 rounded-full bg-down" aria-hidden="true" />Below zero</span>
         </div>
       </div>
-      <ChartContainer config={config} className="aspect-auto h-[230px] w-full px-2 pb-3">
+      <ChartContainer config={config} className="aspect-auto h-[calc(230px*var(--density-chart))] w-full px-2 pb-3">
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: 0 }} barCategoryGap={1}>
           <CartesianGrid stroke="var(--grid-line)" vertical={false} />
           <XAxis

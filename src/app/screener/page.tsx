@@ -48,7 +48,7 @@ function names(list: string[]): string {
   return `${list.slice(0, 3).join(", ")} and ${list.length - 3} more`;
 }
 
-const head = "h-9 px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
+const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const seg = (on: boolean) =>
   cn(
     "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-body-sm font-medium transition-colors",
@@ -171,11 +171,11 @@ export default async function Page({
           </p>
         </Card>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-cards">
           <Readout className="grid-cols-2 lg:grid-cols-4" tiles={tiles} />
 
           <Card className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b px-card-x py-3">
               <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Signal">
                 <SlidingPill active={view} />
                 {([["above", "Crossed above", above.length], ["below", "Crossed below", below.length], ["near", "Near the line", near.length]] as const).map(([k, text, n]) => (
@@ -198,7 +198,7 @@ export default async function Page({
               </div>
             </div>
 
-            <div className="flex items-start justify-between gap-3 px-5 pb-2 pt-4">
+            <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
               <div>
                 <h2 className="text-heading text-foreground">{viewLabel}</h2>
                 <p className="mt-0.5 text-[12px] text-muted-foreground">{viewDesc}</p>
@@ -211,7 +211,7 @@ export default async function Page({
             <ScreenerTable rows={listed} view={view} maLabel={label} empty={empty} />
 
             {hidden.length > 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t px-5 py-3 text-[12px] text-foreground-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t px-card-x py-3 text-[12px] text-foreground-2">
                 <span>
                   {hidden.length} more crossed {view} on lighter volume:{" "}
                   {hidden.slice(0, 4).map((r, i) => (
@@ -234,7 +234,7 @@ export default async function Page({
             <h2 className="text-heading text-foreground"><Term id="near-the-line">Near the line</Term></h2>
             <p className="mt-0.5 text-[12px] text-muted-foreground">Within {NEAR_PCT}% of the {label}, closest first</p>
           </div>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-cards xl:grid-cols-2">
             <NearCard title="Could cross up next" desc="Just below the average" rows={nearBelow} tone="down" />
             <NearCard title="Could cross down next" desc="Just above the average" rows={nearAbove} tone="up" />
           </div>
@@ -247,7 +247,7 @@ export default async function Page({
 function NearCard({ title, desc, rows, tone }: { title: string; desc: string; rows: ScreenerRow[]; tone: "up" | "down" }) {
   return (
     <Card className="self-start overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b px-5 py-3.5">
+      <div className="flex items-center justify-between gap-3 border-b px-card-x py-3.5">
         <div>
           <h3 className="text-heading text-foreground">{title}</h3>
           <p className="mt-0.5 text-[12px] text-muted-foreground">{desc}</p>
@@ -257,28 +257,28 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
         </Badge>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-body-sm text-muted-foreground">None within {NEAR_PCT}% on this side.</p>
+        <p className="px-card-x py-8 text-body-sm text-muted-foreground">None within {NEAR_PCT}% on this side.</p>
       ) : (
         <Table className="tabular-nums">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(head, "pl-5")}>Symbol</TableHead>
+              <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
               <TableHead className={cn(head, "text-right")}>Gap now</TableHead>
               <TableHead className={cn(head, "text-right")}>5 sessions ago</TableHead>
-              <TableHead className={cn(head, "pr-5 text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
+              <TableHead className={cn(head, "pr-card-x text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
-                <TableCell className={cn("px-3 py-2.5 text-right text-body-sm font-medium", tone === "down" ? "text-down" : "text-up")}>
+                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className={cn("px-3 py-cell text-right text-body-sm font-medium", tone === "down" ? "text-down" : "text-up")}>
                   {signed(r.pctFromMa!, 2)}%
                 </TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-body-sm text-muted-foreground">
+                <TableCell className="px-3 py-cell text-right text-body-sm text-muted-foreground">
                   {r.gap5 === null ? "—" : `${signed(r.gap5, 2)}%`}
                 </TableCell>
-                <TableCell className="py-2.5 pl-3 pr-5 text-right text-body-sm text-foreground">
+                <TableCell className="py-cell pl-3 pr-card-x text-right text-body-sm text-foreground">
                   <VolumeTrack ratio={r.volRatio} />
                 </TableCell>
               </TableRow>

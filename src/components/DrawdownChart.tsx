@@ -21,11 +21,11 @@ export default function DrawdownChart({ data, trough }: { data: Point[]; trough:
   const ticks = Array.from({ length: Math.round(-lo / step) + 1 }, (_, i) => -i * step);
   return (
     <div>
-      <div className="px-5 pb-2 pt-4">
+      <div className="px-card-x pb-2 pt-4">
         <h2 className="text-heading text-foreground"><Term id="drawdown">How far below its high</Term></h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">% below the highest close so far, every session</p>
       </div>
-      <ChartContainer config={config} className="aspect-auto h-[220px] w-full px-2 pb-3">
+      <ChartContainer config={config} className="aspect-auto h-[calc(220px*var(--density-chart))] w-full px-2 pb-3">
         <AreaChart data={data} margin={{ top: 16, right: 16, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id="ddFill" x1="0" y1="0" x2="0" y2="1">

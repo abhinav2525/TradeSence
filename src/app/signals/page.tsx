@@ -49,7 +49,7 @@ export default async function Page({
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div className="grid gap-cards lg:grid-cols-12">
           <div className="reveal flex items-start gap-2.5 rounded-lg border bg-raised px-4 py-3 text-body-sm leading-5 text-foreground-2 lg:col-span-12">
             <Info className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
             <span>

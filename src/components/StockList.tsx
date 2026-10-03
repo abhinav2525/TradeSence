@@ -12,7 +12,7 @@ export default function StockList({ stocks }: { stocks: Stock[] }) {
   const shown = q ? stocks.filter((s) => s.symbol.includes(q.trim().toUpperCase())) : stocks;
   const group = (title: string, list: Stock[]) =>
     list.length > 0 && (
-      <Card className="p-5">
+      <Card className="px-card-x py-card">
         <h2 className="text-heading text-foreground">{title}</h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">{list.length} stocks</p>
         <ul className="mt-4 grid grid-cols-2 gap-1 sm:grid-cols-4 lg:grid-cols-6">

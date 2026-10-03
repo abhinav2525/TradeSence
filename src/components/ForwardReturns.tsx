@@ -11,7 +11,7 @@ const OPTIONS: { key: Condition; label: string }[] = [
   { key: "under", label: "Under 20%" },
   { key: "over", label: "Over 80%" },
 ];
-const head = "px-3 py-2 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
+const head = "h-row-head px-3 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
 const seg = (on: boolean) =>
   cn(
     "inline-flex h-8 items-center rounded-[8px] px-3 text-body-sm font-medium transition-colors",
@@ -31,7 +31,7 @@ type Props = {
 export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, className }: Props) {
   return (
     <Card className={cn("overflow-hidden", className)}>
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pb-3 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-card-x pb-3 pt-4">
         <div>
           <h2 className="text-heading text-foreground"><Term id="forward-return">What happened next</Term></h2>
           <p className="mt-0.5 text-[12px] text-muted-foreground">
@@ -48,7 +48,7 @@ export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, 
         </div>
       </div>
 
-      <div className="grid gap-6 px-5 pb-5 xl:grid-cols-2">
+      <div className="grid gap-6 px-card-x pb-card xl:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-body-sm tabular-nums">
@@ -65,12 +65,12 @@ export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, 
               <tbody className="divide-y">
                 {horizons.map((h) => (
                   <tr key={h.key}>
-                    <td className="py-2 pl-4 pr-3 text-foreground">{h.label}</td>
-                    <td className={cn("px-3 py-2 text-right font-semibold", toneClass(h.median))}>{pctText(h.median)}</td>
-                    <td className="px-3 py-2 text-right text-foreground-2">{h.n === 0 ? "—" : `${h.higher} of ${h.n}`}</td>
-                    <td className={cn("px-3 py-2 text-right", toneClass(h.best))}>{pctText(h.best)}</td>
-                    <td className={cn("px-3 py-2 text-right", toneClass(h.worst))}>{pctText(h.worst)}</td>
-                    <td className="py-2 pl-3 pr-4 text-right text-foreground-2">{pctText(h.baseline)}</td>
+                    <td className="py-cell pl-4 pr-3 text-foreground">{h.label}</td>
+                    <td className={cn("px-3 py-cell text-right font-semibold", toneClass(h.median))}>{pctText(h.median)}</td>
+                    <td className="px-3 py-cell text-right text-foreground-2">{h.n === 0 ? "—" : `${h.higher} of ${h.n}`}</td>
+                    <td className={cn("px-3 py-cell text-right", toneClass(h.best))}>{pctText(h.best)}</td>
+                    <td className={cn("px-3 py-cell text-right", toneClass(h.worst))}>{pctText(h.worst)}</td>
+                    <td className="py-cell pl-3 pr-4 text-right text-foreground-2">{pctText(h.baseline)}</td>
                   </tr>
                 ))}
               </tbody>

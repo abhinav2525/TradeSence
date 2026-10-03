@@ -11,37 +11,37 @@ export default function CrashTable({ crashes, className }: { crashes: StockRepor
   const rows = [...crashes.episodes].reverse(); // latest first
   return (
     <Card className={cn("flex flex-col", className)}>
-      <div className="border-b px-5 py-3.5">
+      <div className="border-b px-card-x py-3.5">
         <h2 className="text-heading text-foreground"><Term id="crash-episodes">In past market crashes</Term></h2>
         <p className="mt-0.5 text-[12px] text-muted-foreground">From the high in the 3 months before each crash to the low in the 3 months after</p>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-6 text-body-sm text-muted-foreground">No completed market crash in this stock's history yet.</p>
+        <p className="px-card-x py-6 text-body-sm text-muted-foreground">No completed market crash in this stock's history yet.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-body-sm tabular-nums">
             <thead>
               <tr className="border-b text-left text-[12px] text-muted-foreground">
-                <th className="px-5 py-2 font-medium">Crash began</th>
-                <th className="px-3 py-2 text-right font-medium">This stock</th>
-                <th className="px-3 py-2 text-right font-medium">NIFTY 50</th>
-                <th className="px-5 py-2 text-right font-medium">Back in 6 months</th>
+                <th className="px-card-x h-row-head font-medium">Crash began</th>
+                <th className="px-3 h-row-head text-right font-medium">This stock</th>
+                <th className="px-3 h-row-head text-right font-medium">NIFTY 50</th>
+                <th className="px-card-x h-row-head text-right font-medium">Back in 6 months</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {rows.map((e) => (
                 <tr key={e.start}>
-                  <td className="px-5 py-2 text-foreground">{formatDate(e.start)}</td>
-                  <td className="px-3 py-2 text-right text-foreground">{fall(e.stockFall)}</td>
-                  <td className="px-3 py-2 text-right text-foreground-2">{fall(e.niftyFall)}</td>
-                  <td className="px-5 py-2 text-right text-foreground-2">{e.back === null ? "Not yet" : e.back ? "Yes" : "No"}</td>
+                  <td className="px-card-x py-cell text-foreground">{formatDate(e.start)}</td>
+                  <td className="px-3 py-cell text-right text-foreground">{fall(e.stockFall)}</td>
+                  <td className="px-3 py-cell text-right text-foreground-2">{fall(e.niftyFall)}</td>
+                  <td className="px-card-x py-cell text-right text-foreground-2">{e.back === null ? "Not yet" : e.back ? "Yes" : "No"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
-      <p className="mt-auto border-t px-5 py-3 text-[12px] text-muted-foreground">
+      <p className="mt-auto border-t px-card-x py-3 text-[12px] text-muted-foreground">
         A crash: fewer than 20% of NIFTY 50 stocks above their 200-day average. Back in 6 months: above its price on the day the crash began.
         {crashes.ongoing ? ` One began on ${formatDate(crashes.ongoing)} and counts once 3 months have passed.` : ""}
       </p>

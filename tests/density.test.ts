@@ -129,3 +129,35 @@ describe("body type follows density", () => {
     expect(hits(/text-\[13px\]|\btext-sm\b/)).toEqual([]);
   });
 });
+
+describe("spacing follows density", () => {
+  test("no fixed 20px card inset left outside the sidebar and button sizes", () => {
+    expect(hits(/\b(p|px|pl|pr|pb)-5\b/, ["ui/button.tsx", "SiteNav.tsx"])).toEqual([]);
+  });
+  test("page grids and tiles use gap-cards", () => {
+    const pages = srcFiles("src/app").filter((f) => f.endsWith("page.tsx"));
+    expect(pages.flatMap((f) => (/\bgap-4\b/.test(readFileSync(f, "utf8")) ? [f] : []))).toEqual([]);
+    expect(readFileSync("src/components/Readout.tsx", "utf8")).toContain("gap-cards");
+  });
+  test("the gutter from lg is a token", () => {
+    const shell = readFileSync("src/components/AppShell.tsx", "utf8");
+    expect(shell).toContain("lg:px-gutter");
+    expect(shell).not.toContain("lg:px-8");
+  });
+  test("table rows and headers use the row tokens", () => {
+    // every py-2 / py-2.5 in these files is a table cell (cn() calls span lines, so check whole files)
+    const tables = ["ScreenerTable", "MemberTable", "CrossingsTable", "AdRecentTable", "ForwardReturns", "EpisodeTable", "CrashTable"];
+    for (const t of tables) {
+      const src = readFileSync(`src/components/${t}.tsx`, "utf8");
+      expect({ t, py2: /\bpy-2(\.5)?\b/.test(src), h9: /\bh-9\b/.test(src) }).toEqual({ t, py2: false, h9: false });
+    }
+    const table = readFileSync("src/components/ui/table.tsx", "utf8");
+    expect(table).toContain("h-row-head");
+    expect(table).toContain("py-cell");
+  });
+  test("every chart height scales with density", () => {
+    expect(hits(/<ChartContainer\b/).length).toBeGreaterThanOrEqual(7);
+    expect(hits(/<ChartContainer\b[^>]*\bh-\[\d+px\]/)).toEqual([]);
+    expect(hits(/h-\[calc\(\d+px\*var\(--density-chart\)\)\]/).length).toBe(7);
+  });
+});

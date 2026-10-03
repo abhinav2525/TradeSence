@@ -32,7 +32,7 @@ export default function LearnList({ entries, topics }: { entries: Item[]; topics
         const list = shown.filter((e) => e.topic === t);
         if (list.length === 0) return null;
         return (
-          <Card key={t} className="p-5">
+          <Card key={t} className="px-card-x py-card">
             <h2 className="text-heading text-foreground">{t}</h2>
             <ul className="mt-3 grid gap-1 md:grid-cols-2">
               {list.map((e) => (

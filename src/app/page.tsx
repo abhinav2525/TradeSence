@@ -164,7 +164,7 @@ export default async function Page({
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div className="grid gap-cards lg:grid-cols-12">
           {notice && <WashoutNotice className="lg:col-span-12" text={notice} ma={ma} />}
           <BreadthHero
             className="lg:col-span-12 xl:col-span-7"

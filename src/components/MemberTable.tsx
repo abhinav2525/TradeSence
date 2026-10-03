@@ -20,14 +20,14 @@ type Props = {
 /** Within this distance of the average, a name is one session from flipping. */
 const NEAR = 2;
 
-const head = "h-9 px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
+const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
 export default function MemberTable({ title, rows, tone, maLabel, className }: Props) {
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.pctFromMa)), 1);
 
   return (
     <Card className={cn("flex min-h-[240px] flex-col overflow-hidden", className)}>
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b px-5 py-3.5">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b px-card-x py-3.5">
         <div className="flex items-center gap-2.5">
           <span
             aria-hidden="true"
@@ -43,7 +43,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-5 py-10 text-body-sm text-muted-foreground">
+        <p className="px-card-x py-10 text-body-sm text-muted-foreground">
           No constituents on this side of the line.
         </p>
       ) : (
@@ -51,10 +51,10 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
           {/* sticky so the column names survive scrolling */}
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
-              <TableHead className={cn(head, "pl-5")}>Symbol</TableHead>
+              <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
               <TableHead className={cn(head, "text-right")}>Close</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Average</TableHead>
-              <TableHead className={cn(head, "pr-5 text-right")}>Distance</TableHead>
+              <TableHead className={cn(head, "pr-card-x text-right")}>Distance</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -62,7 +62,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
               const near = Math.abs(r.pctFromMa) <= NEAR;
               return (
                 <TableRow key={r.symbol} className="hover:bg-raised">
-                  <TableCell className="py-2.5 pl-5 pr-3">
+                  <TableCell className="py-cell pl-card-x pr-3">
                     <span className="text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></span>
                     {near && (
                       <Badge variant="outline" className="ml-2 align-middle" title={`Within ${NEAR}% of the average`}>
@@ -70,13 +70,13 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">
+                  <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">
                     {formatPrice(r.close)}
                   </TableCell>
-                  <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-muted-foreground sm:table-cell">
+                  <TableCell className="hidden px-3 py-cell text-right text-body-sm text-muted-foreground sm:table-cell">
                     {formatPrice(r.ma)}
                   </TableCell>
-                  <TableCell className="py-2.5 pl-3 pr-5">
+                  <TableCell className="py-cell pl-3 pr-card-x">
                     <div className="flex items-center justify-end gap-2.5">
                       <span className="hidden h-1.5 w-14 justify-end overflow-hidden rounded-full bg-chart-muted sm:flex" aria-hidden="true">
                         <span
