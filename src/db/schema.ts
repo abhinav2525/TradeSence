@@ -36,9 +36,9 @@ export const dailyPrices = pgTable(
 /**
  * Index membership, modelled point-in-time from day one.
  *
- * v1 seeds only today's NIFTY 50 with a single open interval, which makes the
- * historical breadth chart survivorship-biased (see plan). Fixing that later is
- * a matter of inserting closed intervals — no re-ingest.
+ * Loaded from the hand-kept src/ingest/nifty50-history.csv: every member since
+ * 2020 with the day it joined and the first day it was out, so each day's
+ * breadth uses that day's real index (decision 0005, no survivorship bias).
  */
 export const indexMembers = pgTable(
   "index_members",
