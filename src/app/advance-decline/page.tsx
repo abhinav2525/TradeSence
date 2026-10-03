@@ -151,7 +151,7 @@ export default async function Page({
       ) : (
         <div className="grid gap-cards lg:grid-cols-12">
           <AdHero
-            className="lg:col-span-12 xl:col-span-7"
+            className="lg:col-span-12 xl:col-span-7 xl:compact:col-span-12"
             date={p.date}
             advancing={p.advancing}
             declining={p.declining}
@@ -159,7 +159,7 @@ export default async function Page({
             net={p.net}
             recent={last20.map((s) => ({ date: s.date, advancing: s.advancing, declining: s.declining, net: s.net }))}
           />
-          <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2" tiles={tiles} />
+          <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4" tiles={tiles} />
 
           <Card className="lg:col-span-12">
             <AdLineChart data={series.map((s) => ({ date: s.date, net: s.net }))} selectedDate={wanted ? p.date : null} />

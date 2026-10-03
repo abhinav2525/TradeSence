@@ -167,7 +167,7 @@ export default async function Page({
         <div className="grid gap-cards lg:grid-cols-12">
           {notice && <WashoutNotice className="lg:col-span-12" text={notice} ma={ma} />}
           <BreadthHero
-            className="lg:col-span-12 xl:col-span-7"
+            className="lg:col-span-12 xl:col-span-7 xl:compact:col-span-12"
             pct={point.pctAbove}
             above={point.above}
             total={point.total}
@@ -178,7 +178,7 @@ export default async function Page({
             current={binOf(point.pctAbove)}
             sessions={series.length}
           />
-          <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2" tiles={tiles} />
+          <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4" tiles={tiles} />
 
           <Card className="lg:col-span-12">
             <BreadthArea data={chart} selectedDate={view.date} />

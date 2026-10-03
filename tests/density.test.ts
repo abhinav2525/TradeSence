@@ -161,3 +161,15 @@ describe("spacing follows density", () => {
     expect(hits(/h-\[calc\(\d+px\*var\(--density-chart\)\)\]/).length).toBe(7);
   });
 });
+
+describe("hero layout follows density", () => {
+  for (const f of ["src/app/page.tsx", "src/app/advance-decline/page.tsx"]) {
+    test(`${f}: compact puts the hero full width and four tiles beneath it`, () => {
+      const src = readFileSync(f, "utf8");
+      expect(src).toContain('className="lg:col-span-12 xl:col-span-7 xl:compact:col-span-12"');
+      expect(src).toContain(
+        'className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4"',
+      );
+    });
+  }
+});
