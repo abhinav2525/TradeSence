@@ -1,17 +1,17 @@
 import Link from "next/link";
-import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, Radar, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "stock" | "learn";
+export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "stock" | "signals" | "learn";
 type Props = { current: Section; ma: string; asOf?: string | null };
 
 type NavLink = { key: Section; href: string; label: string; short: string; hint: string; icon: LucideIcon };
 
 /**
- * Pages in labelled groups (docs/design/HANDOFF.md). Screener and Signals join
- * here when they are built, so the nav never links to a page that isn't there.
+ * Pages in labelled groups (docs/design/HANDOFF.md). A page joins here only once
+ * it is built, so the nav never links to a page that isn't there.
  */
 const GROUPS: { label: string; links: NavLink[] }[] = [
   {
@@ -30,6 +30,12 @@ const GROUPS: { label: string; links: NavLink[] }[] = [
     ],
   },
   {
+    label: "Research",
+    links: [
+      { key: "signals", href: "/signals", label: "Signals", short: "Signals", hint: "g", icon: Radar },
+    ],
+  },
+  {
     label: "Help",
     links: [
       { key: "learn", href: "/learn", label: "Learn", short: "Learn", hint: "l", icon: BookOpen },
@@ -42,7 +48,7 @@ const LINKS = GROUPS.flatMap((g) => g.links);
 const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
-  ["b a c s r l", "Switch page"],
+  ["b a c s r g l", "Switch page"],
 ] as const;
 
 /** The product name in plain type. There is no logo yet; the glyph is lucide's chart-spline. */

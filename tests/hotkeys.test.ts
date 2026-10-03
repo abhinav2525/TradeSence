@@ -29,3 +29,11 @@ describe("hotkeyTarget", () => {
 test("l opens Learn from anywhere", () => {
   expect(hotkeyTarget("l", { page: "breadth", ma: "sma200" })).toBe("/learn");
 });
+
+test("g opens Signals from anywhere, keeping the average", () => {
+  expect(hotkeyTarget("g", { page: "breadth", ma: "ema200" })).toBe("/signals?ma=ema200");
+});
+
+test("on Signals, 1/2/3 do nothing: the page always uses the 200-day SMA", () => {
+  for (const k of ["1", "2", "3"]) expect(hotkeyTarget(k, { page: "signals", ma: "sma200" })).toBeNull();
+});

@@ -7,7 +7,7 @@ import { hotkeyTarget, type HotkeyContext } from "@/components/hotkey-target";
 
 /**
  * Keyboard navigation, because this is a readout you check repeatedly: arrows
- * step sessions, 1-3 switch the average, b/a/c/s/r/l switch page, t flips the theme.
+ * step sessions, 1-3 switch the average, b/a/c/s/r/g/l switch page, t flips the theme.
  * Ignored while typing so the date field and the calculator still work normally.
  * Where each key goes lives in hotkey-target.ts (tested).
  */
