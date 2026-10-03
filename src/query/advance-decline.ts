@@ -4,7 +4,7 @@
  *
  * Each member's daily move comes from `daily_indicators.change_pct`, which is
  * computed on the split/demerger-adjusted series joined across renames, so a
- * split day is not a fake decline (decision 0007). Membership is per date, as
+ * split day is not a fake decline (decision 0008). Membership is per date, as
  * in breadthSeries. The instruments are derived here in TypeScript rather than
  * stored: a few thousand sessions, recomputed per request.
  */
