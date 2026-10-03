@@ -1,6 +1,6 @@
 # 0020 — Compact by default, comfortable one key away
 
-**Date:** 2026-10-04 · **Status:** done
+**Date:** 2026-10-04 · **Status:** done · Spec: `docs/superpowers/specs/2026-10-04-ui-density-design.md` · Plan: `docs/superpowers/plans/2026-10-04-ui-density.md`
 
 ## Problem
 
@@ -69,6 +69,25 @@ two-by-two). Colours, contrast, animation and wording are identical in both.
   plus the 1px divider makes 29.
 - **In compact, small body text and captions are both 12px.** Weight and colour still
   tell them apart.
+
+## Found by the independent review (fixed)
+
+- **The shared card and table pieces ignored spacing overrides.** The helper that merges
+  CSS classes (`cn()`) didn't know the new spacing names, so a page asking a card for "no
+  padding" would have kept the density padding instead, or half of it. Nothing did this yet;
+  it would have failed silently the first time something did. The names are now registered,
+  with a test.
+- **The `d` key wasn't in the sidebar's Shortcuts list**, though the spec said it would be.
+  It now reads "Theme / spacing: t d".
+
+Left as small follow-ups: holding `d` flips the spacing over and over (holding `t` already
+did the same with the theme); on a phone the two icon buttons in the top bar can get a few
+pixels narrower than intended.
+
+## Revisit when
+
+- Someone finds compact too tight to read: the values are all in one place in `globals.css`.
+- A new page is built: it should use the density tokens from the start.
 
 ## How to add something new
 
