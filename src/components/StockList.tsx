@@ -21,7 +21,7 @@ export default function StockList({ stocks }: { stocks: Stock[] }) {
               <Link
                 href={`/stock/${encodeURIComponent(s.symbol)}`}
                 prefetch={false}
-                className="block rounded-md px-2.5 py-1.5 text-[13px] font-medium text-foreground-2 transition-colors hover:bg-raised hover:text-foreground"
+                className="block rounded-md px-2.5 py-1.5 text-body-sm font-medium text-foreground-2 transition-colors hover:bg-raised hover:text-foreground"
               >
                 {s.symbol}
               </Link>
@@ -40,10 +40,10 @@ export default function StockList({ stocks }: { stocks: Stock[] }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Filter symbol"
-          className="h-9 w-56 rounded-[8px] border border-input bg-transparent px-3 font-mono text-[13px] uppercase text-foreground placeholder:normal-case placeholder:text-muted-foreground"
+          className="h-9 w-56 rounded-[8px] border border-input bg-transparent px-3 font-mono text-body-sm uppercase text-foreground placeholder:normal-case placeholder:text-muted-foreground"
         />
       </div>
-      {shown.length === 0 && <p className="text-[13px] text-muted-foreground">No symbol matches “{q}”.</p>}
+      {shown.length === 0 && <p className="text-body-sm text-muted-foreground">No symbol matches “{q}”.</p>}
       {group("In the NIFTY 50", shown.filter((s) => s.current))}
       {group("Former members since 2020", shown.filter((s) => !s.current))}
     </div>

@@ -42,7 +42,7 @@ export default async function Page({
       {!s.washout || !s.first ? (
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded yet</p>
-          <p className="mt-2 text-[13px] text-foreground-2">
+          <p className="mt-2 text-body-sm text-foreground-2">
             Signals needs breadth and NIFTY 50 closes. Run{" "}
             <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run ingest:indices</code>{" "}
             and <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
@@ -50,7 +50,7 @@ export default async function Page({
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-12">
-          <div className="reveal flex items-start gap-2.5 rounded-lg border bg-raised px-4 py-3 text-[13px] leading-5 text-foreground-2 lg:col-span-12">
+          <div className="reveal flex items-start gap-2.5 rounded-lg border bg-raised px-4 py-3 text-body-sm leading-5 text-foreground-2 lg:col-span-12">
             <Info className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden="true" />
             <span>
               <strong className="font-medium text-foreground">History starts in {s.first.slice(0, 4)},</strong> on the

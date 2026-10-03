@@ -143,7 +143,7 @@ export default async function Page({
       {!p ? (
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
-          <p className="mt-2 text-[13px] text-foreground-2">
+          <p className="mt-2 text-body-sm text-foreground-2">
             Advance/Decline starts on {formatDate(series[0]?.date)}. If nothing is loaded, run{" "}
             <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
           </p>

@@ -30,7 +30,7 @@ export default function Term({ id, today, children, className }: Props) {
         </PopoverTrigger>
         <PopoverContent align="start" collisionPadding={16} className="w-[min(18rem,calc(100vw-2rem))] p-4 text-left">
           <p className="text-heading text-foreground">{e.term}</p>
-          <p className="mt-1.5 text-[13px] font-normal normal-case leading-5 tracking-normal text-foreground-2">{e.short}</p>
+          <p className="mt-1.5 text-body-sm font-normal normal-case leading-5 tracking-normal text-foreground-2">{e.short}</p>
           <p className="mt-2 text-[12px] font-normal normal-case leading-4 tracking-normal text-foreground-2">
             <span className="font-medium text-foreground">How to read it: </span>
             {e.read}

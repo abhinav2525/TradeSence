@@ -91,7 +91,7 @@ export default function SiteNav({ current, ma, asOf }: Props) {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "group flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors",
+                  "group flex h-9 items-center gap-2.5 rounded-md px-2.5 text-body-sm transition-colors",
                   active
                     ? "bg-brand-soft font-medium text-foreground"
                     : "text-foreground-2 hover:bg-raised hover:text-foreground",
@@ -118,7 +118,7 @@ export default function SiteNav({ current, ma, asOf }: Props) {
         <div className="mt-auto flex flex-col gap-4 p-3">
           <div className="rounded-md border bg-raised px-3 py-2.5">
             <p className="text-[11px] text-muted-foreground">Latest NSE close</p>
-            <p className="mt-0.5 flex items-center gap-2 text-[13px] font-medium text-foreground">
+            <p className="mt-0.5 flex items-center gap-2 text-body-sm font-medium text-foreground">
               <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
               {asOf ? formatDate(asOf) : "No data loaded"}
             </p>
@@ -156,7 +156,7 @@ export default function SiteNav({ current, ma, asOf }: Props) {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "shrink-0 rounded-md px-2.5 py-1.5 text-[13px] transition-colors",
+                  "shrink-0 rounded-md px-2.5 py-1.5 text-body-sm transition-colors",
                   active ? "bg-brand-soft font-medium text-foreground" : "text-foreground-2 hover:text-foreground",
                 )}
               >

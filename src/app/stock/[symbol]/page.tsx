@@ -67,7 +67,7 @@ export default async function Page({
         <PageHeader eyebrow="NIFTY 50 · Stock" title={symbol} />
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
-          <p className="mt-2 text-[13px] text-foreground-2">
+          <p className="mt-2 text-body-sm text-foreground-2">
             {symbol}&apos;s history starts on {formatDate(res.firstDate)}.
           </p>
         </Card>

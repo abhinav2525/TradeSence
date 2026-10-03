@@ -22,12 +22,12 @@ export default function StockEvents({ events, dividends12m, date, className }: P
         <p className="mt-0.5 text-[12px] text-muted-foreground">Splits, bonuses, demergers and renames</p>
       </div>
       {events.length === 0 ? (
-        <p className="px-5 py-6 text-[13px] text-muted-foreground">No splits, bonuses, demergers or renames on record.</p>
+        <p className="px-5 py-6 text-body-sm text-muted-foreground">No splits, bonuses, demergers or renames on record.</p>
       ) : (
         <ul className="divide-y">
           {events.map((e) => (
             <li key={`${e.date}-${e.text}`} className="px-5 py-2.5">
-              <p className="flex items-baseline justify-between gap-3 text-[13px]">
+              <p className="flex items-baseline justify-between gap-3 text-body-sm">
                 <span className="font-medium text-foreground">{KIND[e.kind] ?? e.kind}</span>
                 <span className="tabular-nums text-muted-foreground">{formatDate(e.date)}</span>
               </p>

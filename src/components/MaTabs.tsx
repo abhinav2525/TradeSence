@@ -32,7 +32,7 @@ export default function MaTabs({ base, ma, date, extra = "" }: Props) {
             role="tab"
             aria-selected={active}
             className={cn(
-              "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-[13px] font-medium transition-colors",
+              "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-body-sm font-medium transition-colors",
               active ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground",
             )}
           >

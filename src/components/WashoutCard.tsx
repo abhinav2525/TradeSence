@@ -20,7 +20,7 @@ export default function WashoutCard({
             <h2 className="text-heading text-foreground"><Term id="washout">Washed out</Term></h2>
             <Badge variant={TONE[washout.status]}>{STATUS_LABEL[washout.status]}</Badge>
           </div>
-          <p className="text-[13px] leading-5 text-foreground-2">{washoutSentence(washout)}</p>
+          <p className="text-body-sm leading-5 text-foreground-2">{washoutSentence(washout)}</p>
           <p className="text-[12px] leading-4 text-muted-foreground">
             Only the 200-day SMA: it is the one average our study of past washouts found reliable.
           </p>

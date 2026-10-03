@@ -43,7 +43,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-5 py-10 text-[13px] text-muted-foreground">
+        <p className="px-5 py-10 text-body-sm text-muted-foreground">
           No constituents on this side of the line.
         </p>
       ) : (
@@ -63,17 +63,17 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
               return (
                 <TableRow key={r.symbol} className="hover:bg-raised">
                   <TableCell className="py-2.5 pl-5 pr-3">
-                    <span className="text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></span>
+                    <span className="text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></span>
                     {near && (
                       <Badge variant="outline" className="ml-2 align-middle" title={`Within ${NEAR}% of the average`}>
                         near line
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground">
+                  <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">
                     {formatPrice(r.close)}
                   </TableCell>
-                  <TableCell className="hidden px-3 py-2.5 text-right text-[13px] text-muted-foreground sm:table-cell">
+                  <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-muted-foreground sm:table-cell">
                     {formatPrice(r.ma)}
                   </TableCell>
                   <TableCell className="py-2.5 pl-3 pr-5">
@@ -86,7 +86,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
                       </span>
                       <span
                         className={cn(
-                          "w-16 text-right text-[13px] font-medium",
+                          "w-16 text-right text-body-sm font-medium",
                           tone === "up" ? "text-up" : "text-down",
                         )}
                       >

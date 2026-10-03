@@ -43,7 +43,7 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
       </div>
       )}
       {shown.length === 0 ? (
-        <p className="px-5 pb-8 pt-2 text-[13px] text-muted-foreground">{q ? `No symbol matches “${q}”.` : empty}</p>
+        <p className="px-5 pb-8 pt-2 text-body-sm text-muted-foreground">{q ? `No symbol matches “${q}”.` : empty}</p>
       ) : (
         <Table containerClassName="max-h-[560px] overflow-y-auto" className="tabular-nums">
           <TableHeader className="sticky top-0 z-10 bg-card">
@@ -63,36 +63,36 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
           <TableBody>
             {shown.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground">{formatPrice(r.close)}</TableCell>
+                <TableCell className="py-2.5 pl-5 pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">{formatPrice(r.close)}</TableCell>
                 <TableCell
                   className={cn(
-                    "hidden px-3 py-2.5 text-right text-[13px] sm:table-cell",
+                    "hidden px-3 py-2.5 text-right text-body-sm sm:table-cell",
                     r.changePct === null ? "text-muted-foreground" : r.changePct > 0 ? "text-up" : r.changePct < 0 ? "text-down" : "text-muted-foreground",
                   )}
                 >
                   {pctText(r.changePct)}
                 </TableCell>
-                <TableCell className="hidden px-3 py-2.5 text-right text-[13px] text-muted-foreground sm:table-cell">
+                <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-muted-foreground sm:table-cell">
                   {r.ma === null ? "—" : formatPrice(r.ma)}
                 </TableCell>
                 <TableCell
                   className={cn(
-                    "px-3 py-2.5 text-right text-[13px] font-medium",
+                    "px-3 py-2.5 text-right text-body-sm font-medium",
                     (r.pctFromMa ?? 0) > 0 ? "text-up" : "text-down",
                   )}
                 >
                   {pctText(r.pctFromMa)}
                 </TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground">
+                <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground">
                   <VolumeTrack ratio={r.volRatio} />
                 </TableCell>
-                <TableCell className="hidden px-3 py-2.5 text-right text-[13px] text-foreground-2 md:table-cell">
+                <TableCell className="hidden px-3 py-2.5 text-right text-body-sm text-foreground-2 md:table-cell">
                   {view === "near"
                     ? pctText(r.gap5)
                     : r.runBefore === null ? "—" : `${r.runBefore} ${r.runBefore === 1 ? "session" : "sessions"}`}
                 </TableCell>
-                <TableCell className="hidden py-2.5 pl-3 pr-5 text-[13px] md:table-cell">
+                <TableCell className="hidden py-2.5 pl-3 pr-5 text-body-sm md:table-cell">
                   {r.pastCrossings === null ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (

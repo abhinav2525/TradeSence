@@ -82,12 +82,12 @@ export default function RiskCalculator({ symbol, horizons, initial, firstDate }:
       </div>
 
       {amount === null ? (
-        <p className="px-5 pb-8 pt-4 text-[13px] text-muted-foreground">Type an amount in rupees to see what a bad stretch would have cost.</p>
+        <p className="px-5 pb-8 pt-4 text-body-sm text-muted-foreground">Type an amount in rupees to see what a bad stretch would have cost.</p>
       ) : !stock ? (
-        <p className="px-5 pb-8 pt-4 text-[13px] text-muted-foreground">Not enough history yet for {l.one}-long stretches.</p>
+        <p className="px-5 pb-8 pt-4 text-body-sm text-muted-foreground">Not enough history yet for {l.one}-long stretches.</p>
       ) : (
         <div className="grid gap-6 px-5 pb-5 pt-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-          <dl className="flex flex-col gap-3 text-[13px]">
+          <dl className="flex flex-col gap-3 text-body-sm">
             <div>
               <dt className="text-foreground-2">
                 {stock.p10 < 0 ? `1 in 10 ${l.many} lost more than` : `Even the weakest 1 in 10 ${l.many} ended higher, by at least`}

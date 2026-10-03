@@ -44,7 +44,7 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
       <div className="flex flex-col md:w-[44%]">
         <p className="text-eyebrow uppercase text-muted-foreground"><Term id="net-advances" today={`${signed(net)} (${advancing} rose, ${declining} fell)`}>Net advances</Term></p>
         <p className="mt-4 text-display tabular-nums text-foreground"><CountUp text={signed(net)} /></p>
-        <p className="mt-3 text-[13px] leading-5 text-foreground-2">
+        <p className="mt-3 text-body-sm leading-5 text-foreground-2">
           {advancing} {plural(advancing, "constituent", "constituents")} rose, {declining} fell
           {unchanged > 0 ? ` and ${unchanged} closed unchanged` : ""} on{" "}
           <time dateTime={date} className="font-medium text-foreground">

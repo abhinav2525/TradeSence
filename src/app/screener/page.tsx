@@ -51,7 +51,7 @@ function names(list: string[]): string {
 const head = "h-9 px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const seg = (on: boolean) =>
   cn(
-    "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-[13px] font-medium transition-colors",
+    "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-body-sm font-medium transition-colors",
     on ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground",
   );
 
@@ -166,7 +166,7 @@ export default async function Page({
       {!date ? (
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
-          <p className="mt-2 text-[13px] text-foreground-2">
+          <p className="mt-2 text-body-sm text-foreground-2">
             Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
           </p>
         </Card>
@@ -257,7 +257,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
         </Badge>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-[13px] text-muted-foreground">None within {NEAR_PCT}% on this side.</p>
+        <p className="px-5 py-8 text-body-sm text-muted-foreground">None within {NEAR_PCT}% on this side.</p>
       ) : (
         <Table className="tabular-nums">
           <TableHeader>
@@ -271,14 +271,14 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-2.5 pl-5 pr-3 text-[13px] font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
-                <TableCell className={cn("px-3 py-2.5 text-right text-[13px] font-medium", tone === "down" ? "text-down" : "text-up")}>
+                <TableCell className="py-2.5 pl-5 pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className={cn("px-3 py-2.5 text-right text-body-sm font-medium", tone === "down" ? "text-down" : "text-up")}>
                   {signed(r.pctFromMa!, 2)}%
                 </TableCell>
-                <TableCell className="px-3 py-2.5 text-right text-[13px] text-muted-foreground">
+                <TableCell className="px-3 py-2.5 text-right text-body-sm text-muted-foreground">
                   {r.gap5 === null ? "—" : `${signed(r.gap5, 2)}%`}
                 </TableCell>
-                <TableCell className="py-2.5 pl-3 pr-5 text-right text-[13px] text-foreground">
+                <TableCell className="py-2.5 pl-3 pr-5 text-right text-body-sm text-foreground">
                   <VolumeTrack ratio={r.volRatio} />
                 </TableCell>
               </TableRow>

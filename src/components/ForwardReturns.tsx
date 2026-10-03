@@ -14,7 +14,7 @@ const OPTIONS: { key: Condition; label: string }[] = [
 const head = "px-3 py-2 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
 const seg = (on: boolean) =>
   cn(
-    "inline-flex h-8 items-center rounded-[8px] px-3 text-[13px] font-medium transition-colors",
+    "inline-flex h-8 items-center rounded-[8px] px-3 text-body-sm font-medium transition-colors",
     on ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground",
   );
 
@@ -51,7 +51,7 @@ export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, 
       <div className="grid gap-6 px-5 pb-5 xl:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-4">
           <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-[13px] tabular-nums">
+            <table className="w-full text-body-sm tabular-nums">
               <thead>
                 <tr className="border-b text-muted-foreground">
                   <th className={cn(head, "pl-4 text-left")}>Horizon</th>
@@ -76,7 +76,7 @@ export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, 
               </tbody>
             </table>
           </div>
-          <p className="text-[13px] leading-5 text-foreground-2">{readingSentence(cond, horizons, episodes)}</p>
+          <p className="text-body-sm leading-5 text-foreground-2">{readingSentence(cond, horizons, episodes)}</p>
         </div>
 
         <div className="min-w-0">

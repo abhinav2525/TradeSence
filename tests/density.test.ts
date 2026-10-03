@@ -1,11 +1,23 @@
 import { test, expect, describe } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { cn } from "../src/lib/utils";
 import { PREPAINT_SCRIPT } from "../src/lib/prepaint";
 import { toggleDensity } from "../src/components/DensityToggle";
 
 // Density (decision 0020): every size the compact/comfortable switch controls is a
 // --density-* variable, set once per density, read by named Tailwind tokens.
+
+const srcFiles = (dir: string): string[] =>
+  readdirSync(dir).flatMap((f) => {
+    const p = join(dir, f);
+    return statSync(p).isDirectory() ? srcFiles(p) : /\.tsx?$/.test(p) ? [p] : [];
+  });
+/** file:line for every line in src/ matching `re`, skipping files whose path ends with any of `skip` */
+const hits = (re: RegExp, skip: string[] = []) =>
+  srcFiles("src")
+    .filter((f) => !skip.some((s) => f.endsWith(s)))
+    .flatMap((f) => readFileSync(f, "utf8").split("\n").flatMap((l, i) => (re.test(l) ? [`${f}:${i + 1}`] : [])));
 
 const css = readFileSync("src/app/globals.css", "utf8");
 const block = (sel: string) => {
@@ -109,5 +121,11 @@ describe("toggleDensity", () => {
     const src = readFileSync("src/components/Hotkeys.tsx", "utf8");
     expect(src).toContain('e.key === "d"');
     expect(src).toContain("toggleDensity()");
+  });
+});
+
+describe("body type follows density", () => {
+  test("no raw 13px or text-sm left", () => {
+    expect(hits(/text-\[13px\]|\btext-sm\b/)).toEqual([]);
   });
 });

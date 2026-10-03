@@ -16,10 +16,10 @@ export default function CrashTable({ crashes, className }: { crashes: StockRepor
         <p className="mt-0.5 text-[12px] text-muted-foreground">From the high in the 3 months before each crash to the low in the 3 months after</p>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-6 text-[13px] text-muted-foreground">No completed market crash in this stock's history yet.</p>
+        <p className="px-5 py-6 text-body-sm text-muted-foreground">No completed market crash in this stock's history yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-[13px] tabular-nums">
+          <table className="w-full text-body-sm tabular-nums">
             <thead>
               <tr className="border-b text-left text-[12px] text-muted-foreground">
                 <th className="px-5 py-2 font-medium">Crash began</th>

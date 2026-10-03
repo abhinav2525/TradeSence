@@ -8,7 +8,7 @@ export default function WashoutNotice({ text, ma, className }: { text: string; m
     <div
       role="status"
       className={cn(
-        "reveal flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-down/30 bg-down-soft px-4 py-2.5 text-[13px] leading-5 text-foreground",
+        "reveal flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-down/30 bg-down-soft px-4 py-2.5 text-body-sm leading-5 text-foreground",
         className,
       )}
     >

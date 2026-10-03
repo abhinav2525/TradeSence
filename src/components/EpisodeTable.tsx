@@ -26,10 +26,10 @@ export default function EpisodeTable({
         <Badge variant="neutral">{rows.length} episode{rows.length === 1 ? "" : "s"}</Badge>
       </div>
       {rows.length === 0 ? (
-        <p className="px-5 py-6 text-[13px] text-muted-foreground">No episode {name} since {formatDate(first)}.</p>
+        <p className="px-5 py-6 text-body-sm text-muted-foreground">No episode {name} since {formatDate(first)}.</p>
       ) : (
         <div className="max-h-[520px] overflow-auto">
-          <table className="w-full text-[13px] tabular-nums">
+          <table className="w-full text-body-sm tabular-nums">
             <thead className="sticky top-0 z-10 bg-card">
               <tr className="border-b text-muted-foreground">
                 <th className={cn(head, "pl-5 text-left")}>Started</th>

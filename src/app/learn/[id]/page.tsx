@@ -14,7 +14,7 @@ function Section({ title, children, className }: { title: string; children: Reac
   return (
     <Card className={`p-5 ${className ?? ""}`}>
       <h2 className="text-heading text-foreground">{title}</h2>
-      <div className="mt-2 text-[13px] leading-5 text-foreground-2">{children}</div>
+      <div className="mt-2 text-body-sm leading-5 text-foreground-2">{children}</div>
     </Card>
   );
 }

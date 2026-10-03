@@ -100,7 +100,7 @@ export function LightSummary({ checks, className }: { checks: Check[]; className
   return (
     <Card className={cn("flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4", className)}>
       {checks.map((c) => (
-        <span key={c.label} className="inline-flex items-center gap-2 text-[13px] text-foreground-2">
+        <span key={c.label} className="inline-flex items-center gap-2 text-body-sm text-foreground-2">
           {c.label}
           <LightDot light={c.light} />
         </span>

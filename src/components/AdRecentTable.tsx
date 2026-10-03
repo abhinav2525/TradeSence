@@ -29,18 +29,18 @@ export default function AdRecentTable({ rows, className }: { rows: AdPoint[]; cl
         <TableBody>
           {rows.map((r) => (
             <TableRow key={r.date} className="hover:bg-raised">
-              <TableCell className="py-2.5 pl-5 pr-3 text-[13px] text-foreground">{formatDayMonth(r.date)}</TableCell>
-              <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground-2">{r.advancing}</TableCell>
-              <TableCell className="px-3 py-2.5 text-right text-[13px] text-foreground-2">{r.declining}</TableCell>
+              <TableCell className="py-2.5 pl-5 pr-3 text-body-sm text-foreground">{formatDayMonth(r.date)}</TableCell>
+              <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground-2">{r.advancing}</TableCell>
+              <TableCell className="px-3 py-2.5 text-right text-body-sm text-foreground-2">{r.declining}</TableCell>
               <TableCell
                 className={cn(
-                  "px-3 py-2.5 text-right text-[13px] font-medium",
+                  "px-3 py-2.5 text-right text-body-sm font-medium",
                   r.net > 0 ? "text-up" : r.net < 0 ? "text-down" : "text-muted-foreground",
                 )}
               >
                 {signed(r.net)}
               </TableCell>
-              <TableCell className="py-2.5 pl-3 pr-5 text-right text-[13px] text-foreground">
+              <TableCell className="py-2.5 pl-3 pr-5 text-right text-body-sm text-foreground">
                 {r.mcclellan === null ? "—" : signed(r.mcclellan, 1)}
               </TableCell>
             </TableRow>

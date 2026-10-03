@@ -42,7 +42,7 @@ export default function BreadthHero({
           <CountUp text={pct.toFixed(0)} />
           <span className="ml-1 text-[0.45em] font-medium tracking-normal text-muted-foreground">%</span>
         </p>
-        <p className="mt-3 text-[13px] leading-5 text-foreground-2">
+        <p className="mt-3 text-body-sm leading-5 text-foreground-2">
           of NIFTY 50 constituents closed above their {maLabel} on{" "}
           <time dateTime={date} className="font-medium text-foreground">
             {formatDate(date)}

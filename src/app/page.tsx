@@ -158,7 +158,7 @@ export default async function Page({
       {!point ? (
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
-          <p className="mt-2 text-[13px] text-foreground-2">
+          <p className="mt-2 text-body-sm text-foreground-2">
             Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run ingest:backfill</code>{" "}
             then <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
           </p>

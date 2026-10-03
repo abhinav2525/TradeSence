@@ -71,7 +71,7 @@ function StatTile({ label, term, today, value, unit, sub, direction, badge, fill
       >
         {direction && <Arrow className="size-5 self-center" aria-hidden="true" />}
         <CountUp className="text-metric" text={value} />
-        {unit && <span className="text-[13px] font-medium opacity-70">{unit}</span>}
+        {unit && <span className="text-body-sm font-medium opacity-70">{unit}</span>}
       </div>
 
       {fill !== undefined && (
