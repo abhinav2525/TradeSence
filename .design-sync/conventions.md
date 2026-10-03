@@ -25,7 +25,7 @@ Style with the token utility classes the stylesheet ships. Never use hex values.
 | Surfaces | `bg-background` (page), `bg-card` + `border` + `shadow-card` + `rounded-lg` (panels), `bg-raised` (insets, switches) |
 | Ink | `text-foreground`, `text-foreground-2` (secondary), `text-muted-foreground` (labels) |
 | Meaning | `text-up` / `bg-up-soft` (above, improving), `text-down` / `bg-down-soft` (below, deteriorating), `text-brand` / `bg-brand-soft` (selection, the primary series) |
-| Type scale | `text-display` (one headline figure per page), `text-metric` (tile values), `text-title`, `text-heading` (card titles), `text-eyebrow` + `uppercase` (section labels), `text-[13px]` body, `text-[12px]` captions |
+| Type scale | `text-display` (one headline figure per page), `text-metric` (tile values), `text-title`, `text-heading` (card titles), `text-eyebrow` + `uppercase` (section labels), `text-body-sm` body, `text-[12px]` captions |
 | Numbers | `tabular-nums` in every table and figure |
 
 Rules the components already follow:
@@ -56,7 +56,7 @@ Lead with one figure, then explain it: how rare it is, which way it is moving, a
         <Badge variant="down">Active</Badge>
       </CardHeader>
       <CardContent>
-        <p className="text-[13px] text-foreground-2">16% of NIFTY 50 stocks are above their 200-day SMA, under the 20% line.</p>
+        <p className="text-body-sm text-foreground-2">16% of NIFTY 50 stocks are above their 200-day SMA, under the 20% line.</p>
       </CardContent>
     </Card>
     <Readout tiles={[

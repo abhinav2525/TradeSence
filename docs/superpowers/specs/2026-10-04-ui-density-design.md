@@ -36,12 +36,11 @@ hydration, every component re-rendering); a second stylesheet (two sources of tr
 | `text-body` (new) | 13px / 20px | 14px / 20px | `text-sm`, the `<body>` default |
 | `text-body-sm` (new) | 12px / 18px | 13px / 20px | every `text-[13px]` (70 uses) |
 | `--spacing-card-x` (`px-card-x`) | 16px | 20px | card side inset (`px-5` in cards) |
-| `--spacing-card-head` (`pt-card-head`) | 16px | 16px | card header top |
 | `--spacing-card` (`py-card`, `pb-card`) | 12px | 20px | card body vertical padding |
 | `--spacing-cards` (`gap-cards`) | 12px | 16px | `gap-4` between cards and tiles |
 | `--spacing-gutter` (`lg:px-gutter`) | 20px | 32px | `lg:px-8` in `AppShell` |
-| `--spacing-row-head` (`h-row-head`) | 28px | 48px (`h-12`) / 36px (`h-9`) as today per table | sticky table headers |
-| `--spacing-cell-y` (`py-cell`) | 4px | 10px | table cell `py-2.5` / `py-2` |
+| `--spacing-row-head` (`h-row-head`) | 28px | 36px (amended while planning: `h-9`, what the tables use) | sticky table headers |
+| `--spacing-cell-y` (`py-cell`) | 4px (amended while building: 5px gave 31px rows) | 10px | table cell `py-2.5` / `py-2` |
 | `--chart-scale` | 0.7 | 1 | each chart's fixed height, as `h-[calc(Npx*var(--chart-scale))]` |
 
 **Side inset (default chosen, owner can overrule):** the brief's "16 header / 12 body" is applied as vertical
@@ -51,6 +50,11 @@ footer text stay on one vertical line. Applying 16/12 to the sides would misalig
 `caption`, `label`, `eyebrow`, `table-head` and `badge` sizes are unchanged (the brief names
 only the four). In compact, `body-sm` and `caption` are both 12px; the hierarchy then rests on
 weight and colour, which those styles already carry.
+
+**Amended while planning and building** (decision 0020 has the detail): the card header top
+stays `pt-4` (no token); `px-card-x` also replaces `pl-5`/`pr-5`; stat tiles keep their padding;
+heroes keep `sm:p-6` in comfortable; `<body>` keeps no text size; `body-sm` sits on a 1.5 line;
+comfortable tables are ~1px per row taller, the three hand-built ones ~4px.
 
 ## Switching
 

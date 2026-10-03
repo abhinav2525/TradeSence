@@ -13,12 +13,12 @@ ticks, motion settings and small Report Card wording helpers. No database access
 | `format.ts` | `formatDate`, `formatMonth`, `formatDayMonth`, `signed` (true minus), `formatInt`, `formatPrice`, `formatRupees`, `ordinal`. Indian grouping (`en-IN`), months by hand so server and browser agree. |
 | `count.ts` | Maths behind `<CountUp>`: `parseShown` reads an on-screen figure, `formatLike` redraws in-between values in the same format, `countFrame` (ease-out), `countPlan`. |
 | `motion.ts` | `MOTION` durations, `EASE_OUT`, `useReducedMotion`, `chartAnimation` / `useChartAnimation` (the props every Recharts series spreads). |
-| `prepaint.ts` | `PREPAINT_SCRIPT`, inlined in `<head>` by `layout.tsx`: applies a stored light theme and sets `data-motion` before first paint. |
+| `prepaint.ts` | `PREPAINT_SCRIPT`, inlined in `<head>` by `layout.tsx`: applies a stored light theme, a stored density (`data-density`) and sets `data-motion` before first paint. |
 | `ticks.ts` | `dateTicks`: unique year or month x-axis ticks, at most 8. |
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
 | `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
 | `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
-| `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes. |
+| `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`). |
 
 ## Rules here
 - A new term needs an entry in `IDS` and `GLOSSARY` before it ships (root CLAUDE.md); `tests/glossary.test.ts` checks it. A live sentence for it goes in `src/query/glossary-live.ts`.

@@ -14,6 +14,7 @@ queried from `src/query/`; nothing here touches the database.
 | `MaTabs.tsx`, `DateNav.tsx`, `DatePicker.tsx` | URL-driven controls: pick the average, step or jump sessions (all navigate via links / `router.push`) |
 | `Hotkeys.tsx` + `hotkey-target.ts` | Keyboard shortcuts; the key-to-URL routing is the pure, tested `hotkeyTarget` (1–3 do nothing on Report Card and Signals) |
 | `ThemeToggle.tsx` | Theme switch; also exports `toggleTheme()` used by `Hotkeys` |
+| `DensityToggle.tsx` | Compact/comfortable switch (decision 0020); exports `toggleDensity()` used by `Hotkeys` (`d`) |
 | `Term.tsx` | Label with an ⓘ popover from `src/lib/glossary.ts` |
 | `BreadthHero.tsx`, `AdHero.tsx`, `Readout.tsx` | Headline cards and stat tiles (`Readout` takes `Tile[]`) |
 | `BreadthArea.tsx`, `AdLineChart.tsx`, `McClellanBars.tsx`, `CrossingsBars.tsx`, `StockPriceChart.tsx`, `DrawdownChart.tsx`, `WashoutSpark.tsx`, `ReturnBuckets.tsx` | Recharts charts on `ui/chart`'s `ChartContainer` |

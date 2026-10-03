@@ -19,7 +19,7 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 | `signals`, `signals-copy` | Signals maths (status edges, pending vs gap returns, summaries) and every Signals sentence word for word |
 | `risk`, `market-risk`, `stock-report`, `report-card-ui` | Report Card maths (`src/indicators/risk.ts`, `market-risk.ts`), `stockReport`, calculator wording |
 | `glossary`, `glossary-live` | Glossary completeness (entries, related terms, ≤ 220-char popover text, true minus) and live example sentences |
-| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout`, `tailwind-v4` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys, formatting and ticks, no Tailwind v3 `[--var]` left |
+| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout`, `tailwind-v4`, `density` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys, formatting and ticks, no Tailwind v3 `[--var]` left, density tokens/switch and no raw px for what density controls |
 | `forward-returns`, `volume-research`, `volume-data` | Research studies in `src/research/`: research 0001 helpers; research 0002 indicators, signal flags, luck check and verdict rules; its database reads |
 | `db-url-guard` | `resolveDatabaseUrl` refusing a non-`_test` database |
 | `review-fixes` | Regressions from a code review: header columns, blank closes, corrupt zip, two-digit years, duplicate members, gap restarts |

@@ -168,6 +168,11 @@ shadow and type size lives in `globals.css` and is documented in the tradeSence 
 System artifact; use the tokens (`text-up`, `bg-card`, `text-heading`), never raw hex.
 The custom type sizes are registered with tailwind-merge in `src/lib/utils.ts`; a new one
 added to `@theme` must be added there too, or `cn()` silently drops it.
+**Density** ([0020](docs/decisions/0020-ui-density.md)) is `data-density` on `<html>`: the
+server renders `compact`, the same pre-paint script applies a stored `comfortable`. Anything
+it controls uses the `--density-*` tokens (`text-body-sm`, `px-card-x`, `py-card`, `gap-cards`,
+`lg:px-gutter`, `h-row-head`, `py-cell`, charts `h-[calc(Npx*var(--density-chart))]`), never
+raw px; `tests/density.test.ts` enforces it. `<body>` deliberately has no text size.
 
 **NSE file quirks** (all verified against the live archive):
 - Two formats. UDiFF from 2024-01-02; legacy up to ~2024-06. They overlap; the cutover
