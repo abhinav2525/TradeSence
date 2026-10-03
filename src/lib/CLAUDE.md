@@ -17,12 +17,14 @@ ticks, motion settings and small Report Card wording helpers. No database access
 | `ticks.ts` | `dateTicks`: unique year or month x-axis ticks, at most 8. |
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
 | `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
+| `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
 | `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes. |
 
 ## Rules here
 - A new term needs an entry in `IDS` and `GLOSSARY` before it ships (root CLAUDE.md); `tests/glossary.test.ts` checks it. A live sentence for it goes in `src/query/glossary-live.ts`.
 - `MOTION` must match `--motion-*` in `src/app/globals.css`; `tests/motion.test.ts` reads the CSS and fails if they drift.
 - A type size added to `@theme` must be added to the `font-size` group in `utils.ts`, or `cn()` drops it (root CLAUDE.md).
+- `ma.ts` must stay import-free: anything it pulled in would reach the browser bundle (decision 0019; `tests/ma.test.ts` checks).
 - Show negatives with the true minus `−`, not `-`, via `signed` / `formatRupees`. `count.ts` parses only that form.
 - `prepaint.ts` is a plain string run before React: keep it self-contained, with every `localStorage`/`matchMedia` call in its own try/catch.
 

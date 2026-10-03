@@ -31,6 +31,7 @@ queried from `src/query/`; nothing here touches the database.
 - `LightDot` always shows its word: colour is never the only signal, and amber is a neutral ring (no amber token).
 - `DatePicker` builds dates field by field, never via `toISOString`, so a timezone can't shift the session.
 - `signals-copy.ts` uses relative imports so tests load it directly (an `@/` import is fine only when type-only, as in `hotkey-target.ts`). Signals wording changes go through it and its tests, never inline in a card.
+- Components are bundled for Claude Design (decision 0019, `.design-sync/`): never import a value from `src/query/*` (it opens the database). Type-only imports are fine, and pure helpers belong in `src/lib`.
 - `<Term>` rules (never inside a link or clickable row) and the sidebar width pairing (`w-60` / `lg:pl-60`) are in the root CLAUDE.md.
 
 ## See also

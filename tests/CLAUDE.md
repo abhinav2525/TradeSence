@@ -14,6 +14,7 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 | `bhavcopy`, `fetch-bhavcopy`, `download-resilience`, `backfill`, `backfill-resilience`, `ingest-day`, `holiday-provisional` | Bhavcopy parsing (UDiFF and legacy), URLs, live fetches, retries, weekend days, `ingest_log` settle/resume rules |
 | `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history` | Other ingest pipelines: `classifyAction` wordings, `symbolLineage`, index closes, membership CSV checks |
 | `indicators`, `compute`, `history`, `adjust`, `volume`, `episodes` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, the shared `loadAdjustedHistory`, adjustment factors, `volumeRatios`, episode spans |
+| `ma` | `src/lib/ma.ts` stays import-free and matches `breadth.ts`'s columns; MaTabs doesn't import `src/query` |
 | `breadth`, `breakdown-on-date`, `advance-decline`, `crossings`, `screener`, `signals-query` | Page queries in `src/query/` against seeded rows |
 | `signals`, `signals-copy` | Signals maths (status edges, pending vs gap returns, summaries) and every Signals sentence word for word |
 | `risk`, `market-risk`, `stock-report`, `report-card-ui` | Report Card maths (`src/indicators/risk.ts`, `market-risk.ts`), `stockReport`, calculator wording |
