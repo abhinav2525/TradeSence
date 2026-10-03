@@ -8,6 +8,14 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
+**Where we left off (3 Oct 2026).** Everything below "Done" is built, reviewed and pushed to
+`main`. **Start next with the Signals page's breadth washout alert**: 200-SMA breadth has
+been below 20% since 1 Oct 2026, so it is live right now. The design mockup is
+`docs/design/mockups/signals.html`; crash episodes are already found by `crashEpisodes`
+(`src/indicators/market-risk.ts`, the same rule as research 0001). Re-run
+`bun run research:forward-returns` before quoting its numbers. Then check Monday's nightly
+run (Ops).
+
 ---
 
 ## Next up
@@ -34,7 +42,7 @@ Why each finished item was built the way it was: `docs/decisions/`.
   the top ranked third beat the index over 3–6 months in our data?).
 
 ### More indicators (from the 2026-10-02 indicator brainstorm)
-Order agreed: beginner Report Card first (being designed now), then these.
+The beginner Report Card lights came first (done: 0014); these follow.
 - [ ] **Signal track records (trader)** — a: RSI, breakouts, 52-week highs… each shown with
   its own history on that stock: how many times it fired, what happened N sessions later,
   against the base rate of any random day. Always show the sample size; say "too few
@@ -68,6 +76,23 @@ Order agreed: beginner Report Card first (being designed now), then these.
   breadth-thrust sentence should say whether a thrust fired.
 - [ ] Learn pages keep the reader's average (`ma`) instead of resetting to the 200 SMA.
 
+
+## Report Card lights polish (deferred from the decision 0014 review) — n
+- [ ] A figure can round onto the wrong side of a cut-off: INFY shows "Amber 1.0×" (Right now).
+  Show two decimals near a cut-off, or compare the rounded value.
+- [ ] Bad days sentence: "it" is ambiguous ("When the NIFTY falls 1%, it usually falls…"),
+  and "usually" should be "on average" (also in the glossary and live example).
+- [ ] Only the latest of two overlapping ongoing crashes is mentioned; make `ongoing` a list.
+- [ ] Crash table says "Not yet" also when a data gap (not time) leaves "back" unknown.
+- [ ] Audit: also compare the three new lights' colours, `weekPct`, `capture.sessions`, `backOf`.
+- [ ] RiskMetrics seed is a demeaned sample variance while the recursion is zero-mean
+  (negligible after ~100 sessions; note or switch to mean of squares).
+- [ ] "Right now" can light ~20 sessions after a long suspension (σ seeded on 20 moves):
+  also require ~60 moves in the current segment.
+- [ ] Capture pairs a multi-session stock move after a short gap with a one-session NIFTY
+  move (latent: no NIFTY 50 case since 2020; matters for the whole market).
+- [ ] `breadthSeries` is recomputed on every Report Card view (~120 ms): cache by latest date.
+- [ ] Glossary wording: say a crash fall is capped at 0; "up to 1.5× jumpier" → "up to 1.5× as jumpy".
 
 ## Report Card polish (deferred from the decision 0011 review) — n
 - [ ] The membership line ignores the chosen date: ETERNAL read in 2023 says "In the
