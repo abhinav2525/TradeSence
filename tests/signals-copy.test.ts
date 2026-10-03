@@ -53,7 +53,7 @@ describe("readingSentence", () => {
   test("over 80%: says it is not an alarm", () => {
     const o = [h("1m", { n: 8 }), h("3m", { n: 8 }), h("6m", { n: 8, higher: 4, median: -0.4, baseline: 7.7 })];
     expect(readingSentence("over", o, [])).toBe(
-      "Six months after breadth went over 80%, the index was higher in 4 of 8, a median of −0.4% against +7.7% on an ordinary day. Research 0001 found no edge here, so it is not an alarm. Only 8 over-80% episodes so far: a small sample.",
+      "Six months after breadth went over 80%, the index was higher in 4 of 8, a median of −0.4% against +7.7% on an ordinary day. The study behind this page found no edge here, so it is not an alarm. Only 8 over-80% episodes so far: a small sample.",
     );
   });
   test("nothing has played out yet", () => {
@@ -63,8 +63,8 @@ describe("readingSentence", () => {
 
 describe("home notice", () => {
   test("text uses the live counts", () => {
-    expect(noticeText(h("6m", { n: 5, higher: 5 }))).toBe("under 20% of NIFTY 50 stocks are above their 200-day SMA. After each of the last 5 washouts, the index was higher 6 months later.");
-    expect(noticeText(h("6m", { n: 6, higher: 5 }))).toBe("under 20% of NIFTY 50 stocks are above their 200-day SMA. After 5 of the last 6 washouts, the index was higher 6 months later.");
+    expect(noticeText(h("6m", { n: 5, higher: 5 }))).toBe("under 20% of NIFTY 50 stocks are above their 200-day SMA. After each of the 5 earlier washouts, the index was higher 6 months later.");
+    expect(noticeText(h("6m", { n: 6, higher: 5 }))).toBe("under 20% of NIFTY 50 stocks are above their 200-day SMA. After 5 of the 6 earlier washouts, the index was higher 6 months later.");
     expect(noticeText(h("6m", { n: 0, higher: 0 }))).toBe("under 20% of NIFTY 50 stocks are above their 200-day SMA.");
   });
   test("visible only when Active and showing the latest session", () => {

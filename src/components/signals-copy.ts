@@ -55,7 +55,7 @@ export function readingSentence(cond: Condition, hs: HorizonSummary[], episodes:
     const after = six.n === 0
       ? ""
       : `Six months after breadth went over 80%, the index was higher in ${six.higher} of ${six.n}, a median of ${pctText(six.median)} against ${pctText(six.baseline)} on an ordinary day. `;
-    return `${after}Research 0001 found no edge here, so it is not an alarm. ${sample}`;
+    return `${after}The study behind this page found no edge here, so it is not an alarm. ${sample}`;
   }
 
   const comparable = hs.filter((h) => h.median !== null && h.baseline !== null);
@@ -81,8 +81,8 @@ export function noticeText(six: HorizonSummary): string {
   const lead = `under ${WASHOUT_LINE}% of NIFTY 50 stocks are above their 200-day SMA.`;
   if (six.n === 0) return lead;
   return six.higher === six.n
-    ? `${lead} After each of the last ${six.n} washouts, the index was higher 6 months later.`
-    : `${lead} After ${six.higher} of the last ${six.n} washouts, the index was higher 6 months later.`;
+    ? `${lead} After each of the ${six.n} earlier washouts, the index was higher 6 months later.`
+    : `${lead} After ${six.higher} of the ${six.n} earlier washouts, the index was higher 6 months later.`;
 }
 
 /** Only while Active, and only when the reader is looking at the latest session. */
