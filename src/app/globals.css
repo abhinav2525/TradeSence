@@ -2,6 +2,9 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+/* density (decision 0020): the server renders data-density="compact"; prepaint.ts swaps in a stored choice */
+@custom-variant compact (&:is([data-density="compact"] *));
+@custom-variant comfortable (&:is([data-density="comfortable"] *));
 
 /*
  * tradeSence: a modern fintech dashboard. Dark is the default theme; light sits
@@ -104,6 +107,42 @@
   --elev-thumb: inset 0 1px 0 0 rgba(255, 255, 255, 0.06), 0 1px 2px 0 rgba(0, 0, 0, 0.5);
 }
 
+/* Density (decision 0020): one value per role, swapped by data-density on <html>.
+   Compact is the default; comfortable is the original spacing. */
+:root,
+[data-density="compact"] {
+  --density-display: 3rem;
+  --density-metric: 1.375rem;
+  --density-metric-lh: 1.75rem;
+  --density-body: 0.8125rem;
+  --density-body-lh: 1.25rem;
+  --density-body-sm: 0.75rem;
+  --density-body-sm-lh: 1.125rem;
+  --density-card-x: 1rem;
+  --density-card-y: 0.75rem;
+  --density-cards: 0.75rem;
+  --density-gutter: 1.25rem;
+  --density-row-head: 1.75rem;
+  --density-cell-y: 0.3125rem;
+  --density-chart: 0.7;
+}
+[data-density="comfortable"] {
+  --density-display: 4rem;
+  --density-metric: 1.75rem;
+  --density-metric-lh: 2rem;
+  --density-body: 0.875rem;
+  --density-body-lh: 1.25rem;
+  --density-body-sm: 0.8125rem;
+  --density-body-sm-lh: 1.25rem;
+  --density-card-x: 1.25rem;
+  --density-card-y: 1.25rem;
+  --density-cards: 1rem;
+  --density-gutter: 2rem;
+  --density-row-head: 2.25rem;
+  --density-cell-y: 0.625rem;
+  --density-chart: 1;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -155,12 +194,12 @@
 /* The type scale. One family (Geist) does everything, numbers included;
    Geist Mono is kept for dates, keys and code. */
 @theme {
-  --text-display: 4rem;
+  --text-display: var(--density-display);
   --text-display--line-height: 1;
   --text-display--letter-spacing: -0.04em;
   --text-display--font-weight: 600;
-  --text-metric: 1.75rem;
-  --text-metric--line-height: 2rem;
+  --text-metric: var(--density-metric);
+  --text-metric--line-height: var(--density-metric-lh);
   --text-metric--letter-spacing: -0.025em;
   --text-metric--font-weight: 600;
   --text-title: 1.5rem;
@@ -175,6 +214,19 @@
   --text-eyebrow--line-height: 1rem;
   --text-eyebrow--letter-spacing: 0.08em;
   --text-eyebrow--font-weight: 600;
+  --text-body: var(--density-body);
+  --text-body--line-height: var(--density-body-lh);
+  --text-body-sm: var(--density-body-sm);
+  --text-body-sm--line-height: var(--density-body-sm-lh);
+
+  /* spacing that follows density: px-card-x, py-card / pb-card, gap-cards,
+     lg:px-gutter, h-row-head, py-cell */
+  --spacing-card-x: var(--density-card-x);
+  --spacing-card: var(--density-card-y);
+  --spacing-cards: var(--density-cards);
+  --spacing-gutter: var(--density-gutter);
+  --spacing-row-head: var(--density-row-head);
+  --spacing-cell: var(--density-cell-y);
 }
 
 @layer base {
@@ -188,7 +240,7 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans text-body antialiased;
   }
   /* the dashboard is navigated by keyboard, so focus must always be obvious:
      a solid brand ring, at least 3:1 on every surface in both themes */
