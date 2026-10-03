@@ -8,12 +8,10 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
-**Where we left off (3 Oct 2026).** Everything below "Done" is built, reviewed and pushed to
-`main`. **Start next with the Signals page's breadth washout alert**: 200-SMA breadth has
-been below 20% since 1 Oct 2026, so it is live right now. The design mockup is
-`docs/design/mockups/signals.html`; crash episodes are already found by `crashEpisodes`
-(`src/indicators/market-risk.ts`, the same rule as research 0001). Re-run
-`bun run research:forward-returns` before quoting its numbers. Then check Monday's nightly
+**Where we left off (3 Oct 2026).** The Signals page with the breadth washout alarm is
+built (decision 0017); it reads Active, since 200-SMA breadth has been under 20% since
+1 Oct 2026. **Start next with the breadth-thrust study** (below), using the same method as
+research 0001 and `episodesOf` in `src/indicators/signals.ts`. Then check Monday's nightly
 run (Ops).
 
 ---
@@ -21,9 +19,6 @@ run (Ops).
 ## Next up
 
 ### Signals page (`/signals`, design handoff §3) — a
-- [ ] **Breadth washout alert**: 200-SMA breadth < 20%, shown with its history
-  (research 0001: index higher 6 months later in 5 of 5 episodes, but a small sample).
-  Status Active / Watching / Quiet, last fired, times fired since 2020.
 - [ ] **Study the breadth thrust first** (Zweig: 10-day advancing share < 40% → > 61.5%
   within 10 sessions). Designed for thousands of NYSE stocks; with 50 it may fire too
   often. Same method as research 0001. Build only if it holds up.
@@ -170,3 +165,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Independent Report Card audit; Strength rank and flat-month rounding fixed: 0013
 - [x] Report Card lights 6–8 (Right now, Bad days, In crashes): 0014
 - [x] App motion (polished and smooth): 0015
+- [x] Signals page: breadth washout alarm, what happened next, every episode: 0017

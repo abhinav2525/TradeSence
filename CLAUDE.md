@@ -12,7 +12,9 @@ pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliner
 A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
 near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators/risk.ts`:
 the beginner's Report Card and risk calculator) `/crossings` (`src/query/crossings.ts`: members ranked by how often they
-whipsaw across an average) and `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
+whipsaw across an average), `/signals` (`src/query/signals.ts` + `src/indicators/signals.ts`:
+the breadth washout alarm and what the index did after each episode, 200-day SMA only) and
+`/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
 before making changes; this file covers only what the code cannot tell you. (README
@@ -135,7 +137,7 @@ check to a default.
 **`sql.raw` appears exactly twice**, in the `column()` helpers of `src/query/breadth.ts`
 and `src/query/crossings.ts`. Each is safe only because `MA_COLUMNS` is a fixed map, and
 the `ma` search param is gated by an `isMaKind` of three strict comparisons, which is
-duplicated in every page (`src/app/page.tsx`, `crossings/`, `advance-decline/`, `screener/`).
+duplicated in every page (`src/app/page.tsx`, `crossings/`, `advance-decline/`, `screener/`, `signals/`).
 The Screener avoids a third `sql.raw` by selecting all three averages; prefer that.
 Any new page or caller must validate the same way.
 

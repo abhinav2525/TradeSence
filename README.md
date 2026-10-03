@@ -387,9 +387,23 @@ Postgres's 65,535 bind-parameter cap).
 | `rangeHitRate` | `(line, sigma) => { inside, of } \| null` | Share of week-long stretches (last 500 sessions) inside ±σₜ·√5, using σ known at each week's start. |
 | `marketCapture` | `(stock, nifty) => { beta, up, down, sessions } \| null` | Last 250 sessions matched by date; down/up capture in %; null under 120. |
 | `crashEpisodes` | `(breadth, stock, nifty) => Crashes` | Breadth < 20% episodes (merge gap 10); further fall over 63 sessions vs the NIFTY; back after 126; an unfinished crash is `ongoing`, not counted. |
-| `findEpisodes`, `MERGE_GAP` | | Shared with research 0001 so both count episodes identically. |
+| `findEpisodes`, `findEpisodeSpans`, `MERGE_GAP` | `(pct, test, mergeGap) => number[]` / `EpisodeSpan[]` | Shared by research 0001, the Report Card and Signals so all three count episodes identically. Spans add each episode's last qualifying index and how many sessions qualified. |
 
 The Report Card now has eight lights: `nowVolLight`, `downCaptureLight` and the crash ratio join the five of decision 0011 (cut-offs in `THRESHOLDS`, decision 0014).
+
+### `src/indicators/signals.ts` and `src/query/signals.ts` — the Signals page
+
+The breadth washout alarm and what happened after each episode (decision 0017). Always the 200-day SMA. Computed on every page view; sentences in `src/components/signals-copy.ts`.
+
+| Function | Signature | Notes |
+|---|---|---|
+| `washoutStatus` | `(pct) => "active" \| "watching" \| "quiet"` | Under 20 Active; 20–25 inclusive Watching; above Quiet. |
+| `forwardReturnSafe` | `(closes, seg, i, h) => number \| null` | % change h sessions on; null past the last session or across a hole (`segmentIds`). |
+| `episodesOf` | `(days, "under" \| "over") => Episode[]` | Episodes via `findEpisodeSpans`, with lowest/highest reading, sessions, 1/3/6-month returns and a `pending` flag per horizon. |
+| `summarizeHorizons` | `(days, episodes) => HorizonSummary[]` | Per horizon: n, median, how many higher (`> NOISE_PCT`), best, worst, and the all-sessions median as the baseline. |
+| `bucketMedians` | `(days, h = 63) => { buckets, all }` | Median 3-month return per breadth bucket, by session. |
+| `buildSignals` | `(days) => Signals` | Everything the page and the Breadth notice need. |
+| `signalsData` | `() => Promise<Signals>` | Joins `breadthSeries("sma200")` to `index_prices` ("Nifty 50") by date. |
 
 ### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
 

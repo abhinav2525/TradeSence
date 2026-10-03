@@ -29,6 +29,7 @@ to the table below in the same change.
 | [0014](0014-three-new-lights.md) | 2026-10-02 | A beginner couldn't see whether a stock is unusually jumpy now, falls harder on bad days, or how it did in crashes | Three new Report Card lights (RiskMetrics volatility, down capture, crash episodes), each audited from raw prices with 0 mismatches |
 | [0015](0015-app-motion.md) | 2026-10-02 | The app felt flat: nothing moved | Polished, quick motion with built-in tools (cards rise, figures count, charts draw, switches slide, pages fade), four rules so numbers stay trustworthy; fixed popovers that never animated |
 | [0016](0016-chart-tooltip-v3-syntax.md) | 2026-10-03 | Chart tooltips' colour square used Tailwind v3 `[--var]` syntax, which v4 ignores | Rewritten to `(--var)`; a test now fails on any v3 leftover in `src` |
+| [0017](0017-signals-washout.md) | 2026-10-03 | Signals page: the breadth washout alarm, with what happened next | Washout only (thrust and divergence wait for their studies), 200-day SMA only, computed live; one shared episode rule; research 0001 refreshed after the weekend-sessions shift |
 | [Research 0001](../research/0001-does-breadth-predict.md) | 2026-10-02 | *(study, TODO item 2)* Does breadth predict the NIFTY 50? | Very weak 200-SMA breadth (<20%) was followed by a higher index 6 months later 5/5 times; >80% has no edge. Small sample |
 
 Research studies (questions answered with data, not problems fixed) live in
