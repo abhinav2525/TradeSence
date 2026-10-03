@@ -74,7 +74,7 @@ two-by-two). Colours, contrast, animation and wording are identical in both.
 
 A new size or spacing that should follow density: add its `--density-*` variable to
 **both** blocks in `src/app/globals.css`, add the `@theme` token that reads it, and for a
-type size register it in `src/lib/utils.ts` (otherwise `cn()` silently drops it). Use the
+type size or a spacing register it in `src/lib/utils.ts` (otherwise `cn()` silently drops it, or keeps it beside a caller's override so the override never wins). Use the
 token in components, never the pixel value. For a layout difference, use the `compact:` or
 `comfortable:` variant. `tests/density.test.ts` fails if a raw 13px, a fixed card inset, a
 fixed table row or a fixed chart height comes back.

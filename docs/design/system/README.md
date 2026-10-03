@@ -68,7 +68,7 @@ Every page comes in two densities, set by `data-density` on `<html>`: `compact` 
 - Each size the switch controls is a `--density-*` variable in `globals.css`, set once for each density, and read through the tokens above (`text-display`, `text-metric`, `text-body`, `text-body-sm`, `px-card-x`, `py-card`, `gap-cards`, `lg:px-gutter`, `h-row-head`, `py-cell`, `--density-chart`). Never write the pixel value instead, or that spot stops following the switch.
 - Layout that differs by density uses the `compact:` and `comfortable:` variants (the Breadth and Advance/Decline hero row; the heroes' extra `sm:comfortable:p-6`).
 - Colour, contrast, motion and wording are the same in both.
-- To add a new density-aware size: set its variable in both blocks, add the `@theme` token, and for a type size register it in `src/lib/utils.ts`.
+- To add a new density-aware size: set its variable in both blocks, add the `@theme` token, and register it with tailwind-merge in `src/lib/utils.ts` (type sizes in the `font-size` group, spacing in `theme.spacing`).
 
 ## Charts
 

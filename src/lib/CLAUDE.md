@@ -18,7 +18,7 @@ ticks, motion settings and small Report Card wording helpers. No database access
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
 | `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
 | `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
-| `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`). |
+| `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`) and the density spacing tokens. |
 
 ## Rules here
 - A new term needs an entry in `IDS` and `GLOSSARY` before it ships (root CLAUDE.md); `tests/glossary.test.ts` checks it. A live sentence for it goes in `src/query/glossary-live.ts`.

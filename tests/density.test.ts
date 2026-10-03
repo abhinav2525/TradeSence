@@ -73,6 +73,18 @@ describe("density tokens", () => {
     expect(cn("text-body-sm", "text-[12px]")).toBe("text-[12px]");
     expect(cn("text-body", "text-body-sm")).toBe("text-body-sm");
   });
+
+  test("cn() lets a caller override the density spacing tokens", () => {
+    expect(cn("px-card-x pb-card", "p-0")).toBe("p-0");
+    expect(cn("px-card-x", "px-3")).toBe("px-3");
+    expect(cn("px-4 py-cell", "py-2")).toBe("px-4 py-2");
+    expect(cn("h-row-head px-4", "h-9")).toBe("px-4 h-9");
+    expect(cn("gap-cards", "gap-4")).toBe("gap-4");
+    expect(cn("px-4 py-cell", "py-cell pl-card-x pr-3")).toBe("px-4 py-cell pl-card-x pr-3");
+  });
+  test("the d key is listed in the sidebar shortcuts", () => {
+    expect(readFileSync("src/components/SiteNav.tsx", "utf8")).toMatch(/\["t d", "Theme \/ spacing"\]/);
+  });
 });
 
 describe("density before first paint", () => {

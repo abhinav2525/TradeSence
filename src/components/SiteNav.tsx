@@ -50,6 +50,7 @@ const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
   ["b a c s r g l", "Switch page"],
+  ["t d", "Theme / spacing"],
 ] as const;
 
 /** The product name in plain type. There is no logo yet; the glyph is lucide's chart-spline. */
