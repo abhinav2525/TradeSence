@@ -1,0 +1,36 @@
+import { Card, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Term from "@/components/Term";
+import WashoutSpark, { type SparkPoint } from "@/components/WashoutSpark";
+import { STATUS_LABEL, firedLine, washoutSentence } from "@/components/signals-copy";
+import { WASHOUT_LINE, type Washout } from "@/indicators/signals";
+import { cn } from "@/lib/utils";
+
+const TONE = { active: "down", watching: "neutral", quiet: "outline" } as const;
+
+/** The washout alarm: status, one sentence, recent breadth against the line. */
+export default function WashoutCard({
+  washout, recent, first, className,
+}: { washout: Washout; recent: SparkPoint[]; first: string; className?: string }) {
+  return (
+    <Card className={cn("flex flex-col", className)}>
+      <div className="grid gap-4 px-5 pb-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-heading text-foreground"><Term id="washout">Washed out</Term></h2>
+            <Badge variant={TONE[washout.status]}>{STATUS_LABEL[washout.status]}</Badge>
+          </div>
+          <p className="text-[13px] leading-5 text-foreground-2">{washoutSentence(washout)}</p>
+          <p className="text-[12px] leading-4 text-muted-foreground">
+            Only the 200-day SMA: it is the one average research 0001 found reliable.
+          </p>
+        </div>
+        <div className="min-w-0">
+          <p className="mb-1 text-[12px] text-muted-foreground">Share above the 200-day SMA, last {recent.length} sessions</p>
+          <WashoutSpark data={recent} line={WASHOUT_LINE} />
+        </div>
+      </div>
+      <CardFooter className="mt-auto">{firedLine(washout, first)}</CardFooter>
+    </Card>
+  );
+}

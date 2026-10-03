@@ -31,7 +31,7 @@ test("every chart takes its motion from useChartAnimation, none hard-codes it", 
     const src = readFileSync(`${dir}/${f}`, "utf8");
     expect({ f, literal: /isAnimationActive=\{|animationDuration=\{/.test(src) }).toEqual({ f, literal: false });
   }
-  for (const f of ["BreadthArea", "AdLineChart", "McClellanBars", "CrossingsBars", "StockPriceChart", "DrawdownChart"]) {
+  for (const f of ["BreadthArea", "AdLineChart", "McClellanBars", "CrossingsBars", "StockPriceChart", "DrawdownChart", "WashoutSpark", "ReturnBuckets"]) {
     expect(readFileSync(`${dir}/${f}.tsx`, "utf8")).toContain("useChartAnimation()");
   }
 });
@@ -51,7 +51,7 @@ test("every meter bar grows in, and every card rises in", () => {
 });
 
 test("every segmented switch has a sliding pill", () => {
-  const files = ["src/components/MaTabs.tsx", "src/components/BreadthArea.tsx", "src/components/AdLineChart.tsx", "src/components/RiskCalculator.tsx", "src/app/screener/page.tsx"];
+  const files = ["src/components/MaTabs.tsx", "src/components/BreadthArea.tsx", "src/components/AdLineChart.tsx", "src/components/RiskCalculator.tsx", "src/app/screener/page.tsx", "src/components/ForwardReturns.tsx"];
   for (const f of files) {
     const src = readFileSync(f, "utf8");
     const groups = (src.match(/rounded-md border bg-raised p-0\.5/g) ?? []).length;
