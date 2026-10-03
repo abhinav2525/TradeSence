@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { MA_LABELS, type MaKind } from "@/query/breadth";
+import { MA_LABELS, type MaKind } from "@/lib/ma";
 import SlidingPill from "@/components/SlidingPill";
 
 const ORDER: MaKind[] = ["sma200", "ema200", "sma50"];

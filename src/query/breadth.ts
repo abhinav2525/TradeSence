@@ -1,20 +1,17 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
+import type { MaKind } from "../lib/ma";
+
+// The averages and their labels live in a pure module so browser code can use
+// them without this file's database import; re-exported for existing callers.
+export { MA_LABELS, type MaKind } from "../lib/ma";
 
 /** The three averages the dashboard offers, mapped to their stored columns. */
 export const MA_COLUMNS = {
   sma200: "sma_200",
   ema200: "ema_200",
   sma50: "sma_50",
-} as const;
-
-export type MaKind = keyof typeof MA_COLUMNS;
-
-export const MA_LABELS: Record<MaKind, string> = {
-  sma200: "200-day SMA",
-  ema200: "200-day EMA",
-  sma50: "50-day SMA",
-};
+} as const satisfies Record<MaKind, string>;
 
 export type BreadthPoint = {
   date: string;
