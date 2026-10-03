@@ -115,9 +115,9 @@
   --density-metric: 1.375rem;
   --density-metric-lh: 1.75rem;
   --density-body: 0.8125rem;
-  --density-body-lh: 1.25rem;
+  --density-body-lh: calc(1.25 / 0.8125);
   --density-body-sm: 0.75rem;
-  --density-body-sm-lh: 1.125rem;
+  --density-body-sm-lh: 1.5;
   --density-card-x: 1rem;
   --density-card-y: 0.75rem;
   --density-cards: 0.75rem;
@@ -131,9 +131,9 @@
   --density-metric: 1.75rem;
   --density-metric-lh: 2rem;
   --density-body: 0.875rem;
-  --density-body-lh: 1.25rem;
+  --density-body-lh: calc(1.25 / 0.875);
   --density-body-sm: 0.8125rem;
-  --density-body-sm-lh: 1.25rem;
+  --density-body-sm-lh: 1.5;
   --density-card-x: 1.25rem;
   --density-card-y: 1.25rem;
   --density-cards: 1rem;
@@ -240,7 +240,9 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-background text-foreground font-sans text-body antialiased;
+    /* no text size on purpose: size-only classes such as text-[12px] inherit the
+       1.5 line height of the browser's 16px, and changing it moves every card */
+    @apply bg-background text-foreground font-sans antialiased;
   }
   /* the dashboard is navigated by keyboard, so focus must always be obvious:
      a solid brand ring, at least 3:1 on every surface in both themes */
