@@ -82,11 +82,11 @@ One family, Geist, does everything including figures; Geist Mono is only for key
 1. **Only when something opens or changes, never while you read.** Hover, crosshairs and tooltips are instant; nothing loops.
 2. **The final value is the true one.** Figures end exactly on the server-rendered text, which is in the HTML from the first paint and in an `sr-only` copy for screen readers.
 3. **`prefers-reduced-motion` turns it all off**, in CSS and in JavaScript.
-4. **One clock:** `--motion-fast` 150ms, `--motion-base` 300ms, `--motion-slow` 600ms and `--ease-out`; JavaScript reads `MOTION` from `src/lib/motion.ts`.
+4. **One clock:** `--motion-fast` 250ms, `--motion-base` 500ms, `--motion-slow` 1000ms and a soft `--ease-out` (`cubic-bezier(0.33, 1, 0.68, 1)`); JavaScript reads `MOTION` from `src/lib/motion.ts`.
 
 | Element | On open | On a change | Tool |
 |---|---|---|---|
-| Cards and tiles | Fade and rise 8px, `base`, staggered 40ms (first 8) | none | `.reveal` (on `Card`) |
+| Cards and tiles | Fade and rise 6px, `base`, staggered 70ms (first 8) | none | `.reveal` (on `Card`) |
 | Big figures | Count up from 0, `slow` | Count from the shown value, `base` | `<CountUp text>` |
 | Charts | Draw in, `slow` | Morph, `base` | `useChartAnimation()` |
 | Meters and bars | Grow from 0, `slow` (first screenful of a table only) | Slide, `base` | `.grow-x`, `.grow-x-end`, `.grow-y`, `.grow-y-top`; markers `.fade-in` |

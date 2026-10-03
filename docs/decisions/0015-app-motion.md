@@ -27,7 +27,7 @@ Approach A, with four rules so motion never costs trust in a number:
    instant, and nothing loops.
 2. **The final value is always the true one.** It is in the HTML from the first paint.
 3. **"Reduce motion" on the reader's device turns everything off.**
-4. **One clock:** 150 / 300 / 600 ms, shared by CSS and code (a test keeps them equal).
+4. **One clock:** 250 / 500 / 1,000 ms (first 150 / 300 / 600, see below), shared by CSS and code (a test keeps them equal).
 
 What moves:
 - cards rise in, one after another;
@@ -115,6 +115,24 @@ slow connection. The count-ups, charts, meters and pills held up. It found:
 
 Each was fixed with a test that failed first; suite 323 pass. In the browser, with
 JavaScript off, the Report Card shows all 8 figures and no skeleton.
+
+## Changed after use: gentler (3 Oct 2026)
+
+The owner found the first timings too fast and not subtle. Everything was slowed and
+softened in the one place it is set:
+
+| | Before | Now |
+|---|---|---|
+| Popovers, switch pill, lights' wait | 0.15 s | 0.25 s |
+| Cards rising; a figure moving to a new date's value | 0.3 s | 0.5 s |
+| First count-up, chart draw-in, meters growing | 0.6 s | 1.0 s |
+| Gap between cards | 0.04 s | 0.07 s |
+| How far cards rise | 8 px | 6 px |
+| Easing | sharp ease-out (0.22, 1, 0.36, 1) | softer ease-out (0.33, 1, 0.68, 1) |
+
+Hover stays instant and "reduce motion" still turns everything off. To tune it again,
+change `--motion-*` / `--ease-out` in `globals.css` and `MOTION` / `EASE_OUT` in
+`src/lib/motion.ts` together (a test fails if they disagree).
 
 ## Revisit when
 

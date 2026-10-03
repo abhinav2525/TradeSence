@@ -10,14 +10,14 @@ describe("the motion clock", () => {
       const m = new RegExp(`--motion-${k}:\\s*(\\d+)ms`).exec(css);
       expect(m && Number(m[1])).toBe(MOTION[k]);
     }
-    expect(MOTION).toEqual({ fast: 150, base: 300, slow: 600 });
+    expect(MOTION).toEqual({ fast: 250, base: 500, slow: 1000 }); // gentler, at the owner's request (0015)
   });
   test("shadcn's animate-in/zoom classes exist: tw-animate-css is imported after tailwindcss", () => {
     expect(css.indexOf('@import "tw-animate-css"')).toBeGreaterThan(css.indexOf('@import "tailwindcss"'));
   });
   test("charts: slow on first draw, base on a change, off under reduced motion", () => {
-    expect(chartAnimation(false, true)).toEqual({ isAnimationActive: true, animationDuration: 600, animationEasing: "ease-out" });
-    expect(chartAnimation(false, false).animationDuration).toBe(300);
+    expect(chartAnimation(false, true)).toEqual({ isAnimationActive: true, animationDuration: 1000, animationEasing: "ease-out" });
+    expect(chartAnimation(false, false).animationDuration).toBe(500);
     expect(chartAnimation(true, true).isAnimationActive).toBe(false);
   });
   test("no window (server): not reduced", () => {
@@ -72,4 +72,11 @@ test("reduced motion cancels delays too, so nothing waits hidden in a stagger", 
   const block = /@media \(prefers-reduced-motion: reduce\) \{\s*\*, \*::before, \*::after \{([^}]*)\}/.exec(css);
   expect(block).not.toBeNull();
   expect(block![1]).toContain("animation-delay: 0s !important");
+});
+
+test("cards rise gently: 6px, 70ms apart, on a soft ease-out", () => {
+  expect(css).toContain("--ease-out: cubic-bezier(0.33, 1, 0.68, 1);");
+  expect(css).toMatch(/@keyframes reveal \{ from \{ opacity: 0; transform: translateY\(6px\); \} \}/);
+  expect(css).toContain(".reveal:nth-child(2) { animation-delay: 70ms; }");
+  expect(css).toContain(".reveal:nth-child(n+8) { animation-delay: 490ms; }");
 });

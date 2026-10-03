@@ -1,8 +1,8 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
 /** Milliseconds; mirrors --motion-* in globals.css (a test keeps them equal). */
-export const MOTION = { fast: 150, base: 300, slow: 600 } as const;
-export const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
+export const MOTION = { fast: 250, base: 500, slow: 1000 } as const;
+export const EASE_OUT = "cubic-bezier(0.33, 1, 0.68, 1)";
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 
