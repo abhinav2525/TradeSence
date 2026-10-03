@@ -1,5 +1,7 @@
 import { test, expect, describe } from "bun:test";
-import { adjustedBars, cmf, mfi, obv, type Bars } from "../src/research/volume";
+import {
+  adjustedBars, cmf, crossFlags, mfi, obv, panicThenStampede, quietFlags, rollingMean, upShare, type Bars,
+} from "../src/research/volume";
 import type { History } from "../src/indicators/history";
 
 const day = (i: number) => {
@@ -62,4 +64,42 @@ test("adjustedBars: a 1:2 split inside the window looks like no split at all", (
   };
   expect(adjustedBars(split)).toEqual(adjustedBars(none));
   expect(cmf(adjustedBars(split), 3)).toEqual(cmf(adjustedBars(none), 3));
+});
+
+describe("market-wide", () => {
+  test("upShare: % of traded value in rising stocks; exactly 90 and 10 are kept exact", () => {
+    expect(upShare(300, 100)).toBe(75);
+    expect(upShare(90, 10)).toBe(90);
+    expect(upShare(10, 90)).toBe(10);
+    expect(upShare(0, 0)).toBeNull();
+  });
+  test("rollingMean: null until the window fills, and for any window holding a null", () => {
+    expect(rollingMean([day(0), day(1), day(2), day(3)], [1, 2, 3, 4], 2)).toEqual([null, 1.5, 2.5, 3.5]);
+    expect(rollingMean([day(0), day(1), day(2)], [1, null, 3], 2)).toEqual([null, null, null]);
+  });
+  test("panicThenStampede: a stampede within 10 sessions after a panic", () => {
+    const d = (n: number) => Array.from({ length: n }, (_, i) => day(i));
+    expect(panicThenStampede(d(3), [5, 50, 95])).toEqual([false, false, true]);
+    expect(panicThenStampede(d(11), [5, ...Array(9).fill(50), 95])[10]).toBe(true); // 10 after
+    expect(panicThenStampede(d(12), [5, ...Array(10).fill(50), 95])[11]).toBe(false); // 11 after
+    expect(panicThenStampede(d(2), [95, 5])).toEqual([false, false]); // wrong order
+  });
+});
+
+describe("per stock", () => {
+  test("quietFlags: price down while OBV up is quiet buying, and the reverse", () => {
+    const b = bars([0, 0], [0, 0], [10, 9], [0, 0]);
+    expect(quietFlags(b, [0, 50], 1)).toEqual({ buying: [false, true], selling: [false, false] });
+    expect(quietFlags(bars([0, 0], [0, 0], [10, 11], [0, 0]), [0, -5], 1).selling).toEqual([false, true]);
+  });
+  test("crossFlags: heavy ≥ 2×, light < 1.5×, in between is neither; needs both averages and no hole", () => {
+    const dates = [day(0), day(1)];
+    expect(crossFlags(dates, [9, 11], [10, 10], [1, 2]).aboveHeavy).toEqual([false, true]);
+    expect(crossFlags(dates, [9, 11], [10, 10], [1, 1.2]).aboveLight).toEqual([false, true]);
+    const mid = crossFlags(dates, [9, 11], [10, 10], [1, 1.7]);
+    expect(mid.aboveHeavy[1] || mid.aboveLight[1]).toBe(false);
+    expect(crossFlags(dates, [11, 9], [10, 10], [1, 3]).belowHeavy).toEqual([false, true]);
+    expect(crossFlags(dates, [9, 11], [null, 10], [1, 3]).aboveHeavy[1]).toBe(false);
+    expect(crossFlags(["2020-01-01", "2020-03-01"], [9, 11], [10, 10], [1, 3]).aboveHeavy[1]).toBe(false);
+  });
 });
