@@ -1,0 +1,177 @@
+{
+  "projectId": "c759bac7-c44e-4385-8c80-83ca2589f730",
+  "pkg": "tradesence",
+  "globalName": "TradeSence",
+  "shape": "package",
+  "buildCmd": "node .design-sync/build-css.mjs && rm -rf .design-sync/.cache/types && bunx tsc -p .design-sync/tsconfig.types.json",
+  "srcDir": "src/components",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/.cache/ds.css",
+  "provider": {
+    "component": "ThemeRoot"
+  },
+  "componentSrcMap": {
+    "AdHero": "src/components/AdHero.tsx",
+    "AdLineChart": "src/components/AdLineChart.tsx",
+    "AdRecentTable": "src/components/AdRecentTable.tsx",
+    "AppShell": "src/components/AppShell.tsx",
+    "BreadthArea": "src/components/BreadthArea.tsx",
+    "BreadthHero": "src/components/BreadthHero.tsx",
+    "CountUp": "src/components/CountUp.tsx",
+    "CrashTable": "src/components/CrashTable.tsx",
+    "CrossingsBars": "src/components/CrossingsBars.tsx",
+    "CrossingsTable": "src/components/CrossingsTable.tsx",
+    "DateNav": "src/components/DateNav.tsx",
+    "DatePicker": "src/components/DatePicker.tsx",
+    "DrawdownChart": "src/components/DrawdownChart.tsx",
+    "EpisodeTable": "src/components/EpisodeTable.tsx",
+    "ForwardReturns": "src/components/ForwardReturns.tsx",
+    "Hotkeys": "src/components/Hotkeys.tsx",
+    "LearnList": "src/components/LearnList.tsx",
+    "LightDot": "src/components/LightDot.tsx",
+    "MaTabs": "src/components/MaTabs.tsx",
+    "McClellanBars": "src/components/McClellanBars.tsx",
+    "MemberTable": "src/components/MemberTable.tsx",
+    "PageHeader": "src/components/PageHeader.tsx",
+    "Readout": "src/components/Readout.tsx",
+    "ReturnBuckets": "src/components/ReturnBuckets.tsx",
+    "RiskCalculator": "src/components/RiskCalculator.tsx",
+    "ScreenerTable": "src/components/ScreenerTable.tsx",
+    "SiteNav": "src/components/SiteNav.tsx",
+    "SlidingPill": "src/components/SlidingPill.tsx",
+    "StockChecks": "src/components/StockChecks.tsx",
+    "StockEvents": "src/components/StockEvents.tsx",
+    "StockList": "src/components/StockList.tsx",
+    "StockPriceChart": "src/components/StockPriceChart.tsx",
+    "Term": "src/components/Term.tsx",
+    "ThemeToggle": "src/components/ThemeToggle.tsx",
+    "VolumeTrack": "src/components/VolumeTrack.tsx",
+    "WashoutCard": "src/components/WashoutCard.tsx",
+    "WashoutNotice": "src/components/WashoutNotice.tsx",
+    "WashoutSpark": "src/components/WashoutSpark.tsx",
+    "Badge": "src/components/ui/badge.tsx",
+    "Button": "src/components/ui/button.tsx",
+    "Calendar": "src/components/ui/calendar.tsx",
+    "Card": "src/components/ui/card.tsx",
+    "ChartContainer": "src/components/ui/chart.tsx",
+    "Popover": "src/components/ui/popover.tsx",
+    "Table": "src/components/ui/table.tsx"
+  },
+  "guidelinesGlob": [
+    "docs/design/system/README.md"
+  ],
+  "docsMap": {
+    "Badge": ".design-sync/groups/primitives.md",
+    "Button": ".design-sync/groups/primitives.md",
+    "Card": ".design-sync/groups/primitives.md",
+    "Table": ".design-sync/groups/primitives.md",
+    "Popover": ".design-sync/groups/primitives.md",
+    "Calendar": ".design-sync/groups/primitives.md",
+    "ChartContainer": ".design-sync/groups/primitives.md",
+    "Readout": ".design-sync/groups/readouts.md",
+    "LightDot": ".design-sync/groups/readouts.md",
+    "CountUp": ".design-sync/groups/readouts.md",
+    "VolumeTrack": ".design-sync/groups/readouts.md",
+    "SlidingPill": ".design-sync/groups/readouts.md",
+    "Term": ".design-sync/groups/readouts.md",
+    "BreadthArea": ".design-sync/groups/charts.md",
+    "McClellanBars": ".design-sync/groups/charts.md",
+    "ReturnBuckets": ".design-sync/groups/charts.md",
+    "WashoutSpark": ".design-sync/groups/charts.md",
+    "AdLineChart": ".design-sync/groups/charts.md",
+    "CrossingsBars": ".design-sync/groups/charts.md",
+    "DrawdownChart": ".design-sync/groups/charts.md",
+    "StockPriceChart": ".design-sync/groups/charts.md",
+    "MemberTable": ".design-sync/groups/tables.md",
+    "CrossingsTable": ".design-sync/groups/tables.md",
+    "ScreenerTable": ".design-sync/groups/tables.md",
+    "AdRecentTable": ".design-sync/groups/tables.md",
+    "CrashTable": ".design-sync/groups/tables.md",
+    "EpisodeTable": ".design-sync/groups/tables.md",
+    "AppShell": ".design-sync/groups/navigation.md",
+    "SiteNav": ".design-sync/groups/navigation.md",
+    "PageHeader": ".design-sync/groups/navigation.md",
+    "MaTabs": ".design-sync/groups/navigation.md",
+    "DateNav": ".design-sync/groups/navigation.md",
+    "DatePicker": ".design-sync/groups/navigation.md",
+    "ThemeToggle": ".design-sync/groups/navigation.md",
+    "Hotkeys": ".design-sync/groups/navigation.md",
+    "BreadthHero": ".design-sync/groups/page-sections.md",
+    "AdHero": ".design-sync/groups/page-sections.md",
+    "WashoutCard": ".design-sync/groups/page-sections.md",
+    "WashoutNotice": ".design-sync/groups/page-sections.md",
+    "ForwardReturns": ".design-sync/groups/page-sections.md",
+    "StockChecks": ".design-sync/groups/page-sections.md",
+    "StockEvents": ".design-sync/groups/page-sections.md",
+    "StockList": ".design-sync/groups/page-sections.md",
+    "RiskCalculator": ".design-sync/groups/page-sections.md",
+    "LearnList": ".design-sync/groups/page-sections.md"
+  },
+  "libOverrides": {
+    "dts.mjs": "app repo with no published .d.ts: read tsc-generated declarations in .design-sync/.cache/types"
+  },
+  "dtsPropsFor": {
+    "Term": "/** A glossary term id (src/lib/glossary.ts): the label gets an \u24d8 that explains it. */\n  id: \"nifty50\" | \"session\" | \"membership\" | \"sma\" | \"ema\" | \"ma-50-200\" | \"breadth\" | \"percentile\" | \"five-session-change\" | \"washout\" | \"episode\" | \"forward-return\" | \"advancers-decliners\" | \"net-advances\" | \"rana\" | \"mcclellan\" | \"summation-index\" | \"ad-line\" | \"advancing-share-10d\" | \"breadth-thrust\" | \"crossing\" | \"whipsaw\" | \"volume-ratio\" | \"near-the-line\" | \"trend-check\" | \"relative-strength\" | \"volatility\" | \"drawdown\" | \"liquidity\" | \"stretches\" | \"adjusted-prices\" | \"right-now\" | \"bad-days\" | \"crash-episodes\";\n  /** Live \"Today:\" line shown in the popover. */\n  today?: string;\n  /** Label text; defaults to the term's name. */\n  children?: React.ReactNode;\n  className?: string;"
+  },
+  "overrides": {
+    "Popover": {
+      "cardMode": "single",
+      "viewport": "420x460"
+    },
+    "BreadthArea": {
+      "cardMode": "column"
+    },
+    "AdLineChart": {
+      "cardMode": "column"
+    },
+    "McClellanBars": {
+      "cardMode": "column"
+    },
+    "CrossingsBars": {
+      "cardMode": "column"
+    },
+    "ReturnBuckets": {
+      "cardMode": "column"
+    },
+    "WashoutSpark": {
+      "cardMode": "column"
+    },
+    "PageHeader": {
+      "cardMode": "column"
+    },
+    "Badge": {
+      "cardMode": "column"
+    },
+    "Button": {
+      "cardMode": "column"
+    },
+    "Card": {
+      "cardMode": "column"
+    },
+    "ChartContainer": {
+      "cardMode": "column"
+    },
+    "Table": {
+      "cardMode": "column"
+    },
+    "CountUp": {
+      "cardMode": "column"
+    },
+    "Readout": {
+      "cardMode": "column"
+    },
+    "SlidingPill": {
+      "cardMode": "column"
+    },
+    "Term": {
+      "cardMode": "column"
+    },
+    "VolumeTrack": {
+      "cardMode": "column"
+    },
+    "MemberTable": {
+      "cardMode": "column"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}

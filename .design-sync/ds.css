@@ -1,0 +1,15 @@
+/*
+ * Design-system stylesheet for Claude Design (/design-sync): the app's own
+ * globals.css, compiled by Tailwind v4 with the authored previews scanned too,
+ * plus Geist from Google Fonts (inside the app, next/font self-hosts it and
+ * sets these two variables on <html>). Built by .design-sync/build-css.mjs.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&display=swap");
+@import "../src/app/globals.css";
+@source "./previews";
+@source "./theme-root.tsx";
+
+:root {
+  --font-geist-sans: "Geist";
+  --font-geist-mono: "Geist Mono";
+}
