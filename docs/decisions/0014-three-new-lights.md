@@ -138,10 +138,20 @@ window) now shows 8 mismatches instead of 1.
   | RELIANCE | 0.97 | 116% / 110% | 0.95× | 1.12× |
   | INFY | 0.65 | 89% / 60% | 1.01× | 1.78× |
 
-- **TradingView: not compared yet.** Its data service refused every request on 2 Oct 2026
-  (rate limit, HTTP 429), so no claim of matching TradingView is made. Do it with the
-  numbers above (TODO). Expect differences of definition: TradingView's beta may use a
-  different window, weekly returns or another benchmark. Explain any gap; don't hide it.
+- **TradingView (checked 3 Oct 2026): close, but not a match, and the cause is unknown.**
+  Our closes match TradingView exactly (KOTAKBANK ₹418.35), but its beta differs:
+
+  | Stock | Ours (250 daily sessions vs NIFTY 50) | TradingView `beta_1_year` | Our weekly version |
+  |---|---|---|---|
+  | KOTAKBANK | 0.98 | 0.94 | 0.83 |
+  | RELIANCE | 0.97 | 0.88 | 0.83 |
+  | INFY | 0.65 | 0.77 | 0.34 |
+
+  Weekly moves don't explain the gap; they move further away, especially for INFY.
+  TradingView doesn't publish its method: the benchmark index, the window, or an adjustment
+  could all differ. Gaps of about 0.1 between data providers are common. Ours follows the
+  textbook formula, and the independent audit confirms it to the decimal. **We do not claim
+  to match TradingView's beta.**
 
 ## What the numbers don't prove
 

@@ -68,7 +68,6 @@ Order agreed: beginner Report Card first (being designed now), then these.
   breadth-thrust sentence should say whether a thrust fired.
 - [ ] Learn pages keep the reader's average (`ma`) instead of resetting to the 200 SMA.
 
-- [ ] Compare our beta with TradingView for KOTAKBANK (0.98), RELIANCE (0.97), INFY (0.65) when its API isn't rate-limited (decision 0014).
 
 ## Report Card polish (deferred from the decision 0011 review) — n
 - [ ] The membership line ignores the chosen date: ETERNAL read in 2023 says "In the
@@ -125,7 +124,7 @@ Prerequisites first, or whole-market numbers will be wrong:
   history is split-adjusted first.
 - [ ] Start the dashboard server automatically (a second launchd agent locally, or a
   process manager on the server).
-- [ ] Check the first automatic nightly runs: `tail ~/Library/Logs/tradesence-nightly.log`.
+- [x] Checked the nightly log on 3 Oct 2026: the 2 Oct 19:30 run finished cleanly (holiday detected, corporate actions and renames refreshed, averages recomputed). Check again after the first trading-day run (Mon 5 Oct).
 
 ---
 
