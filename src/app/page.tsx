@@ -7,11 +7,14 @@ import BreadthHero, { type Bin } from "@/components/BreadthHero";
 import BreadthArea, { type AreaPoint } from "@/components/BreadthArea";
 import MemberTable from "@/components/MemberTable";
 import Hotkeys from "@/components/Hotkeys";
+import WashoutNotice from "@/components/WashoutNotice";
+import { noticeText, noticeVisible } from "@/components/signals-copy";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, signed } from "@/lib/format";
 import {
   breadthSeries, breakdownOn, adjacentSessions, MA_LABELS, type BreadthPoint, type MaKind,
 } from "@/query/breadth";
+import { signalsData } from "@/query/signals";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +47,13 @@ export default async function Page({
   const label = MA_LABELS[ma];
   const wanted = cleanDate(rawDate);
 
-  const [series, view] = await Promise.all([breadthSeries(ma), breakdownOn(ma, wanted)]);
+  const [series, view, signals] = await Promise.all([breadthSeries(ma), breakdownOn(ma, wanted), signalsData()]);
   const idx = view.date ? series.findIndex((p) => p.date === view.date) : series.length - 1;
   const point = idx >= 0 ? series[idx] : undefined;
+
+  // Today's washout, only while it is Active and the reader is on the latest session.
+  const six = signals.horizons.under.find((h) => h.key === "6m");
+  const notice = six && noticeVisible(signals.washout?.status, view.date, signals.washout?.date) ? noticeText(six) : null;
   const nav = view.date ? await adjacentSessions(ma, view.date) : { prev: null, next: null };
 
   // Trimmed for the wire: the chart needs four fields, not the whole row.
@@ -158,6 +165,7 @@ export default async function Page({
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-12">
+          {notice && <WashoutNotice className="lg:col-span-12" text={notice} ma={ma} />}
           <BreadthHero
             className="lg:col-span-12 xl:col-span-7"
             pct={point.pctAbove}
