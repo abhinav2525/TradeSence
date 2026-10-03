@@ -266,6 +266,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
 | `bun run ingest:indices <start> <end>` | Load daily closes of every NSE index (resumable) |
 | `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
+| `bun run research:volume` | Print the volume study (research 0002) as Markdown; `-- --check SYM,SYM` prints the latest CMF/MFI |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |
@@ -404,6 +405,24 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `bucketMedians` | `(days, h = 63) => { buckets, all }` | Median 3-month return per breadth bucket, by session. |
 | `buildSignals` | `(days) => Signals` | Everything the page and the Breadth notice need. |
 | `signalsData` | `() => Promise<Signals>` | Joins `breadthSeries("sma200")` to `index_prices` ("Nifty 50") by date. |
+
+### `src/indicators/history.ts` — one company's adjusted history
+
+| Function | Signature | Notes |
+|---|---|---|
+| `loadRenames` | `() => Promise<Rename[]>` | Every row of `symbol_changes`. |
+| `loadAdjustedHistory` | `(symbol, renames) => Promise<History \| null>` | Raw OHLCV across the rename lineage, plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only). Shared by `computeIndicators` and research 0002. |
+
+### `src/research/volume.ts`, `volume-data.ts`, `cli-volume.ts` — research 0002
+
+| Function | Notes |
+|---|---|
+| `adjustedBars`, `cmf`, `mfi`, `obv` | Split-adjusted bars; Chaikin Money Flow (20), Money Flow Index (14), On-Balance Volume, each restarting at a gap. Match TradingView. |
+| `upShare`, `rollingMean`, `panicThenStampede` | Market-wide: % of ₹ turnover in rising members; smoothing; a 90% up day within 10 sessions of a 90% down day. |
+| `quietFlags`, `crossFlags` | Per stock: price vs OBV divergence over 20 sessions; 200-day crossings split by volume ratio. |
+| `excessReturn`, `fifthCuts`, `fifthOf`, `memberFlags`, `episodeStarts` | Stock minus NIFTY return; fifth cut points; member-day filter; episodes via `findEpisodeSpans`. |
+| `luckCheck`, `sameWay`, `verdictOf`, `judge` | Seeded random-draw comparison (two-sided, bar 97.5), consistency across spans, the fixed Build / Maybe / Don't build rules. |
+| `marketTurnover`, `niftyCloses`, `memberWindows`, `stockIndicators` | Database reads (`volume-data.ts`). |
 
 ### `src/query/screener.ts` and `src/indicators/volume.ts` — the Screener
 

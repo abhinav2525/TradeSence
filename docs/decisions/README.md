@@ -31,10 +31,12 @@ to the table below in the same change.
 | [0016](0016-chart-tooltip-v3-syntax.md) | 2026-10-03 | Chart tooltips' colour square used Tailwind v3 `[--var]` syntax, which v4 ignores | Rewritten to `(--var)`; a test now fails on any v3 leftover in `src` |
 | [0017](0017-signals-washout.md) | 2026-10-03 | Signals page: the breadth washout alarm, with what happened next | Washout only (thrust and divergence wait for their studies), 200-day SMA only, computed live; one shared episode rule; research 0001 refreshed after the weekend-sessions shift |
 | [Research 0001](../research/0001-does-breadth-predict.md) | 2026-10-02 | *(study, TODO item 2)* Does breadth predict the NIFTY 50? | Very weak 200-SMA breadth (<20%) was followed by a higher index 6 months later 5/5 times; >80% has no edge. Small sample |
+| [Research 0002](../research/0002-does-volume-predict.md) | 2026-10-03 | *(study)* Does volume tell us anything on the NIFTY 50? | None of 15 volume signals (90% days, up-volume share, CMF, MFI, OBV, volume-confirmed crossings) beat random days; CMF and MFI match TradingView exactly. Volume page, light and breakouts not built as signals |
 
 Research studies (questions answered with data, not problems fixed) live in
 [`docs/research/`](../research/):
-[0001 — Does breadth predict the NIFTY 50?](../research/0001-does-breadth-predict.md)
+[0001 — Does breadth predict the NIFTY 50?](../research/0001-does-breadth-predict.md),
+[0002 — Does volume tell us anything?](../research/0002-does-volume-predict.md)
 
 Older decisions, made before this log existed, are recorded in `CLAUDE.md` under
 "Design decisions that are load-bearing" and "Gotchas that will bite you".

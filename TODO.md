@@ -9,10 +9,11 @@ product, (n) helping a beginner judge a stock. Within each section, highest prio
 Why each finished item was built the way it was: `docs/decisions/`.
 
 **Where we left off (3 Oct 2026).** The Signals page with the breadth washout alarm is
-built (decision 0017); it reads Active, since 200-SMA breadth has been under 20% since
-1 Oct 2026. **Start next with the breadth-thrust study** (below), using the same method as
-research 0001 and `episodesOf` in `src/indicators/signals.ts`. Then check Monday's nightly
-run (Ops).
+built (decision 0017). Research 0002 found no volume signal that beats random days, so the
+volume page, light and breakouts are not built (Volume, below). **Start next with the
+breadth-thrust study** (below), using research 0002's tested machinery
+(`src/research/volume.ts`: `judge`, `luckCheck`, `episodeStarts`). Then check Monday's
+nightly run (Ops).
 
 ---
 
@@ -58,6 +59,19 @@ The beginner Report Card lights came first (done: 0014); these follow.
   jump, NIFTY 50 changed, feed not updated). Today they only go to
   `~/Library/Logs/tradesence-nightly.log` and nobody sees them (docs/pipelines.md §6).
   Email, Telegram or a phone notification.
+
+---
+
+### Volume (from research 0002) — a, b, c
+Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat random days.
+- ~~A: market-wide volume alarm (90% days, up-volume share)~~: no edge. Optional: show
+  up-volume share on Advance/Decline as plain context, never as a signal.
+- ~~B: Report Card volume light (CMF / MFI / OBV)~~: no edge (low CMF came closest; re-check
+  when more data or the whole market is tested).
+- ~~C: Screener volume-confirmed breakouts~~: heavy-volume crossings were no better than
+  light ones. The existing "Volume vs 20d" column stays as information.
+- [ ] Re-run research 0002 on the whole NSE market once averages exist for every stock
+  (Broader universes), and add delivery % (Data to add) as a test.
 
 ---
 
@@ -166,3 +180,4 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Report Card lights 6–8 (Right now, Bad days, In crashes): 0014
 - [x] App motion (polished and smooth): 0015
 - [x] Signals page: breadth washout alarm, what happened next, every episode: 0017
+- [x] Does volume tell us anything? 15 signals, none beat random: research 0002
