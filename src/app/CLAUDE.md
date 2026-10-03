@@ -8,10 +8,11 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 ## Routes
 | Route (file) | What it shows |
 |---|---|
-| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables. Params `ma`, `date`. Uses `breadthSeries`, `breakdownOn`, `adjacentSessions` |
+| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables, and the washout notice while the alarm is Active on the latest session. Params `ma`, `date`. Uses `breadthSeries`, `breakdownOn`, `adjacentSessions`, `signalsData` |
 | `/advance-decline` | Advancers vs decliners, A/D line, McClellan and summation from `advanceDeclineSeries`. Params `date` (snaps back to the prior session), `ma` (only carried for nav) |
 | `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3) |
 | `/crossings` | Members ranked by whipsaw count (`crossingStats`). Param `ma` |
+| `/signals` | Washout alarm, what happened next, every episode (`signalsData`); always the 200-day SMA, no date nav. Params `cond` (under/over), `ma` (only carried for nav) |
 | `/stock` | Picker of stocks with a Report Card (`supportedStocks`) |
 | `/stock/[symbol]` | Report Card, risk calculator, crash table, adjusted price and drawdown charts (`stockReport`). Params `date`, `h` (1w/1m/3m/1y) |
 | `/learn`, `/learn/[id]` | Glossary list and one term's page with a live example (`liveExample`); unknown ids 404 |
@@ -24,10 +25,10 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 
 ## Rules here
 - `params` and `searchParams` are Promises: `await` them. Every page sets `export const dynamic = "force-dynamic"`.
-- Every search param is validated by strict comparisons with a default fallback (`isMaKind`, `isView`, `isVol`, `isHorizon`, `cleanDate` regex), copied into each page; a new page copies the pattern (root CLAUDE.md, `sql.raw`).
+- Every search param is validated by strict comparisons with a default fallback (`isMaKind`, `isView`, `isVol`, `isHorizon`, `isCondition`, `cleanDate` regex), copied into each page; a new page copies the pattern (root CLAUDE.md, `sql.raw`).
 - Dynamic segments are checked before any query: `cleanSymbol` (decode once, `^[A-Z0-9&-]{1,20}$`) and `isTermId` call `notFound()` on anything else.
 - Pages wrap in `AppShell` (its `current` nav key, `asOf` date) and mount `Hotkeys`; pages with sessions use `DateNav`, pages with an average use `MaTabs`.
-- Empty data renders a "Nothing loaded for that session" card, not an error.
+- Empty data renders a "Nothing loaded" card, not an error.
 - New tokens or type sizes go in `globals.css` (and type sizes also in `src/lib/utils.ts`); see root CLAUDE.md "Theme and tokens".
 
 ## See also

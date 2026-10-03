@@ -5,7 +5,7 @@
 
 Design specs written before building a feature (superpowers brainstorming output): the
 agreed intent, the chosen approach and its constraints. Each has a matching plan in
-`docs/superpowers/plans/` and a decision record in `docs/decisions/`.
+`docs/superpowers/plans/` and an outcome record in `docs/decisions/` or `docs/research/`.
 
 ## Files
 | File | What it's for |
@@ -14,12 +14,15 @@ agreed intent, the chosen approach and its constraints. Each has a matching plan
 | `2026-10-02-explain-terms-design.md` | Glossary, ⓘ popovers and `/learn` pages (decision 0012) |
 | `2026-10-02-report-card-three-lights-design.md` | Three new lights: Right now, Bad days, In crashes (decision 0014) |
 | `2026-10-02-app-motion-design.md` | Motion: one clock, count-up, chart draw-in, reduced motion off (decision 0015) |
+| `2026-10-03-signals-washout-design.md` | `/signals` breadth washout alarm, 200-day SMA only, thrust and divergence left out (decision 0017) |
+| `2026-10-03-volume-study-design.md` | Research 0002: 15 volume signals and the verdict rules fixed before results (two-sided 97.5 luck bar) |
 
 ## Rules here
 - Name new specs `YYYY-MM-DD-<topic>-design.md`, header `**Date:** · **Status:** · **Path:**`, starting with `## Intent (agreed)`.
-- These are pre-build snapshots: all four still say "awaiting owner review" though they shipped. What was actually built, and what changed, is in the decision file; trust it and the code over the spec.
+- These are pre-build snapshots: the status line still says "awaiting owner review" (or "agreed in conversation") though all shipped. Amendments made while planning are marked "(amended while planning)". What was actually built is in the decision or research file; trust it and the code over the spec.
+- A study's spec is where its pass/fail rules are fixed before any result is seen; don't change them after.
 
 ## See also
-- `docs/superpowers/plans/` — the step-by-step build plan for each spec
-- `docs/decisions/README.md` — the outcome of each
+- `docs/superpowers/plans/`: the step-by-step build plan for each spec
+- `docs/decisions/README.md`: the outcome of each
 <!-- folder-claude-md:end -->

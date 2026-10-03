@@ -10,14 +10,16 @@ queried from `src/query/`; nothing here touches the database.
 ## Files
 | File | What it's for |
 |---|---|
-| `AppShell.tsx`, `SiteNav.tsx`, `PageHeader.tsx` | Page frame: fixed sidebar + content column; `SiteNav` owns the `Section` type and the grouped page list |
+| `AppShell.tsx`, `SiteNav.tsx`, `PageHeader.tsx` | Page frame: fixed sidebar + content column; `SiteNav` owns the `Section` type and the grouped page list (Market, Stocks, Research, Help) |
 | `MaTabs.tsx`, `DateNav.tsx`, `DatePicker.tsx` | URL-driven controls: pick the average, step or jump sessions (all navigate via links / `router.push`) |
-| `Hotkeys.tsx` + `hotkey-target.ts` | Keyboard shortcuts; the key-to-URL routing is the pure, tested `hotkeyTarget` |
+| `Hotkeys.tsx` + `hotkey-target.ts` | Keyboard shortcuts; the key-to-URL routing is the pure, tested `hotkeyTarget` (1–3 do nothing on Report Card and Signals) |
 | `ThemeToggle.tsx` | Theme switch; also exports `toggleTheme()` used by `Hotkeys` |
 | `Term.tsx` | Label with an ⓘ popover from `src/lib/glossary.ts` |
 | `BreadthHero.tsx`, `AdHero.tsx`, `Readout.tsx` | Headline cards and stat tiles (`Readout` takes `Tile[]`) |
-| `BreadthArea.tsx`, `AdLineChart.tsx`, `McClellanBars.tsx`, `CrossingsBars.tsx`, `StockPriceChart.tsx`, `DrawdownChart.tsx` | Recharts charts on `ui/chart`'s `ChartContainer` |
-| `MemberTable.tsx`, `CrossingsTable.tsx`, `ScreenerTable.tsx`, `AdRecentTable.tsx`, `CrashTable.tsx` | Tables; `ScreenerTable` is client-side for its symbol filter |
+| `BreadthArea.tsx`, `AdLineChart.tsx`, `McClellanBars.tsx`, `CrossingsBars.tsx`, `StockPriceChart.tsx`, `DrawdownChart.tsx`, `WashoutSpark.tsx`, `ReturnBuckets.tsx` | Recharts charts on `ui/chart`'s `ChartContainer` |
+| `MemberTable.tsx`, `CrossingsTable.tsx`, `ScreenerTable.tsx`, `AdRecentTable.tsx`, `CrashTable.tsx`, `EpisodeTable.tsx` | Tables; `ScreenerTable` is client-side for its symbol filter |
+| `WashoutCard.tsx`, `ForwardReturns.tsx`, `WashoutNotice.tsx` | Signals: the alarm card, the Under/Over "what happened next" card (`?cond=` links + `SlidingPill`), and the one-line notice on Breadth |
+| `signals-copy.ts` | Pure, tested sentences for Signals and the notice: `washoutSentence`, `firedLine`, `readingSentence`, `noticeText`, `noticeVisible`, `pctText`, `toneClass` |
 | `StockChecks.tsx`, `LightDot.tsx`, `RiskCalculator.tsx`, `StockEvents.tsx`, `StockList.tsx` | Stock Report Card: `checksOf(report)` builds the eight checks, `LightSummary`, traffic lights, the ₹ calculator, share-count events/renames/dividend count, the stock index |
 | `LearnList.tsx` | `/learn`: every glossary term grouped by topic, with a filter |
 | `CountUp.tsx`, `SlidingPill.tsx`, `VolumeTrack.tsx` | Motion and small visuals: counting figures, the sliding thumb of a segmented switch, the volume-vs-normal track |
@@ -28,10 +30,11 @@ queried from `src/query/`; nothing here touches the database.
 - A segmented switch (`rounded-md border bg-raised p-0.5` group, `seg relative`) gets exactly one `<SlidingPill>`; the test counts them.
 - `LightDot` always shows its word: colour is never the only signal, and amber is a neutral ring (no amber token).
 - `DatePicker` builds dates field by field, never via `toISOString`, so a timezone can't shift the session.
+- `signals-copy.ts` uses relative imports so tests load it directly (an `@/` import is fine only when type-only, as in `hotkey-target.ts`). Signals wording changes go through it and its tests, never inline in a card.
 - `<Term>` rules (never inside a link or clickable row) and the sidebar width pairing (`w-60` / `lg:pl-60`) are in the root CLAUDE.md.
 
 ## See also
 - `src/components/ui/` — the shadcn primitives these build on
-- `tests/motion.test.ts`, `tests/hotkeys.test.ts`, `tests/countup.test.ts`, `tests/glossary.test.ts`
-- `docs/design/system/README.md`, `docs/decisions/0012-explaining-terms.md`, `docs/decisions/0015-app-motion.md`
+- `tests/motion.test.ts`, `tests/hotkeys.test.ts`, `tests/countup.test.ts`, `tests/glossary.test.ts`, `tests/signals-copy.test.ts`
+- `docs/design/system/README.md`, `docs/decisions/0012-explaining-terms.md`, `0015-app-motion.md`, `0017-signals-washout.md`
 <!-- folder-claude-md:end -->

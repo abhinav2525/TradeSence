@@ -13,12 +13,13 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 | `setup.ts` | Preload (from `bunfig.toml`): forces `DATABASE_URL` to `TEST_DATABASE_URL` or `tradesence_test`, throws unless it ends in `_test` |
 | `bhavcopy`, `fetch-bhavcopy`, `download-resilience`, `backfill`, `backfill-resilience`, `ingest-day`, `holiday-provisional` | Bhavcopy parsing (UDiFF and legacy), URLs, live fetches, retries, weekend days, `ingest_log` settle/resume rules |
 | `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history` | Other ingest pipelines: `classifyAction` wordings, `symbolLineage`, index closes, membership CSV checks |
-| `indicators`, `compute`, `adjust`, `volume` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, adjustment factors, `volumeRatios` |
-| `breadth`, `breakdown-on-date`, `advance-decline`, `crossings`, `screener` | Page queries in `src/query/` against seeded rows |
+| `indicators`, `compute`, `history`, `adjust`, `volume`, `episodes` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, the shared `loadAdjustedHistory`, adjustment factors, `volumeRatios`, episode spans |
+| `breadth`, `breakdown-on-date`, `advance-decline`, `crossings`, `screener`, `signals-query` | Page queries in `src/query/` against seeded rows |
+| `signals`, `signals-copy` | Signals maths (status edges, pending vs gap returns, summaries) and every Signals sentence word for word |
 | `risk`, `market-risk`, `stock-report`, `report-card-ui` | Report Card maths (`src/indicators/risk.ts`, `market-risk.ts`), `stockReport`, calculator wording |
 | `glossary`, `glossary-live` | Glossary completeness (entries, related terms, ≤ 220-char popover text, true minus) and live example sentences |
-| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys, formatting and ticks |
-| `forward-returns` | The `src/research/forward-returns` study functions |
+| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout`, `tailwind-v4` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys, formatting and ticks, no Tailwind v3 `[--var]` left |
+| `forward-returns`, `volume-research`, `volume-data` | Research studies in `src/research/`: research 0001 helpers; research 0002 indicators, signal flags, luck check and verdict rules; its database reads |
 | `db-url-guard` | `resolveDatabaseUrl` refusing a non-`_test` database |
 | `review-fixes` | Regressions from a code review: header columns, blank closes, corrupt zip, two-digit years, duplicate members, gap restarts |
 
@@ -29,8 +30,9 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 - Fakes go through the injected `download` / `ingest` parameters (see `review-fixes`, `index-prices`), not a mocking library.
 - Parser fixtures are rows copied verbatim from NSE files; a new corporate-action wording goes into `corporate-actions.test.ts` first.
 - `motion.test.ts` reads `src/` files by relative path, so it only passes when run from the repo root.
+- Compare computed decimals with `toBeCloseTo` or after rounding, never exact equality (root CLAUDE.md).
 
 ## See also
 - `src/db/url.ts` — the second half of the test-database guard
-- `docs/decisions/` — several tests name the decision they protect (0002, 0007, 0014, 0015)
+- `docs/decisions/` — several tests name the decision they protect (0002, 0007, 0014, 0015, 0016, 0017)
 <!-- folder-claude-md:end -->

@@ -16,6 +16,7 @@ so they can be tested without a database.
 | `advance-decline.ts` | `/advance-decline`: `advanceDeclineCounts` (SQL) plus pure `deriveAdvanceDecline` (RANA, McClellan, summation, A/D line, 10-day advancing share), computed per request, per gap segment. |
 | `screener.ts` | `/screener`: `screenerOn` loads every member's history to a date; pure `readSymbol` (cross, run before, 5-session gap), `volumeAtLeast`, `percentile`, `crosserBadge`, `NEAR_PCT = 1`. |
 | `stock-report.ts` | `/stock/[symbol]`: `stockReport` builds the whole Report Card (eight lights, horizons, adjusted price line, events) from `../indicators/risk` and `market-risk`; `supportedStocks` lists current and past members. |
+| `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
 
 ## Rules here
@@ -25,9 +26,10 @@ so they can be tested without a database.
 - Daily moves come from `change_pct`; `advanceDeclineCounts` counts `> 0`, `< 0`, `= 0`. Never derive a move from `prev_close`.
 - Breadth fed into the Report Card's crash check is cut at the shown date (`b.date <= date`) so no hindsight leaks in. Keep it that way for any "as of" figure.
 - A new Report Card number also goes into `src/audit/report-card.ts` (root CLAUDE.md).
+- NSE's index name in `index_prices` is `"Nifty 50"` (`stock-report.ts`, `signals.ts`, `glossary-live.ts` each spell it); membership uses `NIFTY50`.
 
 ## See also
 - `src/indicators/` for the maths these queries call; `src/lib/glossary.ts` for the `TermId`s `glossary-live.ts` switches on.
-- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `glossary-live.test.ts`.
-- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding).
+- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `glossary-live.test.ts`.
+- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals).
 <!-- folder-claude-md:end -->

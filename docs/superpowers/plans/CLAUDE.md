@@ -14,13 +14,15 @@ executing-plans skill.
 | `2026-10-02-explain-terms.md` | Builds `src/lib/glossary.ts`, `<Term>`, `/learn` pages and `src/query/glossary-live.ts` |
 | `2026-10-02-report-card-three-lights.md` | Builds `src/indicators/market-risk.ts`, moves `findEpisodes` to `src/indicators/episodes.ts`, `CrashTable`, audit additions |
 | `2026-10-02-app-motion.md` | Builds `src/lib/motion.ts`, `src/lib/count.ts`, `<CountUp>`, `<SlidingPill>`, chart animation hook |
+| `2026-10-03-signals-washout.md` | Builds `/signals`: `findEpisodeSpans`, `src/indicators/signals.ts`, `signals-copy.ts`, the Signals cards, the Breadth notice, nav key `g` |
+| `2026-10-03-volume-study.md` | Builds research 0002: `src/indicators/history.ts` (shared loader), `src/research/volume*.ts`, `cli-volume.ts` |
 
 ## Rules here
-- Each plan opens with Goal, Architecture, Tech Stack, `**Spec:**` path and `## Global Constraints`, then TDD tasks as `- [ ]` checkboxes.
-- The checkboxes were never ticked; all four plans shipped. Don't read an open box as unfinished work.
-- Plans are historical: later review fixes changed some details (e.g. the app-motion plan's `loading.tsx` skeleton and page fade were dropped, per decision 0015). Check the code and decision file first.
+- Each plan opens with Goal, Architecture, Tech Stack, `**Spec:**` path, `## Global Constraints` and (from 2026-10-03) `## Review Focus`, then TDD tasks as `- [ ]` checkboxes.
+- The checkboxes were never ticked; all six plans shipped. Progress was tracked in a git-ignored ledger, not in these files. Don't read an open box as unfinished work.
+- Plans are historical: rulings during the build and review fixes changed some details (e.g. the app-motion plan's `loading.tsx` skeleton was dropped, decision 0015; the Signals bar-chart label moved into the caption, decision 0017). Check the code and decision file first.
 
 ## See also
-- `docs/superpowers/specs/` — the design each plan implements
-- `docs/decisions/` — 0011, 0012, 0014, 0015 record what was built and why
+- `docs/superpowers/specs/`: the design each plan implements
+- `docs/decisions/`: 0011, 0012, 0014, 0015, 0017 record what was built and why; `docs/research/0002-…` for the volume study
 <!-- folder-claude-md:end -->

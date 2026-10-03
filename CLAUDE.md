@@ -11,7 +11,7 @@ plus that percentage charted since 2020, on the index's real membership each day
 pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
 A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
 near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators/risk.ts`:
-the beginner's Report Card and risk calculator) `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+the beginner's Report Card and risk calculator), `/crossings` (`src/query/crossings.ts`: members ranked by how often they
 whipsaw across an average), `/signals` (`src/query/signals.ts` + `src/indicators/signals.ts`:
 the breadth washout alarm and what the index did after each episode, 200-day SMA only) and
 `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
@@ -22,6 +22,11 @@ predates `/crossings` and does not document it yet.)
 
 **`docs/research/` holds data studies** (question, method, results, caveats, what to
 build). Re-run a study's command before quoting its numbers; they change as data grows.
+A study fixes its pass/fail rules in its spec **before** looking at results, and never
+tunes indicator settings. Reuse the tested machinery in `src/research/volume.ts` (`judge`,
+`luckCheck` with a seeded two-sided 97.5 bar, `episodeStarts`, `excessReturn`) instead of
+writing new statistics. Its random draws treat days as independent, so they flatter
+signals that bunch up; switch to random *dates* before running on the whole market (TODO).
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
@@ -33,8 +38,9 @@ plain language — the owner reads these instead of the code — and add a row t
 `docs/decisions/README.md`. Do this unprompted.
 
 **`docs/design/` holds the design system and the specs for upcoming screens.** Read
-`docs/design/system/README.md` before any UI work. Building Advance/Decline, Screener
-or Signals: start from `docs/design/HANDOFF.md` and match the mockups in
+`docs/design/system/README.md` before any UI work. `docs/design/HANDOFF.md` holds the
+specs Advance/Decline, Screener and Signals were built from (Signals is partly built: only
+the washout alarm; thrust and divergence wait for their studies), with mockups in
 `docs/design/mockups/` (sample data only; never copy their numbers or their CSS).
 
 **This is Next.js 16 — APIs differ from training data.** Read the relevant guide in
@@ -56,12 +62,12 @@ bun run ingest:nifty50                         # membership since 2020, from the
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:symbol-changes                  # NSE ticker renames; one file
 bun run ingest:indices 2020-01-01 2026-10-02   # every NSE index, daily; ~12 min
-bun run research:forward-returns               # breadth -> later NIFTY return study
-bun run research:volume                        # volume indicators -> later returns study
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
+bun run research:forward-returns               # breadth -> later NIFTY return study
+bun run research:volume                        # volume indicators -> later returns study
 bun run ingest:nightly                         # cron entry point
 ```
 
@@ -111,11 +117,13 @@ sessions); `daysBetween` includes every calendar day and a weekend 404 is a holi
 ([0007](docs/decisions/0007-weekend-trading-sessions.md)).
 
 **A member's history spans every symbol it traded under.** Bhavcopy uses the symbol
-current on each day, so `computeIndicators` follows `symbol_changes` back through
-`symbolLineage` and writes everything under today's symbol
-([0003](docs/decisions/0003-renamed-symbols-lose-history.md)). Any new per-member
-history query (52-week highs, A/D line…) must go through the lineage too, or a renamed
-member's history silently starts at its rename.
+current on each day, so history follows `symbol_changes` back through `symbolLineage` and
+is written under today's symbol ([0003](docs/decisions/0003-renamed-symbols-lose-history.md)).
+Any new per-member history (52-week highs, a new study, a new light) loads through
+`loadAdjustedHistory` (`src/indicators/history.ts`): raw OHLCV across the rename lineage
+plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only).
+`computeIndicators` and the research scripts share it. Never re-derive adjustment or
+lineage elsewhere, or a renamed member's history silently starts at its rename.
 
 **Every term is explained once, in `src/lib/glossary.ts`.** A new metric, tile or card
 title needs a glossary entry and a `<Term>` before it ships; `tests/glossary.test.ts`

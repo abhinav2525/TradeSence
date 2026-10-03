@@ -9,18 +9,19 @@ design choice), written in plain language for the owner, who reads these instead
 ## Files
 | File | What it's for |
 |---|---|
-| `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file |
-| `NNNN-short-name.md` | One decision. 0001–0015 so far, from the launchd nightly job (0001) to app motion (0015); see the README table for the list |
+| `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file, plus "Research NNNN" rows for studies |
+| `NNNN-short-name.md` | One decision. 0001–0017 so far, from the launchd nightly job (0001) to the Signals washout alarm (0017); see the README table for the list |
 
 ## Format of a decision file
-- Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015).
-- Sections: `## Problem`, `## Options` (a table works well), `## Decision`, `## Why`, `## Revisit when`.
-- Optional sections used so far: `Result`, `Checks`, `Problems met while building it`, `Found by the independent review (fixed)`, `What the numbers don't prove`.
+- Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015, 0017).
+- Sections: `## Problem`, `## Options` (a table works well), `## Decision`, `## Why`, `## Revisit when`. Some newer files (0009, 0017) use `## Decisions` with numbered choices instead.
+- Optional sections used so far: `Result`, `Checks`, `What we built`, `Something we found along the way`, `Problems met while building it`, `Found by the independent review (fixed)`, `What the numbers don't prove`.
 
 ## Adding one
 - Take the next number, short kebab-case name, written in the same change as the fix.
 - Add a row to the `README.md` table in that same change.
 - Research studies don't go here: they live in `docs/research/` and get a "Research NNNN" row in the README table.
+- Choices the owner makes while designing a feature (scope, what to leave out) are decisions too and go in that feature's file with their reasons.
 
 ## Rules here
 - Plain language, no code dumps: say what went wrong, how it was noticed, and why this option won.
@@ -28,6 +29,6 @@ design choice), written in plain language for the owner, who reads these instead
 - Decisions made before the log began live in the root CLAUDE.md ("Design decisions that are load-bearing", "Gotchas").
 
 ## See also
-- `docs/superpowers/specs/`, `docs/superpowers/plans/` — the design and build plan behind 0011, 0012, 0014, 0015
-- `docs/research/` — data studies
+- `docs/superpowers/specs/`, `docs/superpowers/plans/`: the design and build plan behind 0011, 0012, 0014, 0015, 0017 and research 0002
+- `docs/research/`: data studies
 <!-- folder-claude-md:end -->

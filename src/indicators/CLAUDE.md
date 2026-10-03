@@ -10,26 +10,28 @@ turnover) for every index member; everything else is pure functions over arrays,
 ## Files
 | File | What it's for |
 |---|---|
-| `compute.ts` | `computeIndicators(indexName)`: per member, joins the rename lineage, adjusts for splits/bonuses/demergers, computes SMA50/SMA200/EMA200, `change_pct` and `vol_ratio` per gap segment, scales averages back to each day's rupees and upserts in chunks of 1,000. Reports leftover >30% overnight jumps via `onUnexplainedJump`. |
+| `history.ts` | `loadAdjustedHistory(symbol, renames)`: raw OHLCV across the rename lineage plus `factors` (divide prices) and `shareFactors` (multiply volume; never demergers); `loadRenames`. Shared by `compute.ts` and `src/research/`. |
+| `compute.ts` | `computeIndicators(indexName)`: per member, loads the history, computes SMA50/SMA200/EMA200, `change_pct` and `vol_ratio` per gap segment on the adjusted series, scales averages back to each day's rupees and upserts in chunks of 1,000. Reports leftover >30% overnight jumps via `onUnexplainedJump`. |
 | `cli.ts` | `bun run indicators` entry point: runs `computeIndicators()` and closes the pool. |
 | `moving-average.ts` | `sma`, `ema` (seeded with the first SMA). Output is the same length as input, `null` until the window fills. |
 | `gaps.ts` | `MAX_GAP_DAYS = 21` and `segmentByGaps`: the one copy of the gap rule. |
 | `adjust.ts` | `adjustmentFactors` (product of later events' factors), `demergerFactor` (last close ÷ ex-date open, null if it can't be priced honestly), `findUnexplainedJumps`. |
 | `volume.ts` | `volumeRatios`: volume ÷ mean of the 20 prior sessions, restarting after a gap; `VOLUME_WINDOW`. |
-| `risk.ts` | Report Card risk measures: `adjustedLine` (moves chained into a line from 100, with segments), drawdowns, `horizonStats`, `periodReturn`, `dailyVolatility`, `rankAmongPeers`, `NOISE_PCT`, `THRESHOLDS` and every `*Light` function. |
+| `risk.ts` | Report Card risk measures: `adjustedLine`, drawdowns, `horizonStats`, `periodReturn`, `dailyVolatility`, `rankAmongPeers`, `NOISE_PCT`, `THRESHOLDS` and every `*Light` function. |
 | `market-risk.ts` | Lights 6–8: `ewmaVolatility` (RiskMetrics λ=0.94), `rangeHitRate`, `marketCapture` (beta, up/down capture), `crashEpisodes`. |
-| `episodes.ts` | `findEpisodes` + `MERGE_GAP = 10`: shared by research 0001 and the crash light so both count crashes the same way. |
+| `episodes.ts` | `findEpisodeSpans` (start, last, sessions) and `findEpisodes` (starts only), `MERGE_GAP = 10`: one episode rule for research 0001/0002, the crash light and Signals. |
+| `signals.ts` | Signals page maths: `washoutStatus` (Active < 20, Watching 20–25), `segmentIds`, gap-safe `forwardReturnSafe`, `median`, `episodesOf` (with `pending` horizons), `summarizeHorizons`, `bucketMedians`, `buildSignals`. |
 
 ## Rules here
-- Anything that walks a series splits it with `segmentByGaps` first (root CLAUDE.md). In `risk.ts`/`market-risk.ts` the equivalent is the `segment` field on `LinePoint`: never compare two points from different segments.
-- Volume is scaled by share-count factors only: `compute.ts` builds `shareFactors` from events with `demerger` filtered out. Keep demergers out of any volume maths.
+- Anything that walks a series splits it with `segmentByGaps` first (root CLAUDE.md). In `risk.ts`/`market-risk.ts` the equivalent is the `segment` field on `LinePoint`; in `signals.ts`, `segmentIds`.
+- Load per-member history through `history.ts`; never re-derive lineage or adjustment elsewhere. Volume uses `shareFactors` only (no demergers).
 - A demerger whose factor can't be priced is dropped, not guessed; the jump check then reports it.
 - Today's symbol picks up all its corporate actions (NSE files old actions under the new name); older lineage symbols only within their date window. Don't "simplify" `inWindow` away.
 - Compare returns with `NOISE_PCT`, never `===`; light cut-offs live only in `THRESHOLDS` (decisions 0011, 0013, 0014).
 - `compute.ts` recomputes everything on each run on purpose; there is no incremental path.
 
 ## See also
-- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio).
-- Tests: `tests/indicators.test.ts`, `compute.test.ts`, `adjust.test.ts`, `volume.test.ts`, `risk.test.ts`, `market-risk.test.ts`.
+- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio), 0017 (Signals).
+- Tests: `tests/indicators.test.ts`, `compute.test.ts`, `history.test.ts`, `adjust.test.ts`, `volume.test.ts`, `risk.test.ts`, `market-risk.test.ts`, `episodes.test.ts`, `signals.test.ts`.
 - `src/ingest/symbol-changes.ts` for `symbolLineage`.
 <!-- folder-claude-md:end -->
