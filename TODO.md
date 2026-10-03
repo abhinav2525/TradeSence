@@ -71,7 +71,9 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - ~~C: Screener volume-confirmed breakouts~~: heavy-volume crossings were no better than
   light ones. The existing "Volume vs 20d" column stays as information.
 - [ ] Re-run research 0002 on the whole NSE market once averages exist for every stock
-  (Broader universes), and add delivery % (Data to add) as a test.
+  (Broader universes), and add delivery % (Data to add) as a test. **First** replace the
+  luck check's random stock-days with random *dates* (one random member per date), because
+  signals bunch up; record that in `docs/decisions/` (research 0002 caveats).
 
 ---
 

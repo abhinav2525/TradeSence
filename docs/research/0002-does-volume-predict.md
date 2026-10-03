@@ -71,6 +71,10 @@ data, not even for crossings of the 200-day average.
   reached that bar.
 - **Same way.** Whether the result points the same way at the other four time spans. A
   real effect usually does; a fluke flips around.
+- **"Maybe" is weak.** It only means "pointed one way at most spans and wasn't ruled out".
+  With no real effect at all, about 3 tests in 10 would still point the same way at 3 of
+  the 4 other spans by chance. So seven "Maybe"s are not seven near-passes; read them as
+  "not proven".
 - **Months.** Per-stock signals bunch up: in a sell-off, dozens of stocks fire the same
   week. "1,205 episodes in 80 months" means the episodes are spread over 80 different
   calendar months, so the large counts aren't one event repeated.
@@ -124,6 +128,13 @@ verdict rules were written down before any result was seen (Method, below).
 
 - **15 tests at once.** By chance alone, about one could have passed the bar. None did,
   which fits "no real effect" well.
+- **The "beats random" percentages are, if anything, generous.** Real signals bunch up:
+  dozens of stocks fire in the same sell-off week. The random comparison picks days one by
+  one, which varies less than bunched-up days do, so it makes signals look a little more
+  unusual than they are. That can only push results *towards* passing, so it can't explain
+  why nothing passed, but it means a near-miss like 95.2% is an upper bound. It must be
+  fixed (draw random *dates*, not random stock-days) before this study is re-run on the
+  whole market, where hundreds of stocks can fire on the same day.
 - **50 big stocks only.** These are among the most heavily traded companies in India.
   Volume signals may behave differently in smaller, thinner stocks, where one big buyer
   shows up clearly. The whole-market data is stored; testing it needs the averages computed
@@ -136,15 +147,15 @@ verdict rules were written down before any result was seen (Method, below).
 ## TradingView check
 
 To make sure our formulas and our volume data are right, we compared the latest readings
-(1 Oct 2026) with TradingView's own indicators:
+(1 Oct 2026) with TradingView's own indicators, fetched through its connector on 3 Oct 2026:
 
 | Stock | Our CMF(20) | TradingView | Our MFI(14) | TradingView |
 |---|---|---|---|---|
-| RELIANCE | −0.4653 | −0.4653 | 34.95 | 34.95 |
-| INFY | −0.0364 | −0.0364 | 40.48 | 40.48 |
+| RELIANCE | −0.4653 | −0.46527 | 34.95 | 34.949 |
+| INFY | −0.0364 | −0.03638 | 40.48 | 40.478 |
 
-They match to every decimal shown, so the indicators are computed correctly; the "no edge"
-result isn't a calculation mistake.
+They agree to 4 decimal places (CMF) and 2 (MFI), so the indicators are computed
+correctly; the "no edge" result isn't a calculation mistake.
 
 ## What this means for projects A, B and C
 
