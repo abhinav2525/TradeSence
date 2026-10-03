@@ -5,7 +5,9 @@
  */
 import { segmentByGaps } from "../indicators/gaps";
 import type { History } from "../indicators/history";
-import { segmentIds } from "../indicators/signals";
+import { findEpisodeSpans, MERGE_GAP } from "../indicators/episodes";
+import { forwardReturnSafe, median, segmentIds } from "../indicators/signals";
+import { NOISE_PCT } from "../indicators/risk";
 
 export const CMF_WINDOW = 20; // Chaikin's default
 export const MFI_WINDOW = 14; // Quong & Soudack's default
@@ -163,4 +165,144 @@ export function crossFlags(dates: string[], close: number[], ma: (number | null)
     out.belowLight[i] = down && vr < LIGHT;
   }
   return out;
+}
+
+export const STUDY_HORIZONS = [5, 10, 21, 63, 126] as const; // sessions: 1w, 2w, 1m, 3m, 6m
+export const DRAWS = 1000;
+export const LUCK_BAR = 97.5; // two-sided 95%: only 1 random pick in 20 is this unusual
+export const MIN_MARKET = 8;
+export const MIN_STOCK = 30;
+
+export type Verdict = "Build" | "Maybe" | "Don't build";
+export type Luck = { beat: number; direction: "better" | "worse"; strength: number };
+export type Occasion = { date: string; returns: (number | null)[] }; // one per STUDY_HORIZONS
+export type TestResult = {
+  name: string;
+  feeds: string; // which later project it would feed: A, B or C
+  n: number; // occasions with a main-horizon return
+  months: number; // distinct calendar months those occasions start in
+  main: number; // index into STUDY_HORIZONS
+  medians: (number | null)[];
+  baseline: (number | null)[];
+  luck: Luck | null;
+  same: number; // other horizons on the main horizon's side of the baseline
+  verdict: Verdict;
+};
+
+/** The stock's return minus the NIFTY 50's over the same sessions; null without both, or across a hole. */
+export function excessReturn(
+  close: number[], seg: number[], dates: string[], nifty: Map<string, number>, i: number, h: number,
+): number | null {
+  const r = forwardReturnSafe(close, seg, i, h);
+  if (r === null) return null;
+  const a = nifty.get(dates[i]!);
+  const b = nifty.get(dates[i + h]!);
+  return a === undefined || b === undefined ? null : r - (b / a - 1) * 100;
+}
+
+/** Linear-interpolated quantile of an ascending list. */
+export function quantile(sorted: number[], p: number): number {
+  const pos = p * (sorted.length - 1);
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  return sorted[lo]! + (sorted[hi]! - sorted[lo]!) * (pos - lo);
+}
+
+export function fifthCuts(values: number[]): number[] {
+  const s = [...values].sort((a, b) => a - b);
+  return [0.2, 0.4, 0.6, 0.8].map((p) => quantile(s, p));
+}
+
+/** 0 = bottom fifth … 4 = top fifth. */
+export function fifthOf(v: number, cuts: number[]): number {
+  let k = 0;
+  while (k < cuts.length && v >= cuts[k]!) k++;
+  return k;
+}
+
+/** True on days inside a membership window (added_on ≤ d < removed_on) and on or after `from`. */
+export function memberFlags(dates: string[], windows: { addedOn: string; removedOn: string | null }[], from: string): boolean[] {
+  return dates.map((d) => d >= from && windows.some((w) => d >= w.addedOn && (w.removedOn === null || d < w.removedOn)));
+}
+
+export function episodeStarts(flags: boolean[]): number[] {
+  return findEpisodeSpans(flags.map((f) => (f ? 1 : 0)), (p) => p === 1, MERGE_GAP).map((s) => s.start);
+}
+
+/** A small seeded generator, so the luck check gives the same answer every run. */
+export function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * How unusual is the signal's median? Draw as many random days from `pool`
+ * (without replacement) `draws` times; beat = % of draws whose median is below
+ * the signal's (ties count half). Strength = the larger of beat and 100 − beat.
+ */
+export function luckCheck(signal: number[], pool: number[], draws = DRAWS, seed = 1): Luck | null {
+  const k = signal.length;
+  if (k === 0 || pool.length < k) return null;
+  const target = median(signal)!;
+  const rand = mulberry32(seed);
+  const arr = pool.slice();
+  let below = 0;
+  for (let d = 0; d < draws; d++) {
+    for (let t = 0; t < k; t++) {
+      const r = t + Math.floor(rand() * (arr.length - t));
+      [arr[t], arr[r]] = [arr[r]!, arr[t]!];
+    }
+    const m = median(arr.slice(0, k))!;
+    if (m < target - NOISE_PCT) below += 1;
+    else if (Math.abs(m - target) <= NOISE_PCT) below += 0.5;
+  }
+  const beat = (below / draws) * 100;
+  return { beat, direction: beat >= 50 ? "better" : "worse", strength: Math.max(beat, 100 - beat) };
+}
+
+/** How many of the other horizons sit on the same side of the baseline as the main one. */
+export function sameWay(medians: (number | null)[], baseline: (number | null)[], main: number): number {
+  const side = (i: number) => {
+    const m = medians[i];
+    const b = baseline[i];
+    if (m == null || b == null) return 0;
+    const d = m - b;
+    return d > NOISE_PCT ? 1 : d < -NOISE_PCT ? -1 : 0;
+  };
+  const s = side(main);
+  if (s === 0) return 0;
+  return medians.filter((_, i) => i !== main && side(i) === s).length;
+}
+
+export function verdictOf(n: number, min: number, luck: Luck | null, same: number): Verdict {
+  if (n >= min && luck !== null && luck.strength >= LUCK_BAR && same >= 3) return "Build";
+  if (same >= 3) return "Maybe";
+  return "Don't build";
+}
+
+export function distinctMonths(dates: string[]): number {
+  return new Set(dates.map((d) => d.slice(0, 7))).size;
+}
+
+/** One test's full result. `pool[h]` holds every eligible day's return at horizon h. */
+export function judge(name: string, feeds: string, occasions: Occasion[], pool: number[][], main: number, min: number): TestResult {
+  const at = (h: number) => occasions.map((o) => o.returns[h]).filter((v): v is number => v != null);
+  const medians = STUDY_HORIZONS.map((_, h) => median(at(h)));
+  const baseline = STUDY_HORIZONS.map((_, h) => median(pool[h] ?? []));
+  const mainVals = at(main);
+  const luck = luckCheck(mainVals, pool[main] ?? []);
+  const same = sameWay(medians, baseline, main);
+  const counted = occasions.filter((o) => o.returns[main] != null);
+  return {
+    name, feeds, main, medians, baseline, luck, same,
+    n: mainVals.length,
+    months: distinctMonths(counted.map((o) => o.date)),
+    verdict: verdictOf(mainVals.length, min, luck, same),
+  };
 }

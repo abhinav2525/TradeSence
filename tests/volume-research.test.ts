@@ -1,6 +1,8 @@
 import { test, expect, describe } from "bun:test";
 import {
-  adjustedBars, cmf, crossFlags, mfi, obv, panicThenStampede, quietFlags, rollingMean, upShare, type Bars,
+  LUCK_BAR, adjustedBars, cmf, crossFlags, distinctMonths, episodeStarts, excessReturn, fifthCuts, fifthOf, judge,
+  luckCheck, memberFlags, mfi, mulberry32, obv, panicThenStampede, quietFlags, rollingMean, sameWay, upShare,
+  verdictOf, type Bars,
 } from "../src/research/volume";
 import type { History } from "../src/indicators/history";
 
@@ -101,5 +103,82 @@ describe("per stock", () => {
     expect(crossFlags(dates, [11, 9], [10, 10], [1, 3]).belowHeavy).toEqual([false, true]);
     expect(crossFlags(dates, [9, 11], [null, 10], [1, 3]).aboveHeavy[1]).toBe(false);
     expect(crossFlags(["2020-01-01", "2020-03-01"], [9, 11], [10, 10], [1, 3]).aboveHeavy[1]).toBe(false);
+  });
+});
+
+describe("study machinery", () => {
+  test("excessReturn: stock minus NIFTY over the same sessions; null without both", () => {
+    const dates = [day(0), day(1)];
+    const nifty = new Map([[day(0), 100], [day(1), 105]]);
+    expect(excessReturn([100, 110], [0, 0], dates, nifty, 0, 1)).toBeCloseTo(5, 12);
+    expect(excessReturn([100, 110], [0, 0], dates, new Map([[day(0), 100]]), 0, 1)).toBeNull();
+    expect(excessReturn([100, 110], [0, 1], dates, nifty, 0, 1)).toBeNull(); // a hole
+  });
+
+  test("fifths: cut points and which fifth a value falls in", () => {
+    const cuts = fifthCuts([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(cuts.map((c) => Number(c.toFixed(9)))).toEqual([2.8, 4.6, 6.4, 8.2]);
+    expect([1, 2.8, 5, 9, 10].map((v) => fifthOf(v, [2.8, 4.6, 6.4, 8.2]))).toEqual([0, 1, 2, 4, 4]);
+  });
+
+  test("memberFlags: only on days inside a membership window, from the start date", () => {
+    const dates = ["2019-12-31", "2020-01-02", "2021-06-01", "2021-07-01"];
+    expect(memberFlags(dates, [{ addedOn: "2019-01-01", removedOn: "2021-07-01" }], "2020-01-01")).toEqual([false, true, true, false]);
+  });
+
+  test("episodeStarts merges within 10 sessions", () => {
+    const f = [true, ...Array(10).fill(false), true, ...Array(11).fill(false), true];
+    expect(episodeStarts(f)).toEqual([0, 23]);
+  });
+
+  test("luckCheck is reproducible and spots a clearly better signal", () => {
+    const pool = Array.from({ length: 500 }, (_, i) => i - 250);
+    const a = luckCheck([200, 210, 220, 230, 240], pool);
+    expect(a).toEqual(luckCheck([200, 210, 220, 230, 240], pool));
+    expect(a!.direction).toBe("better");
+    expect(a!.strength).toBeGreaterThan(99);
+    expect(luckCheck([], pool)).toBeNull();
+  });
+
+  test("luckCheck: ties count half, so a flat pool is never 'unusual'", () => {
+    const r = luckCheck([0, 0, 0], Array(100).fill(0));
+    expect(r!.strength).toBe(50);
+  });
+
+  test("luckCheck: a signal that is just random days passes the 97.5 bar about 5% of the time", () => {
+    const pool = Array.from({ length: 400 }, (_, i) => Math.sin(i * 12.9898) * 10);
+    const rand = mulberry32(42);
+    let passes = 0;
+    const trials = 200;
+    for (let t = 0; t < trials; t++) {
+      const sample = Array.from({ length: 12 }, () => pool[Math.floor(rand() * pool.length)]!);
+      if (luckCheck(sample, pool, 400, t + 1)!.strength >= LUCK_BAR) passes++;
+    }
+    expect(passes / trials).toBeGreaterThan(0.01);
+    expect(passes / trials).toBeLessThan(0.11);
+  });
+
+  test("sameWay counts the other horizons on the main horizon's side of the baseline", () => {
+    expect(sameWay([1, 2, 3, 4, 5], [0, 0, 0, 0, 0], 2)).toBe(4);
+    expect(sameWay([1, -2, 3, null, 0], [0, 0, 0, 0, 0], 2)).toBe(1);
+  });
+
+  test("verdictOf", () => {
+    const strong = { beat: 99, direction: "better" as const, strength: 99 };
+    expect(verdictOf(40, 30, strong, 3)).toBe("Build");
+    expect(verdictOf(10, 30, strong, 3)).toBe("Maybe"); // too few
+    expect(verdictOf(40, 30, { beat: 90, direction: "better", strength: 90 }, 4)).toBe("Maybe");
+    expect(verdictOf(40, 30, strong, 2)).toBe("Don't build");
+    expect(verdictOf(0, 30, null, 0)).toBe("Don't build");
+  });
+
+  test("judge: no occasions gives — and Don't build, never throws", () => {
+    const r = judge("x", "A", [], [[1], [1], [1], [1], [1]], 2, 8);
+    expect(r).toMatchObject({ n: 0, months: 0, luck: null, verdict: "Don't build" });
+    expect(r.medians).toEqual([null, null, null, null, null]);
+  });
+
+  test("distinctMonths", () => {
+    expect(distinctMonths(["2020-03-02", "2020-03-20", "2022-06-16"])).toBe(2);
   });
 });
