@@ -6,13 +6,14 @@ import SlidingPill from "@/components/SlidingPill";
 import Term from "@/components/Term";
 import FlowBars from "@/components/FlowBars";
 import FlowStocks from "@/components/FlowStocks";
+import FlowHistoryChart from "@/components/FlowHistoryChart";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
 import { cleanFlowPeriod, cleanSector, sectorFlows, sectorStocks, type FlowPeriod } from "@/indicators/money-flow";
-import { moneyFlowRows, shortSessionsIn, withReportCard } from "@/query/money-flow";
+import { moneyFlowRows, sectorHistory, shortSessionsIn, withReportCard } from "@/query/money-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export default async function Page({
   const stocks = sector ? sectorStocks(rows, sector, period) : [];
   const withCard = await withReportCard(stocks.map((s) => s.symbol));
   const picked = sectors.find((s) => s.sector === sector);
+  const history = sector ? await sectorHistory(sector) : [];
 
   const href = (p: { period?: FlowPeriod; sector?: string | null }) => {
     const q = new URLSearchParams({ ma, period: String(p.period ?? period) });
@@ -118,12 +120,31 @@ export default async function Page({
             <Card id="stocks" className="overflow-hidden">
               <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
                 <div>
+                  <h2 className="text-heading text-foreground">How trading in {picked.sector} has moved</h2>
+                  <p className="mt-0.5 text-[12px] text-muted-foreground">
+                    Each week&apos;s <Term id="trading-vs-normal">trading vs normal</Term> over the past year; the dashed line is 1×. Rings mark weeks with a short special session.
+                  </p>
+                </div>
+                <Link href={href({ sector: null })} className="shrink-0 text-body-sm font-medium text-brand hover:underline">Close</Link>
+              </div>
+              <div className="px-card-x pb-3">
+                {history.some((h) => h.ratio !== null)
+                  ? <FlowHistoryChart data={history} />
+                  : <p className="py-6 text-body-sm text-muted-foreground">No history yet for this sector.</p>}
+              </div>
+              <CardFooter>Uses today&apos;s Nifty Total Market stocks and sectors for the whole year; each sector is compared with its own past on the same stocks.</CardFooter>
+            </Card>
+          )}
+
+          {picked && (
+            <Card className="overflow-hidden">
+              <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
+                <div>
                   <h2 className="text-heading text-foreground">{picked.sector}: who drove it</h2>
                   <p className="mt-0.5 text-[12px] text-muted-foreground">
                     Stocks by extra rupees traded above their own normal, {PERIOD_PHRASE[period]}. {picked.up} rose, {picked.down} fell.
                   </p>
                 </div>
-                <Link href={href({ sector: null })} className="shrink-0 text-body-sm font-medium text-brand hover:underline">Close</Link>
               </div>
               <FlowStocks rows={stocks} withCard={withCard} />
               <CardFooter>Top {stocks.length} of {picked.stocks} stocks. Report Cards cover stocks that have been in the NIFTY 50 since 2020.</CardFooter>
