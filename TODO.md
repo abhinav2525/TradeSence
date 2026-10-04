@@ -8,12 +8,13 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
-**Where we left off (3 Oct 2026).** The Signals page with the breadth washout alarm is
-built (decision 0017). Research 0002 found no volume signal that beats random days, so the
-volume page, light and breakouts are not built (Volume, below). **Start next with the
-breadth-thrust study** (below), using research 0002's tested machinery
-(`src/research/volume.ts`: `judge`, `luckCheck`, `episodeStarts`). Then check Monday's
-nightly run (Ops).
+**Where we left off (4 Oct 2026).** UI density shipped (decision 0020): compact by default,
+comfortable on the `d` key, Claude Design re-synced, the :3000 production server rebuilt.
+The owner then asked about volume and delivery %, and chose to **collect delivery % next**
+(Data to add, below). **Open question for the owner:** start the delivery backfill at
+28 Sep 2016 (matches prices; recommended, since the whole-market study needs the years) or at
+late 2019 (enough for a NIFTY 50-only study). After that: the delivery study, or the
+breadth-thrust study (Signals, below). Check Monday's (5 Oct) nightly run (Ops).
 
 ---
 
@@ -117,8 +118,20 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - [ ] Optional extra checks: delivery % (needs the full bhavcopy, below) and valuation.
 
 ## Data to add — a, b, n
-- [ ] **Delivery %**: NSE's full bhavcopy (`sec_bhavdata_full`) has delivered quantity
-  per stock per day. A conviction signal for the Screener and Report Card.
+- [ ] **Delivery %** (next build, owner's choice 4 Oct): shares bought *and kept* ÷ shares
+  traded, per stock per day. Checked 4 Oct against the live archive:
+  - Source: NSE's security-wise delivery file
+    `nsearchives.nseindia.com/archives/equities/mto/MTO_DDMMYYYY.DAT`, one format from at
+    least 2012 to today (28 Sep 2016 and 1 Oct 2026 both exist). Rows `20,<sr>,SYMBOL,SERIES,
+    traded qty,deliverable qty,deliv %`; the trade date is in the header line.
+  - `sec_bhavdata_full_DDMMYYYY.csv` has the same numbers (`DELIV_QTY`, `DELIV_PER`; INFY
+    51.96% on 1 Oct 2026 in both) but only from ~2019 (Oct 2018 is a 404, Oct 2019 exists).
+  - Plan: store it for every stock (store everything), backfill, add to the nightly run, then
+    study it before any UI. Study guards: rules fixed first, the 97.5% luck bar, random
+    *dates* not stock-days, a hold-out (e.g. decide on 2016–2022, confirm on 2023–2026),
+    compare each stock with its own usual delivery, use day D's figure from D+1 only, and a
+    liquidity filter so tiny stocks don't add noise. The real test is the whole market
+    (needs `change_pct` for every stock, Broader universes); a NIFTY 50 trial is possible now.
 - [ ] **Sector tag for every stock**, from NSE's sector-index constituent files. Needed for
   sector rotation and the leaderboard.
 - [ ] **Company names**, for the Report Card and the stock list.
@@ -141,6 +154,9 @@ Prerequisites first, or whole-market numbers will be wrong:
   for history.
 
 ## Nice-to-haves (old item 8) — c
+- [ ] Density follow-ups (decision 0020 review): holding `d` (or `t`) flips on every key repeat
+  (`if (e.repeat) return;` in Hotkeys); the phone top bar's two icon toggles need `shrink-0`;
+  the spec's token table still says `--spacing-cell-y` / `--chart-scale` (code: `--density-*`).
 - [ ] Page cross-fades: React's `<ViewTransition>` never started here (decision 0015). Retry when Next.js documents it working for pages that render their own sidebar, or move `SiteNav` into the layout first.
 - [ ] Motion polish (decision 0015 review): the pill should re-measure when option labels change width; `−₹` figures can't count; hover on the breadth histogram eases 300 ms; rename `.fade-in` (clashes with tw-animate-css); the pill's 8 px radius has no token; behaviour tests for no-JS and reduced motion.
 - [ ] Learn pages: small diagrams for SMA vs EMA and for a drawdown (decision 0012).
@@ -181,5 +197,6 @@ Prerequisites first, or whole-market numbers will be wrong:
 - [x] Independent Report Card audit; Strength rank and flat-month rounding fixed: 0013
 - [x] Report Card lights 6–8 (Right now, Bad days, In crashes): 0014
 - [x] App motion (polished and smooth): 0015
+- [x] UI density: compact by default, comfortable on `d`, remembered per browser: 0020
 - [x] Signals page: breadth washout alarm, what happened next, every episode: 0017
 - [x] Does volume tell us anything? 15 signals, none beat random: research 0002
