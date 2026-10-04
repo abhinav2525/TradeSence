@@ -5,7 +5,7 @@ import Term from "@/components/Term";
 import { formatCrore, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ActivityRow } from "@/query/activity";
-import { KINDS, type Kind } from "@/indicators/activity";
+import { KINDS, isBigJump, type Kind } from "@/indicators/activity";
 
 export const KIND_LABEL: Record<Kind, string> = {
   kept: "Big keeping", volume: "Huge volume", jump: "Delivery jump", collapse: "Delivery collapse",
@@ -41,6 +41,7 @@ export default function ActivityTable({ rows, empty }: { rows: ActivityRow[]; em
               <TableCell className="px-3 py-cell">
                 <div className="flex flex-wrap gap-1">
                   {KINDS.filter((k) => r[k]).map((k) => <Badge key={k} variant="neutral">{KIND_LABEL[k]}</Badge>)}
+                  {isBigJump(r.changePct) && <Badge variant="outline">Big price jump</Badge>}
                 </div>
               </TableCell>
               <TableCell className={cn("hidden px-3 py-cell text-right text-body-sm sm:table-cell", r.kept ? "font-semibold text-foreground" : "text-muted-foreground")}>{x(r.keptRatio)}</TableCell>

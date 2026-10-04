@@ -4,7 +4,7 @@ import Term from "@/components/Term";
 import { KIND_LABEL } from "@/components/ActivityTable";
 import { formatDate, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { KINDS } from "@/indicators/activity";
+import { KINDS, isBigJump } from "@/indicators/activity";
 import type { ActivityRow } from "@/query/activity";
 
 const x = (v: number | null) => (v === null ? "—" : `${v.toFixed(1)}×`);
@@ -24,7 +24,7 @@ export default function UnusualDaysCard({ rows, className }: { rows: ActivityRow
           {rows.map((r) => (
             <li key={r.tradeDate} className="flex flex-wrap items-center justify-between gap-2 px-card-x py-cell text-body-sm">
               <span className="font-medium text-foreground">{formatDate(r.tradeDate)}</span>
-              <span className="flex flex-wrap gap-1">{KINDS.filter((k) => r[k]).map((k) => <Badge key={k} variant="neutral">{KIND_LABEL[k]}</Badge>)}</span>
+              <span className="flex flex-wrap gap-1">{KINDS.filter((k) => r[k]).map((k) => <Badge key={k} variant="neutral">{KIND_LABEL[k]}</Badge>)}{isBigJump(r.changePct) && <Badge variant="outline">Big price jump</Badge>}</span>
               <span className="tabular-nums text-foreground-2">
                 kept {x(r.keptRatio)} · volume {x(r.volumeRatio)}
                 {r.deliveryPct !== null && r.usualDeliveryPct !== null && ` · delivery ${r.deliveryPct.toFixed(0)}% (usual ${r.usualDeliveryPct.toFixed(0)}%)`}

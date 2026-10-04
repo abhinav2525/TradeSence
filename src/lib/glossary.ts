@@ -14,7 +14,7 @@ const IDS = [
   "breadth", "percentile", "five-session-change", "washout", "episode", "forward-return",
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
   "crossing", "whipsaw", "volume-ratio", "near-the-line",
-  "unusual-activity", "big-keeping", "huge-volume", "delivery-pct", "delivery-jump", "delivery-collapse",
+  "unusual-activity", "big-keeping", "huge-volume", "big-price-jump", "delivery-pct", "delivery-jump", "delivery-collapse",
   "top-volume", "value-traded", "size-group", "nse-sector",
   "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
 ] as const;
@@ -352,8 +352,22 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     what: "Volume counts every share that changed hands. A sudden surge often comes with news, results or a large block of shares changing owner.",
     calc: { plain: "Traded shares today ÷ the average of the 20 sessions before it, adjusted for splits and bonuses." },
     example: "45 lakh shares traded against an average of 6 lakh is 7.5×.",
-    mistakes: ["Forgetting splits: after a 1:5 split share counts jump 5× with nothing happening. tradeSence adjusts for it."],
-    related: ["volume-ratio", "big-keeping", "unusual-activity"],
+    mistakes: [
+      "Forgetting splits: after a 1:5 split share counts jump 5× with nothing happening. tradeSence adjusts for it.",
+      "Reading huge volume on an up day as a warning, or as a buy sign. Our research (study 0005) compared it with jumps of the same size on ordinary volume: the huge-volume ones did no worse, so the size of the jump matters more than the volume.",
+    ],
+    related: ["volume-ratio", "big-price-jump", "big-keeping", "unusual-activity"],
+  },
+  "big-price-jump": {
+    id: "big-price-jump", term: "Big price jump", topic: "Stocks",
+    short: "The stock's price rose 8% or more in one session (adjusted for splits and bonuses). A label for context, not a prediction.",
+    read: "After big one-day jumps, stocks have tended to give back a little over the next month, more so in 2016–22 than since 2023. Plenty of single stocks kept rising.",
+    what: "Our research (study 0005) compared big up days with each other. How big the jump was mattered; how much volume came with it made no clear difference. For a +10% day, the following month ran about 1.6 points behind a similar stock that hadn't jumped in 2016–22, and about 0.9 points since 2023.",
+    calc: { plain: "Today's adjusted close ÷ the previous session's adjusted close, minus 1, as a percentage. 8% or more counts." },
+    example: "A stock closing at ₹540 after ₹500 the day before rose 8%: a big price jump.",
+    mistakes: ["Treating it as a sell signal. These are averages over thousands of jumps; the give-back has been smaller since 2023, and many stocks did the opposite."],
+    related: ["huge-volume", "unusual-activity"],
+    seeIt: { label: "Unusual activity", href: "/activity?move=big" },
   },
   "delivery-pct": {
     id: "delivery-pct", term: "Delivery %", topic: "Stocks",

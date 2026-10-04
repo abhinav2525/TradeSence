@@ -13,6 +13,7 @@ import { pctText } from "../components/signals-copy";
 import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
+import { BIG_JUMP_PCT } from "../indicators/activity";
 import { formatDate, formatInt, formatPrice, ordinal, signed } from "../lib/format";
 import type { TermId } from "../lib/glossary";
 
@@ -101,6 +102,13 @@ async function build(id: TermId): Promise<string | null> {
       const n = { "unusual-activity": row.n, "big-keeping": row.kept, "huge-volume": row.volume, "delivery-jump": row.jump, "delivery-collapse": row.collapse }[id];
       const what = id === "unusual-activity" ? "had an unusual day" : "qualified";
       return `${formatInt(n)} ${n === 1 ? "stock" : "stocks"} ${what} on ${formatDate(row.d)}.`;
+    }
+    case "big-price-jump": {
+      const [row] = await db.execute<{ d: string | null; n: number }>(sql`
+        select max(trade_date)::text d, count(*) filter (where change_pct >= ${BIG_JUMP_PCT - 1e-9})::int n
+        from unusual_days where trade_date = (select max(trade_date) from unusual_days)`);
+      if (!row?.d) return null;
+      return `${formatInt(row.n)} unusual ${row.n === 1 ? "stock" : "stocks"} rose 8% or more on ${formatDate(row.d)}.`;
     }
     case "delivery-pct": {
       const [row] = await db.execute<{ d: string; traded: number; delivered: number }>(sql`

@@ -4,7 +4,7 @@
  */
 import { sql } from "drizzle-orm";
 import { db } from "../db";
-import { KINDS, unusualScore, type Kind, type UnusualRow } from "../indicators/activity";
+import { KINDS, isBigJump, unusualScore, type Kind, type UnusualRow } from "../indicators/activity";
 import { INDEX_NAME } from "../ingest/nifty50";
 
 export type ActivitySet = "all" | "nifty50";
@@ -67,6 +67,11 @@ export function kindCounts(rows: ActivityRow[]): Record<Kind, number> {
 
 export function filterKinds(rows: ActivityRow[], kinds: readonly Kind[]): ActivityRow[] {
   return rows.filter((r) => kinds.some((k) => r[k]));
+}
+
+/** Only rows whose price rose BIG_JUMP_PCT or more that day (the "Big price jumps" filter). */
+export function filterBigJumps<T extends { changePct: number | null }>(rows: T[]): T[] {
+  return rows.filter((r) => isBigJump(r.changePct));
 }
 
 export async function recentUnusual(symbol: string, toDate: string, days = 92): Promise<ActivityRow[]> {

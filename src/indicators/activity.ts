@@ -122,3 +122,10 @@ export function unusualScore(r: Pick<UnusualRow, "keptRatio" | "volumeRatio" | "
   if (r.deliveryPct !== null && r.usualDeliveryPct !== null) parts.push(Math.abs(r.deliveryPct - r.usualDeliveryPct) / JUMP_PTS);
   return Math.max(0, ...parts);
 }
+
+// A display label, not a signal: study 0005 found the size of an up day's jump, not its
+// volume, goes with the weaker month after; +8% is the edge of its big-jump bands.
+export const BIG_JUMP_PCT = 8;
+export function isBigJump(changePct: number | null): boolean {
+  return changePct !== null && changePct >= BIG_JUMP_PCT - EPS;
+}

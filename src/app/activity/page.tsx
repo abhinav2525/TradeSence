@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { KINDS, type Kind } from "@/indicators/activity";
 import type { MaKind } from "@/query/breadth";
 import {
-  activityFirst, activityNeighbours, activityOn, activitySession, filterKinds, kindCounts, type ActivitySet,
+  activityFirst, activityNeighbours, activityOn, activitySession, filterBigJumps, filterKinds, kindCounts, type ActivitySet,
 } from "@/query/activity";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +33,10 @@ function cleanKinds(v: string | undefined): Kind[] {
   const picked = (v ?? "").split(",").filter(isKind);
   return picked.length ? KINDS.filter((k) => picked.includes(k)) : [...KINDS];
 }
+type Move = "all" | "big";
+function isMove(v: string | undefined): v is Move {
+  return v === "all" || v === "big";
+}
 function cleanDate(v: string | undefined): string | undefined {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
 }
@@ -45,12 +49,13 @@ const seg = (on: boolean) =>
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; date?: string; set?: string; kinds?: string }>;
+  searchParams: Promise<{ ma?: string; date?: string; set?: string; kinds?: string; move?: string }>;
 }) {
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
   const set: ActivitySet = isSet(sp.set) ? sp.set : "all";
   const kinds = cleanKinds(sp.kinds);
+  const move: Move = isMove(sp.move) ? sp.move : "all";
   const wanted = cleanDate(sp.date);
 
   const date = await activitySession(wanted);
@@ -59,11 +64,13 @@ export default async function Page({
   const nav = date ? await activityNeighbours(date) : { prev: null, next: null };
   const all = date ? await activityOn(date, set) : [];
   const counts = kindCounts(all);
-  const shown = filterKinds(all, kinds);
+  const byKind = filterKinds(all, kinds);
+  const bigJumps = filterBigJumps(byKind).length;
+  const shown = move === "big" ? filterBigJumps(byKind) : byKind;
 
-  const extra = (p: { set?: ActivitySet; kinds?: Kind[] } = {}) =>
-    `&set=${p.set ?? set}&kinds=${(p.kinds ?? kinds).join(",")}`;
-  const href = (p: { set?: ActivitySet; kinds?: Kind[] }) =>
+  const extra = (p: { set?: ActivitySet; kinds?: Kind[]; move?: Move } = {}) =>
+    `&set=${p.set ?? set}&kinds=${(p.kinds ?? kinds).join(",")}${(p.move ?? move) === "big" ? "&move=big" : ""}`;
+  const href = (p: { set?: ActivitySet; kinds?: Kind[]; move?: Move }) =>
     `/activity?ma=${ma}${date && wanted ? `&date=${date}` : ""}${extra(p)}`;
   const toggle = (k: Kind) => {
     const next = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k];
@@ -132,6 +139,13 @@ export default async function Page({
                   <span className="font-mono text-[11px]">{counts[k]}</span>
                 </Link>
               ))}
+              <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+              <Link href={href({ move: move === "big" ? "all" : "big" })} aria-pressed={move === "big"}
+                className={cn("inline-flex h-7 items-center gap-1.5 rounded-[8px] border px-2.5 text-[12px] font-medium transition-colors",
+                  move === "big" ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground")}>
+                Big price jumps only
+                <span className="font-mono text-[11px]">{bigJumps}</span>
+              </Link>
             </div>
           </div>
 
@@ -141,7 +155,7 @@ export default async function Page({
                 {all.length} {scopeOf(all.length)} had an <Term id="unusual-activity">unusual day</Term> on {formatDate(date)}
               </h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
-                Sorted by how far outside normal, against each stock&apos;s own last 20 sessions. Our research found big delivery days don&apos;t reliably lead to gains (<Link href="/learn/unusual-activity" className="text-brand hover:underline">why</Link>).
+                Sorted by how far outside normal, against each stock&apos;s own last 20 sessions. Our research found big delivery days don&apos;t reliably lead to gains (<Link href="/learn/unusual-activity" className="text-brand hover:underline">why</Link>), and that huge volume on an up day is not a warning by itself: the size of the jump matters more (<Link href="/learn/big-price-jump" className="text-brand hover:underline">big price jump</Link>).
               </p>
             </div>
             <Badge variant="neutral">{shown.length} {shown.length === 1 ? "stock" : "stocks"}</Badge>
