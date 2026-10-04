@@ -25,8 +25,10 @@ build). Re-run a study's command before quoting its numbers; they change as data
 A study fixes its pass/fail rules in its spec **before** looking at results, and never
 tunes indicator settings. Reuse the tested machinery in `src/research/volume.ts` (`judge`,
 `luckCheck` with a seeded two-sided 97.5 bar, `episodeStarts`, `excessReturn`) instead of
-writing new statistics. Its random draws treat days as independent, so they flatter
-signals that bunch up; switch to random *dates* before running on the whole market (TODO).
+writing new statistics. Per-stock studies compare each occasion with other eligible stocks
+on the **same date** (`matchedLuck`, `matchedBaseline` in `src/research/delivery.ts`,
+[0022](docs/decisions/0022-matched-luck-check.md)); `luckCheck`'s independent random days
+flatter signals that bunch up, so don't use it for a whole-market per-stock study.
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
@@ -70,6 +72,7 @@ bun run indicators                             # recompute every average (~5s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study
+bun run research:delivery                      # delivery % signals, whole market (~2 min)
 bun run ingest:nightly                         # cron entry point
 ```
 

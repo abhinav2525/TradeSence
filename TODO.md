@@ -10,9 +10,10 @@ Why each finished item was built the way it was: `docs/decisions/`.
 
 **Where we left off (4 Oct 2026, later).** Database check-up done (decision 0021): Postgres
 tuned, nightly backup (restore tested), index on `daily_indicators(symbol, trade_date)`.
-**Delivery % is collected**: `daily_delivery` since 28 Sep 2016, in the nightly run. Next:
-the delivery study (Research, below; guards listed under Data to add), or the
-breadth-thrust study (Signals). Backups go to this Mac and iCloud Drive. Check Monday's (5 Oct) nightly run (Ops): it
+**Delivery % is collected** (`daily_delivery` since 28 Sep 2016, nightly) **and studied**
+(research 0003): no delivery buy/sell signal passed; three real but small effects, all under
+the cost bar. Next candidates: nightly warnings to the owner (Telegram/email, owner to pick),
+website auto-restart, the breadth-thrust study (Signals). Backups go to this Mac and iCloud Drive. Check Monday's (5 Oct) nightly run (Ops): it
 now also loads delivery and writes a backup.
 
 ---
@@ -125,12 +126,12 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
     traded qty,deliverable qty,deliv %`; the trade date is in the header line.
   - `sec_bhavdata_full_DDMMYYYY.csv` has the same numbers (`DELIV_QTY`, `DELIV_PER`; INFY
     51.96% on 1 Oct 2026 in both) but only from ~2019 (Oct 2018 is a 404, Oct 2019 exists).
-  - **Next: the study**, before any UI. Leave out the five days where the delivery file
-    covers different trades than bhavcopy (0021 lists them, with the query). Study guards: rules fixed first, the 97.5% luck bar, random
-    *dates* not stock-days, a hold-out (e.g. decide on 2016–2022, confirm on 2023–2026),
-    compare each stock with its own usual delivery, use day D's figure from D+1 only, and a
-    liquidity filter so tiny stocks don't add noise. The real test is the whole market
-    (needs `change_pct` for every stock, Broader universes); a NIFTY 50 trial is possible now.
+  - [x] **Studied** (research 0003, 4 Oct): 8 signals on the whole liquid market, decided
+    on 2016–22 and confirmed on 2023–. None Build. ~~Delivery buy/sell signal, accumulation
+    alert, delivery-spike screener~~: no edge worth trading (the up-day spike even lagged).
+  - [ ] Maybe, owner's call: a stock's typical delivery level ("mostly held" vs "mostly
+    traded") on the Report Card as information only, with a glossary entry; ideally after a
+    3-month study, since the gaps grew with time (1.0 and 1.4 points at 3 months).
 - [ ] **Sector tag for every stock**, from NSE's sector-index constituent files. Needed for
   sector rotation and the leaderboard.
 - [ ] **Company names**, for the Report Card and the stock list.
