@@ -1,5 +1,5 @@
 import {
-  pgTable, date, text, doublePrecision, bigint, integer, timestamp, primaryKey, index,
+  pgTable, date, text, doublePrecision, bigint, integer, timestamp, primaryKey, index, boolean,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -104,6 +104,35 @@ export const dailyDelivery = pgTable(
   (t) => [
     primaryKey({ columns: [t.tradeDate, t.symbol, t.series] }),
     index("daily_delivery_symbol_date_idx").on(t.symbol, t.tradeDate),
+  ],
+);
+
+/**
+ * Each session's unusual stock-days (Unusual activity page): only days where at
+ * least one of the four kinds fired, for liquid companies (ETFs out). Rebuilt in
+ * full each night from daily_prices + daily_delivery by computeUnusualDays, so a
+ * late corporate action re-adjusts history. `symbol` is today's symbol (history
+ * joined across renames). Spec: docs/superpowers/specs/2026-10-04-unusual-activity-design.md.
+ */
+export const unusualDays = pgTable(
+  "unusual_days",
+  {
+    tradeDate: date("trade_date").notNull(),
+    symbol: text("symbol").notNull(),
+    kept: boolean("kept").notNull(),
+    volume: boolean("volume").notNull(),
+    jump: boolean("jump").notNull(),
+    collapse: boolean("collapse").notNull(),
+    keptRatio: doublePrecision("kept_ratio"),
+    volumeRatio: doublePrecision("volume_ratio"),
+    deliveryPct: doublePrecision("delivery_pct"),
+    usualDeliveryPct: doublePrecision("usual_delivery_pct"),
+    changePct: doublePrecision("change_pct"),
+    turnover: doublePrecision("turnover").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tradeDate, t.symbol] }),
+    index("unusual_days_symbol_date_idx").on(t.symbol, t.tradeDate),
   ],
 );
 

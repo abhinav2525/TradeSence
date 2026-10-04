@@ -9,6 +9,7 @@ import { backfill } from "./backfill";
 import { ingestIndexDays } from "./index-prices";
 import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
+import { computeUnusualDays } from "../indicators/compute-activity";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -89,6 +90,14 @@ const rows = await computeIndicators("NIFTY50", {
   },
 });
 console.log(`[nightly] indicators: ${rows} rows`);
+
+// Unusual activity page: rebuilt in full after delivery and the averages (spec 2026-10-04).
+try {
+  const act = await computeUnusualDays();
+  console.log(`[nightly] unusual activity: ${act.rows} stock-days from ${act.companies} companies`);
+} catch (e) {
+  console.warn(`[nightly] WARNING unusual activity not rebuilt: ${e instanceof Error ? e.message : e}`);
+}
 
 await sql.end();
 

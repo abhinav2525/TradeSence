@@ -1,4 +1,6 @@
-import { test, expect, describe } from "bun:test";
+import { test, expect, describe, beforeEach } from "bun:test";
+import { db, schema } from "../src/db";
+import { computeUnusualDays } from "../src/indicators/compute-activity";
 import type { History } from "../src/indicators/history";
 import { unusualDays, unusualScore, KEPT_X, JUMP_PTS } from "../src/indicators/activity";
 
@@ -92,5 +94,27 @@ describe("unusualScore", () => {
     expect(unusualScore({ keptRatio: 10, volumeRatio: 6, deliveryPct: 50, usualDeliveryPct: 40 })).toBeCloseTo(2, 9);
     expect(unusualScore({ keptRatio: null, volumeRatio: 5, deliveryPct: 10, usualDeliveryPct: 100 })).toBeCloseTo(3, 9);
     expect(unusualScore({ keptRatio: null, volumeRatio: null, deliveryPct: null, usualDeliveryPct: null })).toBe(0);
+  });
+});
+
+describe("computeUnusualDays", () => {
+  beforeEach(async () => {
+    for (const t of [schema.dailyPrices, schema.dailyDelivery, schema.corporateActions, schema.symbolChanges, schema.unusualDays]) await db.delete(t);
+  });
+
+  test("writes only the unusual days, and a re-run replaces rather than duplicates", async () => {
+    const days = hist(40).dates;
+    await db.insert(schema.dailyPrices).values(days.map((d, i) => ({
+      tradeDate: d, symbol: "ABC", series: "EQ", open: 100, high: 101, low: 99, close: 100, prevClose: 100,
+      volume: i === 30 ? 9000 : 1000, turnover: 2e7,
+    })));
+    await db.insert(schema.dailyDelivery).values(days.map((d, i) => ({
+      tradeDate: d, symbol: "ABC", series: "EQ", tradedQty: i === 30 ? 9000 : 1000, deliverableQty: i === 30 ? 3600 : 400,
+    })));
+    await computeUnusualDays({ symbols: ["ABC"] });
+    await computeUnusualDays({ symbols: ["ABC"] });
+    const rows = await db.select().from(schema.unusualDays);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ tradeDate: days[30], symbol: "ABC", volume: true, kept: true });
   });
 });
