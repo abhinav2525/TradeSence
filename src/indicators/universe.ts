@@ -9,7 +9,8 @@
  */
 import { readFileSync } from "node:fs";
 import { sql } from "drizzle-orm";
-import { db } from "../db";
+import { db, schema } from "../db";
+import { bhavcopyUrl, download, unzipCsv } from "../ingest/bhavcopy";
 
 export const FUND_SYMBOLS_FILE = new URL("./fund-symbols.txt", import.meta.url);
 
@@ -53,4 +54,33 @@ export async function companies(funds: Set<string> = new Set()): Promise<string[
     )
     order by s.symbol`);
   return rows.map((r) => r.symbol).filter((s) => !funds.has(s));
+}
+
+/**
+ * Adds the session's fund symbols (ISIN "INF…") to `fund_symbols`, from that
+ * day's bhavcopy. A failed download or unreadable file is an error, never
+ * "no new funds"; the next night tries again.
+ */
+export async function refreshFundSymbols(
+  dateIso: string,
+  deps: { download?: typeof download } = {},
+): Promise<{ status: "ok"; added: number } | { status: "error"; message: string }> {
+  const res = await (deps.download ?? download)(bhavcopyUrl(dateIso).url);
+  if (res.kind !== "ok") return { status: "error", message: res.kind === "failed" ? res.message : "HTTP 404" };
+  let found: string[];
+  try {
+    found = fundSymbols(unzipCsv(res.bytes));
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
+  }
+  if (found.length === 0) return { status: "ok", added: 0 };
+  const added = await db.insert(schema.fundSymbols).values(found.map((symbol) => ({ symbol, firstSeen: dateIso })))
+    .onConflictDoNothing().returning({ symbol: schema.fundSymbols.symbol });
+  return { status: "ok", added: added.length };
+}
+
+/** The committed list plus every fund seen since. */
+export async function allFundSymbols(): Promise<Set<string>> {
+  const rows = await db.select({ symbol: schema.fundSymbols.symbol }).from(schema.fundSymbols);
+  return new Set([...readFundSymbols(), ...rows.map((r) => r.symbol)]);
 }

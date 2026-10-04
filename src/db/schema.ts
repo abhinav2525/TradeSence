@@ -137,6 +137,16 @@ export const unusualDays = pgTable(
 );
 
 /**
+ * Fund symbols (ETFs: ISIN starting "INF") seen in bhavcopy since the committed
+ * list (src/indicators/fund-symbols.txt) was written. Topped up nightly so a new
+ * ETF never shows up as an "unusual" company (decision 0024, final review).
+ */
+export const fundSymbols = pgTable("fund_symbols", {
+  symbol: text("symbol").primaryKey(),
+  firstSeen: date("first_seen").notNull(),
+});
+
+/**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
  * market, exactly as NSE words them.
  *

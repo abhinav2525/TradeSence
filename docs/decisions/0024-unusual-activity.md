@@ -57,6 +57,33 @@ the footer says so. NIFTY 50 Report Cards get an "Unusual days, last 3 months" c
 glossary terms, each with a live sentence. A date before 27 Oct 2016 explains that each
 stock needs 20 sessions of history first.
 
+## Found by the independent review (fixed)
+
+- **A made-up price move.** HEGAM on 22 Sep 2026 showed **−68%**: it traded in series BE from
+  7 to 21 Sep around a demerger, so "the previous day" was an EQ close from 4 Sep, before the
+  demerger, which couldn't be priced. Now no move is shown when the previous EQ session is
+  more than 5 calendar days back (the longest normal NSE break is a 4-day weekend). The
+  reviewer suggested anything beyond ±20% was an artefact; that's not so: stocks in the
+  derivatives segment have no daily price band, and the 56 rows still beyond ±25% are real
+  (ZEEL 23 Jan 2024 −32.6% when the Sony merger was called off; INDUSINDBK 11 Mar 2025; the
+  4 Jun 2024 election result; POLICYBZR 24 Sep 2026 −36%, checked on TradingView: it closed at
+  its low on 27 million shares against ~2 million usual). The same BE stretch also stretches
+  "its own last 20 sessions" across the series switch; accepted, since it can only make a
+  normal day look less unusual, never invent a spike.
+- **New ETFs would have appeared.** The committed fund list never updated. Now a table,
+  `fund_symbols`, is topped up every night from that session's bhavcopy (ISIN "INF…"), and
+  the rebuild leaves out both. A test now checks the rebuild itself leaves a fund out.
+- **A value a hair under a threshold.** A mean of whole shares times a bonus factor can come
+  out at 4.999999999999999 for an exact 5×; thresholds now allow 1e-9 (CLAUDE.md: never
+  compare computed numbers exactly). The test uses a case found by search.
+- **Links:** any stock that has a Report Card (ever a NIFTY 50 member since 2020) links to it,
+  not only members on the day viewed. **Wording:** "1 NIFTY 50 member" in the singular; the
+  Delivery % glossary example now uses INFY's real 1 Oct 2026 figures. **Phones:** the Price
+  column keeps the card's edge padding.
+- Not done: a separate glossary term for "× normal" (the two ratio columns point at Big
+  keeping and Huge volume, which define it); cosmetic glossary formatting; running the
+  page's queries in parallel; chip/tab ARIA roles, which Screener shares (to fix app-wide).
+
 ## Revisit when
 
 - Report Cards exist for every stock: link every row.

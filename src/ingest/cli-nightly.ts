@@ -10,6 +10,7 @@ import { ingestIndexDays } from "./index-prices";
 import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
+import { refreshFundSymbols } from "../indicators/universe";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -90,6 +91,15 @@ const rows = await computeIndicators("NIFTY50", {
   },
 });
 console.log(`[nightly] indicators: ${rows} rows`);
+
+// New ETFs first, so a fund listed today can't show up as an unusual company.
+const [lastDay] = await sql<{ d: string | null }[]>`
+  select max(trade_date)::text d from ingest_log where source = 'bhavcopy' and status = 'ok'`;
+if (lastDay?.d) {
+  const funds = await refreshFundSymbols(lastDay.d);
+  if (funds.status === "error") console.warn(`[nightly] WARNING fund list not refreshed: ${funds.message}`);
+  else if (funds.added > 0) console.log(`[nightly] fund symbols: ${funds.added} new`);
+}
 
 // Unusual activity page: rebuilt in full after delivery and the averages (spec 2026-10-04).
 try {

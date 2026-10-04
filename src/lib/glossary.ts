@@ -360,7 +360,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     read: "High means buyers mostly held on; low means mostly same-day trading. What counts as high depends on the stock, so compare with its own usual.",
     what: "NSE publishes, for every stock each evening, how many traded shares were actually delivered. tradeSence divides delivered by traded.",
     calc: { plain: "Delivered shares ÷ traded shares × 100, from NSE's daily delivery file." },
-    example: "1.5 crore INFY shares traded and 79 lakh delivered: 51.96%.",
+    example: "On 1 Oct 2026, 1,51,66,446 INFY shares traded and 78,81,166 were delivered: 51.96%.",
     mistakes: ["Comparing across stocks. A steady large company may always run at 60% and a heavily traded one at 20%; both can be normal."],
     related: ["delivery-jump", "delivery-collapse", "big-keeping"],
   },

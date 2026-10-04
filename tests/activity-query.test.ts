@@ -53,3 +53,13 @@ describe("recentUnusual", () => {
     expect(await recentUnusual("AAA", "2026-09-28")).toEqual([]);
   });
 });
+
+describe("Report Card links (final review)", () => {
+  test("a stock links to its Report Card if it was ever a member, not only on that date", async () => {
+    // AAA left on 2026-09-30, but its Report Card still exists
+    const rows = await activityOn("2026-09-30", "all");
+    expect(rows.find((r) => r.symbol === "AAA")?.member).toBe(false);
+    expect(rows.find((r) => r.symbol === "AAA")?.hasCard).toBe(true);
+    expect((await activityOn("2026-10-01", "all")).find((r) => r.symbol === "CCC")?.hasCard).toBe(false);
+  });
+});

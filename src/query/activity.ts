@@ -8,12 +8,14 @@ import { KINDS, unusualScore, type Kind, type UnusualRow } from "../indicators/a
 import { INDEX_NAME } from "../ingest/nifty50";
 
 export type ActivitySet = "all" | "nifty50";
-export type ActivityRow = UnusualRow & { symbol: string; member: boolean; score: number };
+// member: in the NIFTY 50 on that date (the switch). hasCard: ever a member, so its
+// Report Card exists and the row can link to it.
+export type ActivityRow = UnusualRow & { symbol: string; member: boolean; hasCard: boolean; score: number };
 
 type Raw = {
   trade_date: string; symbol: string; kept: boolean; volume: boolean; jump: boolean; collapse: boolean;
   kept_ratio: number | null; volume_ratio: number | null; delivery_pct: number | null; usual_delivery_pct: number | null;
-  change_pct: number | null; turnover: number; member: boolean;
+  change_pct: number | null; turnover: number; member: boolean; has_card: boolean;
 };
 const num = (v: number | null) => (v === null ? null : Number(v));
 function toRow(r: Raw): ActivityRow {
@@ -21,6 +23,7 @@ function toRow(r: Raw): ActivityRow {
     tradeDate: r.trade_date, symbol: r.symbol, kept: r.kept, volume: r.volume, jump: r.jump, collapse: r.collapse,
     keptRatio: num(r.kept_ratio), volumeRatio: num(r.volume_ratio), deliveryPct: num(r.delivery_pct),
     usualDeliveryPct: num(r.usual_delivery_pct), changePct: num(r.change_pct), turnover: Number(r.turnover), member: r.member,
+    hasCard: r.has_card,
   };
   return { ...base, score: unusualScore(base) };
 }
@@ -29,7 +32,8 @@ const select = sql`
   select u.trade_date::text, u.symbol, u.kept, u.volume, u.jump, u.collapse, u.kept_ratio, u.volume_ratio,
          u.delivery_pct, u.usual_delivery_pct, u.change_pct, u.turnover,
          exists (select 1 from index_members m where m.index_name = ${INDEX_NAME} and m.symbol = u.symbol
-                 and u.trade_date >= m.added_on and (m.removed_on is null or u.trade_date < m.removed_on)) as member
+                 and u.trade_date >= m.added_on and (m.removed_on is null or u.trade_date < m.removed_on)) as member,
+         exists (select 1 from index_members m where m.index_name = ${INDEX_NAME} and m.symbol = u.symbol) as has_card
   from unusual_days u`;
 
 export async function activitySession(dateIso?: string): Promise<string | null> {

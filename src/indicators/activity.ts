@@ -48,6 +48,13 @@ export function liquidFlags(turnover: number[], segs: number[][]): boolean[] {
 export const KEPT_X = 5; // delivered shares vs normal
 export const VOLUME_X = 5; // traded shares vs normal
 export const JUMP_PTS = 30; // delivery % vs normal, either way
+// A threshold is met within this: a mean of whole shares × a bonus factor can land a
+// hair under an exact 5× (4.999999999999999), and that day must count (CLAUDE.md).
+const EPS = 1e-9;
+// A "day's move" against an EQ close further back than this is not a day's move: the
+// stock traded in another series (BE) in between, maybe across an unpriced demerger
+// (HEGAM 22 Sep 2026 showed −68%). The longest normal NSE break is a 4-day weekend.
+export const MAX_MOVE_GAP_DAYS = 5;
 
 export type Kind = "kept" | "volume" | "jump" | "collapse";
 export const KINDS: readonly Kind[] = ["kept", "volume", "jump", "collapse"];
@@ -66,6 +73,7 @@ export type UnusualRow = {
   turnover: number; // ₹ traded that day
 };
 
+const dayGap = (a: string, b: string) => (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000;
 const ratio = (x: number | null, m: number | null) => (x === null || m === null || m === 0 ? null : x / m);
 
 /** One company's unusual sessions: liquid days where at least one kind fires (spec thresholds). */
@@ -93,12 +101,14 @@ export function unusualDays(h: History): UnusualRow[] {
     const u = usual[i]!;
     const row: UnusualRow = {
       tradeDate: d,
-      kept: keptRatio !== null && keptRatio >= KEPT_X,
-      volume: volumeRatio !== null && volumeRatio >= VOLUME_X,
-      jump: p !== null && u !== null && p - u >= JUMP_PTS,
-      collapse: p !== null && u !== null && u - p >= JUMP_PTS,
+      kept: keptRatio !== null && keptRatio >= KEPT_X - EPS,
+      volume: volumeRatio !== null && volumeRatio >= VOLUME_X - EPS,
+      jump: p !== null && u !== null && p - u >= JUMP_PTS - EPS,
+      collapse: p !== null && u !== null && u - p >= JUMP_PTS - EPS,
       keptRatio, volumeRatio, deliveryPct: p, usualDeliveryPct: u,
-      changePct: i > 0 && seg[i] === seg[i - 1] ? (close[i]! / close[i - 1]! - 1) * 100 : null,
+      changePct: i > 0 && seg[i] === seg[i - 1] && dayGap(h.dates[i - 1]!, d) <= MAX_MOVE_GAP_DAYS
+        ? (close[i]! / close[i - 1]! - 1) * 100
+        : null,
       turnover: h.turnover[i]!,
     };
     if (row.kept || row.volume || row.jump || row.collapse) out.push(row);

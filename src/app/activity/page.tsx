@@ -70,6 +70,7 @@ export default async function Page({
     return href({ kinds: next.length ? KINDS.filter((x) => next.includes(x)) : [...KINDS] });
   };
   const scope = set === "nifty50" ? "NIFTY 50 members" : "active stocks";
+  const scopeOf = (n: number) => (n !== 1 ? scope : set === "nifty50" ? "NIFTY 50 member" : "active stock");
 
   return (
     <AppShell current="activity" ma={ma} asOf={latest}>
@@ -137,7 +138,7 @@ export default async function Page({
           <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
             <div>
               <h2 className="text-heading text-foreground">
-                {all.length} {scope} had an <Term id="unusual-activity">unusual day</Term> on {formatDate(date)}
+                {all.length} {scopeOf(all.length)} had an <Term id="unusual-activity">unusual day</Term> on {formatDate(date)}
               </h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
                 Sorted by how far outside normal, against each stock&apos;s own last 20 sessions. Our research found big delivery days don&apos;t reliably lead to gains (<Link href="/learn/unusual-activity" className="text-brand hover:underline">why</Link>).
@@ -152,7 +153,7 @@ export default async function Page({
           />
           <CardFooter>
             Each stock against its own last 20 sessions; stocks trading under ₹1 crore a day and ETFs are left out.
-            Report Cards cover the NIFTY 50 for now, so only members link to one.
+            Report Cards cover stocks that have been in the NIFTY 50 since 2020; those link to theirs.
           </CardFooter>
         </Card>
       )}

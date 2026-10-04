@@ -6,13 +6,13 @@
 import { db, schema } from "../db";
 import { loadAdjustedHistory, loadRenames } from "./history";
 import { unusualDays } from "./activity";
-import { companies, readFundSymbols } from "./universe";
+import { allFundSymbols, companies } from "./universe";
 
-const CHUNK = 1000; // 13 columns × 1000 rows, under Postgres' 65535 bind parameters
+const CHUNK = 1000; // 12 columns × 1000 rows, under Postgres' 65535 bind parameters
 
 export async function computeUnusualDays(opts: { symbols?: string[] } = {}): Promise<{ rows: number; companies: number }> {
   const renames = await loadRenames();
-  const symbols = opts.symbols ?? (await companies(readFundSymbols()));
+  const symbols = opts.symbols ?? (await companies(await allFundSymbols()));
   const rows: (typeof schema.unusualDays.$inferInsert)[] = [];
   let used = 0;
   for (const symbol of symbols) {

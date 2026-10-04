@@ -71,6 +71,13 @@
       "when": 1791126806078,
       "tag": "0009_third_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791127813719,
+      "tag": "0010_parallel_mephisto",
+      "breakpoints": true
     }
   ]
 }
