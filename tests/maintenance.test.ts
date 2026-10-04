@@ -5,7 +5,7 @@ import { NIGHTLY_ANALYZE, analyzeTables } from "../src/db/maintenance";
 
 test("the nightly ANALYZE covers the big raw tables, not only the rebuilt ones (decision 0029)", () => {
   for (const t of ["daily_prices", "daily_delivery", "index_prices", "ingest_log",
-    "daily_indicators", "unusual_days", "volume_leaders", "money_flow", "sector_flow_weeks", "short_sessions"]) {
+    "daily_indicators", "unusual_days", "volume_leaders", "money_flow", "sector_flow_weeks", "short_sessions", "breadth_daily"]) {
     expect(NIGHTLY_ANALYZE as readonly string[]).toContain(t);
   }
 });

@@ -11,6 +11,8 @@ export const NIGHTLY_ANALYZE = [
   "daily_prices", "daily_delivery", "index_prices", "ingest_log",
   // derived, replaced in full nightly
   "daily_indicators", "unusual_days", "volume_leaders", "money_flow", "sector_flow_weeks", "short_sessions",
+  // upserted nightly
+  "breadth_daily",
 ] as const;
 
 export async function analyzeTables(sql: Sql): Promise<void> {

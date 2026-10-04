@@ -234,6 +234,24 @@ export const shortSessions = pgTable("short_sessions", {
 });
 
 /**
+ * Breadth beyond the NIFTY 50 (decision 0030): per universe, average and day, how many
+ * stocks closed above the average out of those that have one. `market` = liquid NSE
+ * companies, every day, recomputed nightly; index-list keys = today's members, one row
+ * per night, never back-filled. Written by upsert only: nothing here is ever deleted.
+ */
+export const breadthDaily = pgTable(
+  "breadth_daily",
+  {
+    universe: text("universe").notNull(),
+    ma: text("ma").notNull(),
+    tradeDate: date("trade_date").notNull(),
+    above: integer("above").notNull(),
+    total: integer("total").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.universe, t.ma, t.tradeDate] })],
+);
+
+/**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
  * market, exactly as NSE words them.
  *

@@ -12,6 +12,7 @@ import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
 import { computeVolumeLeaders } from "../indicators/compute-volume-leaders";
 import { computeMoneyFlow } from "../indicators/compute-money-flow";
+import { computeBreadth } from "../indicators/compute-breadth";
 import { analyzeTables } from "../db/maintenance";
 import { refreshFundSymbols } from "../indicators/universe";
 import { ingestIndexLists } from "./index-constituents";
@@ -136,6 +137,14 @@ try {
   console.log(`[nightly] money flow: ${mf.rows} rows, ${mf.weeks} sector-weeks as of ${mf.asOf}`);
 } catch (e) {
   console.warn(`[nightly] WARNING money flow not rebuilt: ${e instanceof Error ? e.message : e}`);
+}
+
+// Breadth beyond the NIFTY 50 (decision 0030): whole market every day, index lists tonight. Upserts only.
+try {
+  const br = await computeBreadth();
+  console.log(`[nightly] breadth: whole market ${br.marketDays} days, ${br.lists} index lists as of ${br.asOf}`);
+} catch (e) {
+  console.warn(`[nightly] WARNING breadth not updated: ${e instanceof Error ? e.message : e}`);
 }
 
 // Fresh planner statistics for the big raw tables and every table rebuilt tonight (decision 0029).
