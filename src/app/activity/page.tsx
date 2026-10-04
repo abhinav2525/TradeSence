@@ -1,0 +1,161 @@
+import Link from "next/link";
+import AppShell from "@/components/AppShell";
+import PageHeader from "@/components/PageHeader";
+import DateNav from "@/components/DateNav";
+import Hotkeys from "@/components/Hotkeys";
+import SlidingPill from "@/components/SlidingPill";
+import Term from "@/components/Term";
+import ActivityTable, { KIND_LABEL } from "@/components/ActivityTable";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardFooter } from "@/components/ui/card";
+import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { KINDS, type Kind } from "@/indicators/activity";
+import type { MaKind } from "@/query/breadth";
+import {
+  activityFirst, activityNeighbours, activityOn, activitySession, filterKinds, kindCounts, type ActivitySet,
+} from "@/query/activity";
+
+export const dynamic = "force-dynamic";
+
+// Every search param is checked with strict comparisons and falls back to its
+// default (CLAUDE.md): nothing from the URL reaches SQL except a checked date.
+function isMaKind(v: string | undefined): v is MaKind {
+  return v === "sma200" || v === "ema200" || v === "sma50";
+}
+function isSet(v: string | undefined): v is ActivitySet {
+  return v === "all" || v === "nifty50";
+}
+function isKind(v: string): v is Kind {
+  return v === "kept" || v === "volume" || v === "jump" || v === "collapse";
+}
+function cleanKinds(v: string | undefined): Kind[] {
+  const picked = (v ?? "").split(",").filter(isKind);
+  return picked.length ? KINDS.filter((k) => picked.includes(k)) : [...KINDS];
+}
+function cleanDate(v: string | undefined): string | undefined {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined;
+}
+const seg = (on: boolean) =>
+  cn(
+    "inline-flex h-8 items-center gap-2 rounded-[8px] px-3 text-body-sm font-medium transition-colors",
+    on ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground",
+  );
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ ma?: string; date?: string; set?: string; kinds?: string }>;
+}) {
+  const sp = await searchParams;
+  const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
+  const set: ActivitySet = isSet(sp.set) ? sp.set : "all";
+  const kinds = cleanKinds(sp.kinds);
+  const wanted = cleanDate(sp.date);
+
+  const date = await activitySession(wanted);
+  const latest = await activitySession();
+  const first = await activityFirst();
+  const nav = date ? await activityNeighbours(date) : { prev: null, next: null };
+  const all = date ? await activityOn(date, set) : [];
+  const counts = kindCounts(all);
+  const shown = filterKinds(all, kinds);
+
+  const extra = (p: { set?: ActivitySet; kinds?: Kind[] } = {}) =>
+    `&set=${p.set ?? set}&kinds=${(p.kinds ?? kinds).join(",")}`;
+  const href = (p: { set?: ActivitySet; kinds?: Kind[] }) =>
+    `/activity?ma=${ma}${date && wanted ? `&date=${date}` : ""}${extra(p)}`;
+  const toggle = (k: Kind) => {
+    const next = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k];
+    return href({ kinds: next.length ? KINDS.filter((x) => next.includes(x)) : [...KINDS] });
+  };
+  const scope = set === "nifty50" ? "NIFTY 50 members" : "active stocks";
+
+  return (
+    <AppShell current="activity" ma={ma} asOf={latest}>
+      <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="activity" extra={extra()} />
+      <PageHeader
+        eyebrow="All NSE · Stocks"
+        title="Unusual activity"
+        description="Stocks whose session was far outside their own normal: shares kept, shares traded, or the share kept. Facts about the day, not predictions."
+        actions={
+          <DateNav
+            base="/activity"
+            extra={extra()}
+            ma={ma}
+            date={date}
+            requested={wanted ?? null}
+            snapped={Boolean(wanted && date && date !== wanted)}
+            prev={nav.prev}
+            next={nav.next}
+            min={first}
+            max={latest}
+          />
+        }
+      />
+
+      {!date ? (
+        <Card className="px-6 py-12 text-center">
+          {first && wanted && wanted < first ? (
+            <>
+              <p className="text-heading text-foreground">Unusual activity starts on {formatDate(first)}</p>
+              <p className="mt-2 text-body-sm text-foreground-2">
+                Each stock needs 20 sessions of history before a day can count as unusual.{" "}
+                <Link href={`/activity?ma=${ma}&date=${first}${extra()}`} className="font-medium text-brand hover:underline">Go to the first session</Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-heading text-foreground">Nothing loaded for that session</p>
+              <p className="mt-2 text-body-sm text-foreground-2">
+                Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run activity</code>.
+              </p>
+            </>
+          )}
+        </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b px-card-x py-3">
+            <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Stocks">
+              <SlidingPill active={set} />
+              {([["all", "All active stocks"], ["nifty50", "NIFTY 50"]] as const).map(([k, text]) => (
+                <Link key={k} href={href({ set: k })} role="tab" aria-selected={set === k} className={seg(set === k)}>{text}</Link>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Kinds">
+              {KINDS.map((k) => (
+                <Link key={k} href={toggle(k)} aria-pressed={kinds.includes(k)}
+                  className={cn("inline-flex h-7 items-center gap-1.5 rounded-[8px] border px-2.5 text-[12px] font-medium transition-colors",
+                    kinds.includes(k) ? "bg-thumb text-foreground shadow-thumb" : "text-muted-foreground hover:text-foreground")}>
+                  {KIND_LABEL[k]}
+                  <span className="font-mono text-[11px]">{counts[k]}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
+            <div>
+              <h2 className="text-heading text-foreground">
+                {all.length} {scope} had an <Term id="unusual-activity">unusual day</Term> on {formatDate(date)}
+              </h2>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">
+                Sorted by how far outside normal, against each stock&apos;s own last 20 sessions. Our research found big delivery days don&apos;t reliably lead to gains (<Link href="/learn/unusual-activity" className="text-brand hover:underline">why</Link>).
+              </p>
+            </div>
+            <Badge variant="neutral">{shown.length} {shown.length === 1 ? "stock" : "stocks"}</Badge>
+          </div>
+
+          <ActivityTable
+            rows={shown}
+            empty={all.length === 0 ? `No ${scope} had an unusual day on ${formatDate(date)}.` : "No stock matched these filters."}
+          />
+          <CardFooter>
+            Each stock against its own last 20 sessions; stocks trading under ₹1 crore a day and ETFs are left out.
+            Report Cards cover the NIFTY 50 for now, so only members link to one.
+          </CardFooter>
+        </Card>
+      )}
+    </AppShell>
+  );
+}

@@ -5,6 +5,8 @@ import DateNav from "@/components/DateNav";
 import StockChecks, { LightSummary, checksOf } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
 import RiskCalculator from "@/components/RiskCalculator";
+import UnusualDaysCard from "@/components/UnusualDaysCard";
+import { recentUnusual } from "@/query/activity";
 import CrashTable from "@/components/CrashTable";
 import StockPriceChart from "@/components/StockPriceChart";
 import DrawdownChart from "@/components/DrawdownChart";
@@ -76,6 +78,7 @@ export default async function Page({
   }
 
   const r = res.report;
+  const unusual = await recentUnusual(symbol, r.date);
   const checks = checksOf(r);
   return (
     <AppShell current="stock" ma="sma200" asOf={r.lastDate}>
@@ -118,6 +121,7 @@ export default async function Page({
           </Card>
           <StockEvents className="xl:col-span-4" events={r.events} dividends12m={r.dividends12m} date={r.date} />
         </div>
+        <UnusualDaysCard rows={unusual} />
       </div>
     </AppShell>
   );
