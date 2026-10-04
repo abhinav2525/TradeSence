@@ -12,8 +12,8 @@ import { loadAdjustedHistory, loadRenames } from "../indicators/history";
 import { median } from "../indicators/signals";
 import { memberWindows } from "./volume-data";
 import { STUDY_HORIZONS, fifthCuts, fifthOf, memberFlags } from "./volume";
-import { companies, tradingDays } from "./delivery-data";
-import { readFundSymbols } from "./funds";
+import { tradingDays } from "./delivery-data";
+import { companies, readFundSymbols } from "../indicators/universe";
 import {
   DISCOVERY_END, SIGNALS, assertAligned, deliveryVerdict, levelCutsByDate, occasionsOf, part, signalFlags, stockSeries,
   type DeliveryResult, type Occasion, type StockSeries,

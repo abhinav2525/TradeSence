@@ -1,7 +1,6 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
-import { companies } from "../src/research/delivery-data";
-import { fundSymbols } from "../src/research/funds";
+import { companies, fundSymbols } from "../src/indicators/universe";
 import type { History } from "../src/indicators/history";
 import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, matchedBaseline, part, deliveryVerdict, assertAligned, type Occasion } from "../src/research/delivery";
 import { mulberry32 } from "../src/research/volume";
@@ -342,5 +341,21 @@ describe("assertAligned", () => {
   test("passes when pass 2 counted exactly what pass 1 pooled, throws otherwise", () => {
     expect(() => assertAligned([2, 1], [[1, 2], [3]])).not.toThrow();
     expect(() => assertAligned([2, 0], [[1, 2], [3]])).toThrow(/day 1/);
+  });
+});
+describe("shared with the Unusual activity page", () => {
+  test("the study and the page use one copy of the maths", async () => {
+    const a = await import("../src/indicators/activity");
+    const r = await import("../src/research/delivery");
+    expect(r.windowMean).toBe(a.windowMean);
+    expect(r.EXCLUDED_DAYS).toBe(a.EXCLUDED_DAYS);
+  });
+  test("liquidFlags: median of the last 20 sessions' turnover ≥ ₹1 crore, within a segment", async () => {
+    const { liquidFlags } = await import("../src/indicators/activity");
+    const t = Array.from({ length: 25 }, (_, i) => (i < 12 ? 2e7 : 5e6));
+    const f = liquidFlags(t, [t.map((_, i) => i)]);
+    expect(f[18]).toBe(false); // fewer than 20 sessions
+    expect(f[19]).toBe(true); // 12 of 20 at ₹2 cr: median ₹2 cr
+    expect(f[24]).toBe(false); // 7 of 20 at ₹2 cr: median ₹50 lakh
   });
 });

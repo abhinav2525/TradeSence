@@ -6,41 +6,18 @@ import { segmentByGaps } from "../indicators/gaps";
 import type { History } from "../indicators/history";
 import { forwardReturnSafe, median, segmentIds } from "../indicators/signals";
 import { NOISE_PCT } from "../indicators/risk";
+import { EXCLUDED_DAYS, MIN_PRESENT, MIN_TURNOVER, WINDOW, liquidFlags, windowMean } from "../indicators/activity";
 import {
   DRAWS, HEAVY, LUCK_BAR, STUDY_HORIZONS, distinctMonths, episodeStarts, fifthCuts, fifthOf, mulberry32, sameWay,
   type Luck, type Verdict,
 } from "./volume";
 
-export const WINDOW = 20; // sessions: "its own normal"
-export const MIN_PRESENT = 15; // of WINDOW sessions with a delivery figure
-export const MIN_TURNOVER = 1e7; // ₹1 crore: median of the last WINDOW sessions
+// Shared with the Unusual activity page (one copy of the maths).
+export { EXCLUDED_DAYS, MIN_PRESENT, MIN_TURNOVER, WINDOW, windowMean } from "../indicators/activity";
 export const DISCOVERY_END = "2022-12-31";
 export const MIN_EPISODES = 30;
 export const MIN_EFFECT = 0.5; // percentage points at the main span: roughly a round trip's costs
 export const HOLDOUT_BAR = 95; // one-sided: discovery already fixed the direction
-// The delivery file covers different trades than bhavcopy on these days (decision 0021).
-export const EXCLUDED_DAYS = new Set(["2019-06-17", "2019-06-18", "2023-09-04", "2025-10-21", "2026-09-11"]);
-
-/**
- * Mean of `v` over a window inside each segment: offset 1 = the WINDOW sessions
- * before i; offset 0 = i and the WINDOW − 1 before it. Missing values are
- * skipped; null with fewer than MIN_PRESENT present.
- */
-export function windowMean(v: (number | null)[], segs: number[][], offset: 0 | 1): (number | null)[] {
-  const out: (number | null)[] = new Array(v.length).fill(null);
-  for (const seg of segs) {
-    seg.forEach((i, j) => {
-      let sum = 0;
-      let n = 0;
-      for (let k = Math.max(0, j - WINDOW + 1 - offset); k <= j - offset; k++) {
-        const x = v[seg[k]!];
-        if (x != null) { sum += x; n++; }
-      }
-      out[i] = n >= MIN_PRESENT ? sum / n : null;
-    });
-  }
-  return out;
-}
 
 export type StockSeries = {
   dates: string[];
@@ -69,15 +46,7 @@ export function stockSeries(h: History): StockSeries {
   const level = windowMean(dp, segs, 0);
   const move = close.map((c, i) => (i > 0 && seg[i] === seg[i - 1] ? (c / close[i - 1]! - 1) * 100 : null));
 
-  // Liquid: median turnover over the last WINDOW sessions of the same segment.
-  const liquid: boolean[] = new Array(n).fill(false);
-  for (const s of segs) {
-    s.forEach((i, j) => {
-      if (j < WINDOW - 1) return;
-      const t = s.slice(j - WINDOW + 1, j + 1).map((k) => h.turnover[k]!);
-      liquid[i] = median(t)! >= MIN_TURNOVER;
-    });
-  }
+  const liquid = liquidFlags(h.turnover, segs);
   const eligible = h.dates.map((_, i) => liquid[i]! && dp[i] !== null && usual[i] !== null);
 
   const returns = STUDY_HORIZONS.map((hz) =>

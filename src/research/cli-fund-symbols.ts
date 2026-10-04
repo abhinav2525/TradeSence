@@ -8,7 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { sql } from "../db";
 import { bhavcopyUrl, download, unzipCsv } from "../ingest/bhavcopy";
-import { FUND_SYMBOLS_FILE, fundSymbols } from "./funds";
+import { FUND_SYMBOLS_FILE, fundSymbols } from "../indicators/universe";
 
 const days = await sql<{ d: string }[]>`
   select min(trade_date)::text as d from ingest_log
