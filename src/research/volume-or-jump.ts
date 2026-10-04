@@ -2,7 +2,11 @@
  * Research 0005: volume or the jump? Pure helpers; runner cli-volume-or-jump.ts.
  * Spec: docs/superpowers/specs/2026-10-04-volume-or-jump-design.md.
  */
-import { quantile, sameWay } from "./volume";
+import { segmentByGaps } from "../indicators/gaps";
+import { WINDOW } from "../indicators/activity";
+import { median, segmentIds } from "../indicators/signals";
+import { HEAVY, LIGHT, quantile, sameWay } from "./volume";
+import { HUGE_X } from "./volume-market";
 import { HOLDOUT_BAR, MIN_EFFECT, MIN_EPISODES, type Part } from "./delivery";
 
 const EPS = 1e-9;
@@ -32,21 +36,26 @@ export function groupKey(date: string, band: number, third: number, sector?: str
   return `${date.slice(0, 7)}|${band}|${third}${sector ? `|${sector}` : ""}`;
 }
 
-/** Least squares by the normal equations (Gaussian elimination, partial pivoting); null if singular. */
-export function ols(X: number[][], y: number[]): number[] | null {
-  const k = X[0]?.length ?? 0;
-  const A = Array.from({ length: k }, () => new Array<number>(k + 1).fill(0));
-  for (let r = 0; r < X.length; r++) {
-    const x = X[r]!;
-    for (let i = 0; i < k; i++) {
-      for (let j = 0; j < k; j++) A[i]![j]! += x[i]! * x[j]!;
-      A[i]![k]! += x[i]! * y[r]!;
-    }
+/** Running sums for least squares: one day's fit without keeping its rows. */
+export type NormalEq = { k: number; n: number; xx: number[][]; xy: number[] };
+export function normalEq(k: number): NormalEq {
+  return { k, n: 0, xx: Array.from({ length: k }, () => new Array<number>(k).fill(0)), xy: new Array<number>(k).fill(0) };
+}
+export function addRow(acc: NormalEq, x: number[], y: number): void {
+  for (let i = 0; i < acc.k; i++) {
+    for (let j = 0; j < acc.k; j++) acc.xx[i]![j]! += x[i]! * x[j]!;
+    acc.xy[i]! += x[i]! * y;
   }
+  acc.n++;
+}
+/** Gaussian elimination with partial pivoting; null if singular. */
+export function solveEq(acc: NormalEq): number[] | null {
+  const k = acc.k;
+  const A = acc.xx.map((row, i) => [...row, acc.xy[i]!]);
   for (let c = 0; c < k; c++) {
     let p = c;
     for (let r = c + 1; r < k; r++) if (Math.abs(A[r]![c]!) > Math.abs(A[p]![c]!)) p = r;
-    if (Math.abs(A[p]![c]!) < 1e-12) return null;
+    if (Math.abs(A[p]![c]!) < 1e-12 * Math.max(1, Math.abs(A[c]![c]!))) return null;
     [A[c], A[p]] = [A[p]!, A[c]!];
     for (let r = 0; r < k; r++) {
       if (r === c) continue;
@@ -56,6 +65,12 @@ export function ols(X: number[][], y: number[]): number[] | null {
   }
   const out = A.map((row, i) => row[k]! / row[i]!);
   return out.every(Number.isFinite) ? out : null;
+}
+/** Least squares by the normal equations; null if singular. */
+export function ols(X: number[][], y: number[]): number[] | null {
+  const acc = normalEq(X[0]?.length ?? 0);
+  X.forEach((x, r) => addRow(acc, x, y[r]!));
+  return acc.k ? solveEq(acc) : null;
 }
 
 /** Mean of a time series with a Newey–West (Bartlett) standard error; null if too short. */
@@ -93,4 +108,55 @@ export function verdict5(o: { disc: Part; hold: Part; main: number; fmT: number 
 /** Signal days left out because their group has no control day (pools indexed by group). */
 export function droppedCount(occ: { day: number }[], pools: number[][]): number {
   return occ.filter((o) => (pools[o.day]?.length ?? 0) === 0).length;
+}
+
+type FlagInput = {
+  dates: string[]; close: number[]; sma200: (number | null)[];
+  volRatio: (number | null)[]; move: (number | null)[]; eligible: boolean[];
+};
+
+/** Q1: up day of at least +3%, on ≥ 5× volume (signal) or < 1.5× (control). Eligible days only. */
+export function jumpFlags(s: FlagInput): { signal: boolean[]; control: boolean[] } {
+  const signal = s.dates.map(() => false), control = s.dates.map(() => false);
+  s.dates.forEach((_, i) => {
+    const vr = s.volRatio[i], mv = s.move[i];
+    if (!s.eligible[i] || vr == null || mv == null || mv < JUMP_FLOOR - EPS) return;
+    signal[i] = vr >= HUGE_X - EPS;
+    control[i] = vr < LIGHT - EPS;
+  });
+  return { signal, control };
+}
+
+/** Q2: close crosses above the 200-day SMA (crossFlags' rule), ≥ 2× (signal) or < 1.5× (control). */
+export function breakoutFlags(s: FlagInput): { signal: boolean[]; control: boolean[] } {
+  const seg = segmentIds(s.dates);
+  const signal = s.dates.map(() => false), control = s.dates.map(() => false);
+  for (let i = 1; i < s.dates.length; i++) {
+    const a = s.sma200[i - 1], b = s.sma200[i], vr = s.volRatio[i];
+    if (!s.eligible[i] || a == null || b == null || vr == null || seg[i - 1] !== seg[i]) continue;
+    if (!(s.close[i - 1]! <= a && s.close[i]! > b)) continue;
+    signal[i] = vr >= HEAVY - EPS;
+    control[i] = vr < LIGHT - EPS;
+  }
+  return { signal, control };
+}
+
+/** Median turnover of the last WINDOW sessions including the day (same segment); the size measure. */
+export function medianTurnover(turnover: number[], dates: string[]): (number | null)[] {
+  const out: (number | null)[] = dates.map(() => null);
+  for (const s of segmentByGaps(dates)) {
+    s.forEach((i, j) => {
+      if (j >= WINDOW - 1) out[i] = median(s.slice(j - WINDOW + 1, j + 1).map((k) => turnover[k]!));
+    });
+  }
+  return out;
+}
+
+/** % return over the h sessions ending the day before (D−1−h → D−1), same segment; the reversal control. */
+export function prevReturn(close: number[], dates: string[], h: number): (number | null)[] {
+  const seg = segmentIds(dates);
+  return close.map((_, i) => {
+    const a = i - 1 - h, b = i - 1;
+    return a >= 0 && seg[a] === seg[i] ? (close[b]! / close[a]! - 1) * 100 : null;
+  });
 }

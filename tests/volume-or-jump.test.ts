@@ -2,7 +2,7 @@ import { test, expect, describe } from "bun:test";
 import { bandOf, thirdCuts, thirdOf, groupKey, ols, neweyWest, verdict5, Q1_BANDS, Q2_BANDS } from "../src/research/volume-or-jump";
 import { mulberry32 } from "../src/research/volume";
 import { matchedLuck } from "../src/research/delivery";
-import { droppedCount } from "../src/research/volume-or-jump";
+import { droppedCount, jumpFlags, breakoutFlags, medianTurnover, prevReturn, normalEq, addRow, solveEq } from "../src/research/volume-or-jump";
 
 describe("bands, thirds, groups", () => {
   test("Q1 bands start at +3%, exactly 3 counts", () => {
@@ -91,5 +91,63 @@ describe("matched groups", () => {
     const pools = [[10, 10, 10], [-10, -10, -10]];
     const l = matchedLuck([occ(0, 0), occ(0, 0), occ(0, 0)], pools, 0)!;
     expect(l.beat).toBe(0);
+  });
+});
+
+describe("signal and control flags", () => {
+  // a minimal series: day 1 crosses above the average; volume ratio and move vary per test
+  const series = (volRatio: number | null, move: number | null) => ({
+    dates: ["2021-03-01", "2021-03-02"], close: [99, 101], sma200: [100, 100],
+    volRatio: [1, volRatio], move: [0, move], eligible: [true, true],
+  });
+  test("Q1: exactly 5× and exactly +3% are a signal; a float hair under 5× still counts", () => {
+    expect(jumpFlags(series(5, 3)).signal[1]).toBe(true);
+    expect(jumpFlags(series(4.999999999999999, 3)).signal[1]).toBe(true);
+    expect(jumpFlags(series(5, 2.9)).signal[1]).toBe(false);
+  });
+  test("Q1: control needs the same +3% jump on under 1.5×", () => {
+    expect(jumpFlags(series(1.2, 4)).control[1]).toBe(true);
+    expect(jumpFlags(series(1.5, 4)).control[1]).toBe(false);
+    expect(jumpFlags(series(1.2, 2)).control[1]).toBe(false);
+  });
+  test("Q2: exactly 2× on a cross is a signal; under 1.5× a control; not eligible neither", () => {
+    expect(breakoutFlags(series(2, 2)).signal[1]).toBe(true);
+    expect(breakoutFlags(series(1.9999999999999998, 2)).signal[1]).toBe(true);
+    expect(breakoutFlags(series(1.4, 2)).control[1]).toBe(true);
+    expect(breakoutFlags({ ...series(3, 2), eligible: [true, false] }).signal[1]).toBe(false);
+  });
+});
+
+describe("size and reversal inputs", () => {
+  test("median turnover of the last 20 sessions, null before 20", () => {
+    const dates = Array.from({ length: 21 }, (_, i) => `2021-03-${String(i + 1).padStart(2, "0")}`);
+    const t = dates.map((_, i) => i + 1);
+    const m = medianTurnover(t, dates);
+    expect(m[18]).toBeNull();
+    expect(m[19]).toBe(10.5);
+    expect(m[20]).toBe(11.5);
+  });
+  test("previous-21-session return ends the day before, null without 22 sessions", () => {
+    const dates = Array.from({ length: 23 }, (_, i) => `2021-03-${String(i + 1).padStart(2, "0")}`);
+    const close = dates.map((_, i) => 100 + i);
+    const r = prevReturn(close, dates, 21);
+    expect(r[21]).toBeNull();
+    expect(r[22]).toBeCloseTo((121 / 100 - 1) * 100, 9);
+  });
+});
+
+describe("normal equations, row by row", () => {
+  test("same answer as ols on the whole matrix", () => {
+    const rand = mulberry32(9);
+    const X: number[][] = [], y: number[] = [];
+    const acc = normalEq(3);
+    for (let i = 0; i < 300; i++) {
+      const x = [1, rand(), rand() * 20];
+      const v = 1 + 2 * x[1]! - 0.1 * x[2]! + rand();
+      X.push(x); y.push(v); addRow(acc, x, v);
+    }
+    const a = ols(X, y)!, b = solveEq(acc)!;
+    a.forEach((v, i) => expect(b[i]).toBeCloseTo(v, 9));
+    expect(acc.n).toBe(300);
   });
 });

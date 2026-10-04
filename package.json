@@ -28,6 +28,7 @@
     "research:volume": "bun run src/research/cli-volume.ts",
     "research:delivery": "bun run src/research/cli-delivery.ts",
     "research:volume-market": "bun run src/research/cli-volume-market.ts",
+    "research:volume-or-jump": "bun run src/research/cli-volume-or-jump.ts",
     "research:fund-symbols": "bun run src/research/cli-fund-symbols.ts",
     "audit:report-card": "bun run src/audit/report-card.ts"
   },
