@@ -11,7 +11,7 @@ Why each finished item was built the way it was: `docs/decisions/`.
 **Where we left off (4 Oct 2026, later).** Database check-up done (decision 0021): Postgres
 tuned, nightly backup (restore tested), index on `daily_indicators(symbol, trade_date)`.
 **Delivery % is collected** (`daily_delivery` since 28 Sep 2016, nightly) **and studied**
-(research 0003): no delivery buy/sell signal passed; three real but small effects, all under
+(research 0003): no delivery buy/sell signal passed; four real but small effects, all under
 the cost bar. Next candidates: nightly warnings to the owner (Telegram/email, owner to pick),
 website auto-restart, the breadth-thrust study (Signals). Backups go to this Mac and iCloud Drive. Check Monday's (5 Oct) nightly run (Ops): it
 now also loads delivery and writes a backup.
@@ -131,7 +131,7 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
     alert, delivery-spike screener~~: no edge worth trading (the up-day spike even lagged).
   - [ ] Maybe, owner's call: a stock's typical delivery level ("mostly held" vs "mostly
     traded") on the Report Card as information only, with a glossary entry; ideally after a
-    3-month study, since the gaps grew with time (1.0 and 1.4 points at 3 months).
+    3-month study, since the gaps grew with time (1.1 and 1.5 points at 3 months).
 - [ ] **Sector tag for every stock**, from NSE's sector-index constituent files. Needed for
   sector rotation and the leaderboard.
 - [ ] **Company names**, for the Report Card and the stock list.

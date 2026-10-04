@@ -1,8 +1,9 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { companies } from "../src/research/delivery-data";
+import { fundSymbols } from "../src/research/funds";
 import type { History } from "../src/indicators/history";
-import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, matchedBaseline, part, deliveryVerdict, type Occasion } from "../src/research/delivery";
+import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, matchedBaseline, part, deliveryVerdict, assertAligned, type Occasion } from "../src/research/delivery";
 import { mulberry32 } from "../src/research/volume";
 
 /** n consecutive weekdays from 2021-01-04, all fields filled, liquid. */
@@ -275,5 +276,71 @@ describe("companies", () => {
     await db.insert(schema.dailyPrices).values([bar("2020-01-01", "ABC"), bar("2020-03-02", "XYZ"), bar("2021-01-04", "ABC")]);
     await db.insert(schema.symbolChanges).values({ oldSymbol: "ABC", newSymbol: "XYZ", changedOn: "2020-02-01" });
     expect((await companies()).sort()).toEqual(["ABC", "XYZ"]);
+  });
+});
+
+// ── fixes from the final review ──
+
+describe("fundSymbols", () => {
+  test("reads ETFs (ISIN INF…) from a legacy bhavcopy, leaving companies (INE…) out", () => {
+    const csv = [
+      "SYMBOL,SERIES,OPEN,HIGH,LOW,CLOSE,LAST,PREVCLOSE,TOTTRDQTY,TOTTRDVAL,TIMESTAMP,TOTALTRADES,ISIN,",
+      "GOLDBEES,EQ,1,1,1,1,1,1,1,1,03-OCT-2016,1,INF204KB17I5,",
+      "INFY,EQ,1,1,1,1,1,1,1,1,03-OCT-2016,1,INE009A01021,",
+    ].join("\n");
+    expect(fundSymbols(csv)).toEqual(["GOLDBEES"]);
+  });
+
+  test("reads the UDiFF format too", () => {
+    const csv = [
+      "TradDt,BizDt,Sgmt,Src,FinInstrmTp,FinInstrmId,ISIN,TckrSymb,SctySrs",
+      "2024-01-02,2024-01-02,CM,NSE,STK,1,INF732E01037,NIFTYBEES,EQ",
+      "2024-01-02,2024-01-02,CM,NSE,STK,2,INE002A01018,RELIANCE,EQ",
+    ].join("\n");
+    expect(fundSymbols(csv)).toEqual(["NIFTYBEES"]);
+  });
+
+  test("refuses a file without an ISIN column rather than finding no funds", () => {
+    expect(() => fundSymbols("SYMBOL,SERIES\nGOLDBEES,EQ")).toThrow(/ISIN/);
+  });
+});
+
+describe("companies, review fixes", () => {
+  beforeEach(async () => {
+    for (const t of [schema.dailyPrices, schema.symbolChanges]) await db.delete(t);
+  });
+  const bar = (tradeDate: string, symbol: string, series = "EQ") => ({
+    tradeDate, symbol, series, open: 1, high: 1, low: 1, close: 1, prevClose: 1, volume: 1, turnover: 1,
+  });
+
+  // Renamed and moved to trade-for-trade (BE): the new symbol has no EQ rows, so
+  // the old one is the only way the company's EQ history gets studied.
+  test("keeps an old symbol whose new symbol never traded in EQ", async () => {
+    await db.insert(schema.dailyPrices).values([bar("2020-01-01", "SICKCO"), bar("2020-03-02", "SICKNEW", "BE")]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "SICKCO", newSymbol: "SICKNEW", changedOn: "2020-02-01" });
+    expect(await companies()).toEqual(["SICKCO"]);
+  });
+
+  test("leaves out the symbols it is told are funds", async () => {
+    await db.insert(schema.dailyPrices).values([bar("2020-01-01", "GOLDBEES"), bar("2020-01-01", "INFY")]);
+    expect(await companies(new Set(["GOLDBEES"]))).toEqual(["INFY"]);
+  });
+});
+
+describe("deliveryVerdict, review fix", () => {
+  test("an effect pointing the other way from the luck check can't Build", () => {
+    const p = (med: number, beat: number) => ({
+      n: 40, months: 12, medians: [med, med], baseline: [0, 0],
+      luck: { beat, direction: beat >= 50 ? "better" as const : "worse" as const, strength: Math.max(beat, 100 - beat) },
+    });
+    // luck says "better" (99) but the median sits 1 point BELOW the baseline
+    expect(deliveryVerdict("x", p(-1, 99), p(-1, 99), 0).verdict).not.toBe("Build");
+  });
+});
+
+describe("assertAligned", () => {
+  test("passes when pass 2 counted exactly what pass 1 pooled, throws otherwise", () => {
+    expect(() => assertAligned([2, 1], [[1, 2], [3]])).not.toThrow();
+    expect(() => assertAligned([2, 0], [[1, 2], [3]])).toThrow(/day 1/);
   });
 });

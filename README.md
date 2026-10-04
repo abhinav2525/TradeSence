@@ -277,6 +277,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run db:backup` | Compressed `pg_dump` to `~/Backups/tradesence`, newest 7 kept (also nightly) |
 | `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
 | `bun run research:delivery` | Print the delivery study (research 0003) as Markdown; whole liquid market, about 2 minutes |
+| `bun run research:fund-symbols` | Rebuild `src/research/fund-symbols.txt` (NSE ETFs since 2016, by ISIN); ~15 s |
 | `bun run research:volume` | Print the volume study (research 0002) as Markdown; `-- --check SYM,SYM` prints the latest CMF/MFI |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
@@ -432,7 +433,8 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `signalFlags`, `levelCutsByDate`, `occasionsOf` | The eight signals (order = `SIGNALS`); per-day fifths across stocks; episodes with their day, pool position and returns. |
 | `matchedLuck`, `matchedBaseline` | Date-matched comparison (0022): random other eligible stocks on the same dates, 1,000 seeded draws; the baseline as one number from the same kind of draw. |
 | `part`, `deliveryVerdict` | One period's medians, baselines and luck; Build needs discovery (n ≥ 30, ≥ 97.5, same way ≥ 3 of 4, effect ≥ 0.5 pts) and a confirming 2023– hold-out (≥ 95 one-sided). |
-| `companies`, `tradingDays` | Database reads (`delivery-data.ts`): each company once under its latest symbol (delisted included); bhavcopy trading days. |
+| `companies(funds)`, `tradingDays` | Database reads (`delivery-data.ts`): each company once under its latest symbol (delisted included; an old symbol is kept when its new one never traded EQ); ETFs left out; bhavcopy trading days. |
+| `fundSymbols`, `readFundSymbols` | `funds.ts`: symbols whose ISIN starts "INF" (fund units, i.e. ETFs) in a bhavcopy; the committed list `fund-symbols.txt`, rebuilt by `bun run research:fund-symbols` (one bhavcopy per month since 2016 + NSE's current ETF list). |
 
 ### `src/research/volume.ts`, `volume-data.ts`, `cli-volume.ts` — research 0002
 

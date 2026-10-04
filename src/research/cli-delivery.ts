@@ -13,8 +13,9 @@ import { median } from "../indicators/signals";
 import { memberWindows } from "./volume-data";
 import { STUDY_HORIZONS, fifthCuts, fifthOf, memberFlags } from "./volume";
 import { companies, tradingDays } from "./delivery-data";
+import { readFundSymbols } from "./funds";
 import {
-  DISCOVERY_END, SIGNALS, deliveryVerdict, levelCutsByDate, occasionsOf, part, signalFlags, stockSeries,
+  DISCOVERY_END, SIGNALS, assertAligned, deliveryVerdict, levelCutsByDate, occasionsOf, part, signalFlags, stockSeries,
   type DeliveryResult, type Occasion, type StockSeries,
 } from "./delivery";
 
@@ -27,7 +28,8 @@ const out: string[] = [];
 const p = (line = "") => out.push(line);
 const t0 = Date.now();
 
-const [renames, windows, symbols, days] = await Promise.all([loadRenames(), memberWindows(), companies(), tradingDays(START)]);
+const funds = readFundSymbols(); // ETFs aren't companies (research 0003, review)
+const [renames, windows, symbols, days] = await Promise.all([loadRenames(), memberWindows(), companies(funds), tradingDays(START)]);
 const dayIdx = new Map(days.map((d, i) => [d, i]));
 const H = STUDY_HORIZONS.length;
 
@@ -89,6 +91,8 @@ await each((symbol, s) => {
   });
 });
 
+assertAligned(posCount, pools[MAIN]!);
+
 const results: DeliveryResult[] = SIGNALS.map((name, k) => {
   const all = occ[k]!;
   return deliveryVerdict(
@@ -101,7 +105,7 @@ const results: DeliveryResult[] = SIGNALS.map((name, k) => {
 
 // ── print ──
 const luck = (l: { beat: number; direction: string } | null) => (l ? `${l.beat.toFixed(1)}% (${l.direction})` : "—");
-p(`Generated ${new Date().toISOString().slice(0, 10)} · ${stocksUsed} companies with delivery data · ${eligibleDays.toLocaleString("en-IN")} eligible stock-days · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+p(`Generated ${new Date().toISOString().slice(0, 10)} · ${stocksUsed} companies with delivery data (${funds.size} fund symbols left out) · ${eligibleDays.toLocaleString("en-IN")} eligible stock-days · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 p();
 p("## Results (main span: 1 month; discovery 2016–2022, hold-out 2023–)");
 p();

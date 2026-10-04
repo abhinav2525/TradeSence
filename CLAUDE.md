@@ -29,6 +29,8 @@ writing new statistics. Per-stock studies compare each occasion with other eligi
 on the **same date** (`matchedLuck`, `matchedBaseline` in `src/research/delivery.ts`,
 [0022](docs/decisions/0022-matched-luck-check.md)); `luckCheck`'s independent random days
 flatter signals that bunch up, so don't use it for a whole-market per-stock study.
+A whole-market study leaves ETFs out (`readFundSymbols`, `src/research/funds.ts`): NSE lists
+them in series EQ beside companies, and their prices follow gold or rates, not the company.
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
@@ -73,6 +75,7 @@ bun run audit:report-card [date]               # independent recalculation; exit
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study
 bun run research:delivery                      # delivery % signals, whole market (~2 min)
+bun run research:fund-symbols                  # rebuild the ETF list studies leave out (~15s)
 bun run ingest:nightly                         # cron entry point
 ```
 

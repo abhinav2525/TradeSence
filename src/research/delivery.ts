@@ -242,7 +242,21 @@ export function deliveryVerdict(name: string, discovery: Part, holdout: Part, ma
   const confirmed = hl !== null && dl !== null && holdout.n >= MIN_EPISODES &&
     (dl.direction === "better" ? hl.beat >= HOLDOUT_BAR : hl.beat <= 100 - HOLDOUT_BAR);
   const build = discovery.n >= MIN_EPISODES && dl !== null && dl.strength >= LUCK_BAR && same >= need &&
-    effect !== null && Math.abs(effect) >= MIN_EFFECT && confirmed;
+    effect !== null && Math.abs(effect) >= MIN_EFFECT && Math.sign(effect) === (dl.direction === "better" ? 1 : -1) &&
+    confirmed;
   const verdict: Verdict = build ? "Build" : same >= need ? "Maybe" : "Don't build";
   return { name, discovery, holdout, same, effect, verdict };
+}
+
+/**
+ * The runner's pass 2 rebuilds each occasion's position in its day's pool by
+ * replaying pass 1. If the data changed in between (a nightly ingest running
+ * meanwhile), positions would point at the wrong stock: refuse to report.
+ */
+export function assertAligned(counts: number[], pools: number[][]): void {
+  counts.forEach((c, d) => {
+    if (c !== pools[d]!.length) {
+      throw new Error(`pass 2 counted ${c} stocks on day ${d} but pass 1 pooled ${pools[d]!.length}; the data changed during the run, run it again`);
+    }
+  });
 }

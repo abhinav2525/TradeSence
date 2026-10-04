@@ -258,7 +258,7 @@ export async function download(
   return { kind: "failed", message: lastMessage };
 }
 
-function unzipCsv(buf: Uint8Array): string {
+export function unzipCsv(buf: Uint8Array): string {
   const files = unzipSync(buf);
   const name = Object.keys(files).find((n) => n.toLowerCase().endsWith(".csv"));
   if (!name) throw new Error(`Archive contained no CSV (entries: ${Object.keys(files).join(", ")})`);
