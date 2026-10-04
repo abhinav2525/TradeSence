@@ -9,7 +9,7 @@ are generated from it into `drizzle/` (`drizzle.config.ts`).
 ## Files
 | File | What it's for |
 |---|---|
-| `schema.ts` | All tables. Raw, from NSE: `daily_prices` (whole market, raw bhavcopy), `daily_delivery` (traded vs delivered shares, EQ), `corporate_actions`, `symbol_changes`, `index_prices`, `index_constituents` (today's members of 43 NSE indices, with sector), `ingest_log`. Hand-kept: `index_members` (point-in-time intervals). Derived, rebuilt in full: `daily_indicators`, `unusual_days`, `volume_leaders`. Also `fund_symbols` (ETFs seen, grown nightly). Column comments explain units and nullability. |
+| `schema.ts` | All tables. Raw, from NSE: `daily_prices` (whole market, raw bhavcopy), `daily_delivery` (traded vs delivered shares, EQ), `corporate_actions`, `symbol_changes`, `index_prices`, `index_constituents` (today's members of 43 NSE indices, with sector), `ingest_log`. Hand-kept: `index_members` (point-in-time intervals). Derived, rebuilt in full: `daily_indicators`, `unusual_days`, `volume_leaders`, `money_flow` (key period, symbol), `sector_flow_weeks` (key sector, week_end), `short_sessions`. Also `fund_symbols` (ETFs seen, grown nightly). Column comments explain units and nullability. |
 | `index.ts` | Exports `sql` (postgres.js pool, `max: 8`), `db` (Drizzle over it) and `schema`. Importing it opens the connection. |
 | `url.ts` | `resolveDatabaseUrl`: falls back to the local `tradesence` database, and throws under `NODE_ENV=test` unless the name ends in `_test`. |
 
@@ -17,13 +17,14 @@ are generated from it into `drizzle/` (`drizzle.config.ts`).
 - Change a table in `schema.ts`, then `bun run db:generate && bun run db:migrate`. Don't hand-edit `drizzle/`.
 - The test guard in `url.ts` is load-bearing (root CLAUDE.md, "Test isolation"); never weaken it to a default. Covered by `tests/db-url-guard.test.ts`.
 - `daily_prices` holds raw, unadjusted prices and the whole market; adjustment and universe filtering happen at query/compute time.
-- Derived tables (`daily_indicators`, `unusual_days`, `volume_leaders`) are always recomputable; never hand-fix a row, fix the input and recompute.
+- Derived tables (`daily_indicators`, `unusual_days`, `volume_leaders`, `money_flow`, `sector_flow_weeks`, `short_sessions`) are always recomputable; never hand-fix a row, fix the input and recompute.
+- Key each derived table by how its page reads it (decision 0029); the nightly job runs `ANALYZE` on every table it rebuilds, since a full replace leaves planner statistics stale.
 - `daily_delivery` is its own table, not columns on `daily_prices` (a separate file that can fail alone); delivery % is not stored, it is deliverable ÷ traded.
 - `corporate_actions.factor` is null only for `kind = 'unparsed'`, and is 1 for `demerger` (the real factor is derived at compute time).
 - Prices are `doublePrecision`, not `numeric`: they feed averages, not ledgers.
 - `index_members.index_name` is `NIFTY50`; `index_prices.index_name` is NSE's spelling, e.g. `Nifty 50`; `index_constituents.index_key` is a slug (`total-market`, `nifty-100`). They are different strings.
 
 ## See also
-- `src/indicators/` (writes `daily_indicators`, `unusual_days`, `volume_leaders`, `fund_symbols`), `src/ingest/` (writes everything else).
+- `src/indicators/` (writes `daily_indicators`, `unusual_days`, `volume_leaders`, the three Money flow tables, `fund_symbols`), `src/ingest/` (writes everything else).
 - Decisions 0002–0006 for why the corporate-action, rename, membership and index-price tables exist; 0021, 0024, 0025 for delivery, unusual activity and Top volume.
 <!-- folder-claude-md:end -->

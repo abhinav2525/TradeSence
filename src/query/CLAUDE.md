@@ -20,7 +20,7 @@ so they can be tested without a database.
 | `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
 | `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all or NIFTY 50, sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
 | `volume.ts` | `/volume` (Top volume): `topVolume` reads `volume_leaders` joined to NSE's index lists (size group, sector, optional index filter; rank by value or shares); `sectorsPresent`; `PAGE_SIZE = 100` and pure `pageOfRows` (a page past the end shows the last, decision 0026). |
-| `money-flow.ts` | `/money-flow`: `moneyFlowRows(period)` reads `money_flow` (the page sums per sector with `sectorFlows` from `../indicators/money-flow`); `withReportCard` (drill-down links); `shortSessionsIn(period)` finds Muhurat/special-Saturday sessions in the window from market-wide ₹. |
+| `money-flow.ts` | `/money-flow`: `moneyFlowRows(period)` reads `money_flow` (the page sums per sector with `sectorFlows` from `../indicators/money-flow`); `withReportCard` (drill-down links); `shortSessionsIn(period)` reads `short_sessions` inside the window; `sectorHistory(sector)` reads `sector_flow_weeks` (52 weeks, by its key). |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
 
 ## Rules here

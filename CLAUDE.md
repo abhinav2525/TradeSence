@@ -80,7 +80,7 @@ bun run indicators                             # recompute every average (~5s)
 bun run activity                               # rebuild the Unusual activity table (~20s)
 bun run ingest:index-lists                     # today's members of 43 NSE indices (~15s)
 bun run volume-leaders                         # rebuild the Top volume table (~5s)
-bun run money-flow                             # rebuild the Money flow table (~8s)
+bun run money-flow                             # rebuild the Money flow tables + 52-week history (~10s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study

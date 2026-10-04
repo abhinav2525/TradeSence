@@ -481,8 +481,10 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `sectorFlows(rows, period)` | Per sector: ₹ vs normal (stocks with a normal), share of all ₹ now vs usual, median move, rising/falling counts; sectors under 5 stocks returned as `small`. |
 | `sectorStocks(rows, sector, period)` | A sector's stocks by extra ₹ above their normal (top 25). |
 | `cleanFlowPeriod` | The page's `period` param: "1", "5" or "21", else 5. |
-| `computeMoneyFlow` | Every Nifty Total Market stock through `loadAdjustedHistory` (EQ+BE); `money_flow` replaced in one transaction. |
-| `moneyFlowRows`, `withReportCard` | The page's reads. |
+| `computeMoneyFlow` | Every Nifty Total Market stock through `loadAdjustedHistory` (EQ+BE); `money_flow`, `sector_flow_weeks` and `short_sessions` replaced in one transaction. |
+| `weekWindows`, `weeklySectorFlows`, `HISTORY_WEEKS` | The 52-week history: week k = sessions 5k…5k+4 with its own 63-session normal (week 0 = the 1-week bar), each sector through `sectorFlows`. |
+| `marketTotals`, `shortSessions` / `shortSessionRows` | Market-wide ₹ per session; sessions under half the usual day (Muhurat, special Saturdays). |
+| `moneyFlowRows`, `withReportCard`, `sectorHistory`, `shortSessionsIn` | The page's reads (`sector_flow_weeks`, `short_sessions` by their keys). |
 
 ### `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts` and `src/query/activity.ts` — Unusual activity
 
