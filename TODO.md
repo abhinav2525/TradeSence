@@ -85,6 +85,10 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   same-stock controls).
   So: **no** caution line blaming volume on Unusual activity; at most one about big jumps
   (owner's call). Screener stays neutral on heavy-volume crossings.
+- [x] **Money flow page** (`/money-flow`, decision 0028, 5 Oct): each sector's ₹ traded vs its
+  own 3-month normal, share of trading, the stocks driving it.
+- [ ] **Money flow history**: a chart per sector of its trading vs normal over past months
+  (needs the table to keep history, or a computed series).
 - [ ] **Heavy vs light breakouts on the bigger stocks** (follow-up to 0005): among today's
   ~750 Nifty Total Market stocks heavy-volume breakouts lagged light ones by ~1 pt a month in
   both periods (an after-the-fact side row). Fix the rules first: size measured on each day

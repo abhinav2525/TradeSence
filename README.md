@@ -317,6 +317,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run activity` | Rebuild the Unusual activity table (also nightly; ~20 s) |
 | `bun run ingest:index-lists` | Download today's members of 43 NSE indices (also nightly; ~15 s) |
 | `bun run volume-leaders` | Rebuild the Top volume table (also nightly; ~5 s) |
+| `bun run money-flow` | Rebuild the Money flow table (also nightly; ~8 s) |
 | `bun run ingest:nightly` | Cron entry point: ingest recent days + recompute |
 
 ---
@@ -467,8 +468,21 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `INDEX_LISTS`, `UNIVERSE_KEY`, `SIZE_KEYS` | The 43 verified NSE index files (key, name, file, group); the universe (Nifty Total Market) and the four size lists. |
 | `parseConstituents`, `fetchConstituents`, `ingestIndexLists`, `sizeProblems` | Read an `ind_*list.csv` (header checked, quoted names); a bad download is an error, never an empty index; replace per index, keep yesterday's on failure; every universe stock in exactly one size list. |
 | `leaderStats(h, windowStarts, lastDay)`, `PERIODS` | One stock's ₹ traded, split-adjusted shares, price move and session count per window. |
+| `windowMove(h, first, last, lastDay)` | The shared rule for a window's price move: adjusted closes, ends on the latest session, no step over 5 calendar days (also used by Money flow). |
 | `computeVolumeLeaders` | Every universe stock through `loadAdjustedHistory`, plus Unusual activity counts; `volume_leaders` replaced in one transaction. |
 | `topVolume`, `sectorsPresent` | The page: rank by ₹ or shares, size / sector / index filters, Report Card links. |
+
+### `src/indicators/money-flow.ts`, `compute-money-flow.ts` and `src/query/money-flow.ts` — Money flow
+
+| Function | Notes |
+|---|---|
+| `flowWindows(days)`, `FLOW_PERIODS` | From market sessions (newest first): the last 1/5/21 sessions and the 63 before each (the normal); null without enough history. |
+| `flowStats(h, w)` | One stock's ₹ traded per window, its normal ₹ per session (needs 40 of 63 traded) and price move (`windowMove`). |
+| `sectorFlows(rows, period)` | Per sector: ₹ vs normal (stocks with a normal), share of all ₹ now vs usual, median move, rising/falling counts; sectors under 5 stocks returned as `small`. |
+| `sectorStocks(rows, sector, period)` | A sector's stocks by extra ₹ above their normal (top 25). |
+| `cleanFlowPeriod` | The page's `period` param: "1", "5" or "21", else 5. |
+| `computeMoneyFlow` | Every Nifty Total Market stock through `loadAdjustedHistory` (EQ+BE); `money_flow` replaced in one transaction. |
+| `moneyFlowRows`, `withReportCard` | The page's reads. |
 
 ### `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts` and `src/query/activity.ts` — Unusual activity
 
