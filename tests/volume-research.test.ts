@@ -58,11 +58,11 @@ test("adjustedBars: a 1:2 split inside the window looks like no split at all", (
   const dates = [day(0), day(1), day(2), day(3)];
   const split: History = {
     dates, open: [200, 200, 100, 100], high: [210, 204, 103, 101], low: [190, 196, 97, 99], close: [200, 202, 100, 100],
-    volume: [100, 120, 260, 200], turnover: [0, 0, 0, 0], factors: [2, 2, 1, 1], shareFactors: [2, 2, 1, 1],
+    volume: [100, 120, 260, 200], turnover: [0, 0, 0, 0], traded: [null, null, null, null], delivered: [null, null, null, null], factors: [2, 2, 1, 1], shareFactors: [2, 2, 1, 1],
   };
   const none: History = {
     dates, open: [100, 100, 100, 100], high: [105, 102, 103, 101], low: [95, 98, 97, 99], close: [100, 101, 100, 100],
-    volume: [200, 240, 260, 200], turnover: [0, 0, 0, 0], factors: [1, 1, 1, 1], shareFactors: [1, 1, 1, 1],
+    volume: [200, 240, 260, 200], turnover: [0, 0, 0, 0], traded: [null, null, null, null], delivered: [null, null, null, null], factors: [1, 1, 1, 1], shareFactors: [1, 1, 1, 1],
   };
   expect(adjustedBars(split)).toEqual(adjustedBars(none));
   expect(cmf(adjustedBars(split), 3)).toEqual(cmf(adjustedBars(none), 3));

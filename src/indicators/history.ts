@@ -18,6 +18,8 @@ export type History = {
   close: number[]; // raw bhavcopy prices
   volume: number[]; // raw shares
   turnover: number[];
+  traded: (number | null)[]; // shares traded per NSE's delivery file; null: no delivery row
+  delivered: (number | null)[]; // shares delivered (raw; multiply by shareFactors like volume)
   factors: number[]; // divide a raw price by this for the adjusted series
   shareFactors: number[]; // multiply raw volume by this (splits/bonuses only, never demergers)
 };
@@ -40,13 +42,18 @@ export async function loadRenames(): Promise<Rename[]> {
 
 export async function loadAdjustedHistory(symbol: string, renames: Rename[]): Promise<History | null> {
   const lineage = symbolLineage(symbol, renames);
+  // The lineage clauses say `symbol = …`, which would be ambiguous inside the
+  // join, so prices are filtered in a subquery first.
   const prices = await db.execute<{
     trade_date: string; open: number; high: number; low: number; close: number; volume: number; turnover: number;
+    traded_qty: number | null; deliverable_qty: number | null;
   }>(
-    sql`select trade_date, open, high, low, close, volume, turnover
-        from daily_prices
-        where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})
-        order by trade_date asc`,
+    sql`select p.trade_date, p.open, p.high, p.low, p.close, p.volume, p.turnover, d.traded_qty, d.deliverable_qty
+        from (select trade_date, symbol, series, open, high, low, close, volume, turnover
+              from daily_prices
+              where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})) p
+        left join daily_delivery d on d.trade_date = p.trade_date and d.symbol = p.symbol and d.series = p.series
+        order by p.trade_date asc`,
   );
   if (prices.length === 0) return null;
 
@@ -82,6 +89,8 @@ export async function loadAdjustedHistory(symbol: string, renames: Rename[]): Pr
     close,
     volume: prices.map((p) => Number(p.volume)),
     turnover: prices.map((p) => Number(p.turnover)),
+    traded: prices.map((p) => (p.traded_qty === null ? null : Number(p.traded_qty))),
+    delivered: prices.map((p) => (p.deliverable_qty === null ? null : Number(p.deliverable_qty))),
     factors: adjustmentFactors(dates, events),
     // Volume is scaled by share-count changes only: a demerger moves the price
     // but leaves the number of shares alone (decision 0008).

@@ -8,7 +8,7 @@ const bar = (tradeDate: string, symbol: string, close: number, volume: number) =
 
 describe("loadAdjustedHistory", () => {
   beforeEach(async () => {
-    for (const t of [schema.dailyPrices, schema.corporateActions, schema.symbolChanges]) await db.delete(t);
+    for (const t of [schema.dailyPrices, schema.corporateActions, schema.symbolChanges, schema.dailyDelivery]) await db.delete(t);
   });
 
   test("joins a renamed company's old symbol and adjusts prices and volume for a split", async () => {
@@ -29,6 +29,22 @@ describe("loadAdjustedHistory", () => {
     expect(h!.factors).toEqual([2, 2, 1]);
     expect(h!.shareFactors).toEqual([2, 2, 1]);
     expect(h!.volume).toEqual([100, 100, 200]); // raw; callers apply shareFactors
+  });
+
+  test("carries delivery figures across a rename, null where a day has none", async () => {
+    await db.insert(schema.dailyPrices).values([
+      bar("2026-01-01", "OLDCO", 200, 100),
+      bar("2026-01-02", "NEWCO", 200, 100),
+      bar("2026-01-05", "NEWCO", 100, 200),
+    ]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDCO", newSymbol: "NEWCO", changedOn: "2026-01-02" });
+    await db.insert(schema.dailyDelivery).values([
+      { tradeDate: "2026-01-01", symbol: "OLDCO", series: "EQ", tradedQty: 100, deliverableQty: 40 },
+      { tradeDate: "2026-01-05", symbol: "NEWCO", series: "EQ", tradedQty: 200, deliverableQty: 150 },
+    ]);
+    const h = await loadAdjustedHistory("NEWCO", await loadRenames());
+    expect(h!.traded).toEqual([100, null, 200]);
+    expect(h!.delivered).toEqual([40, null, 150]);
   });
 
   test("no prices: null", async () => {
