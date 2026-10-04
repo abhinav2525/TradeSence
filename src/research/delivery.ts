@@ -5,7 +5,11 @@
 import { segmentByGaps } from "../indicators/gaps";
 import type { History } from "../indicators/history";
 import { forwardReturnSafe, median, segmentIds } from "../indicators/signals";
-import { STUDY_HORIZONS, HEAVY, episodeStarts, fifthCuts, fifthOf } from "./volume";
+import { NOISE_PCT } from "../indicators/risk";
+import {
+  DRAWS, HEAVY, LUCK_BAR, STUDY_HORIZONS, distinctMonths, episodeStarts, fifthCuts, fifthOf, mulberry32, sameWay,
+  type Luck, type Verdict,
+} from "./volume";
 
 export const WINDOW = 20; // sessions: "its own normal"
 export const MIN_PRESENT = 15; // of WINDOW sessions with a delivery figure
@@ -141,4 +145,80 @@ export function occasionsOf(
   return episodeStarts(flags).map((i) => ({
     date: s.dates[i]!, day: dayOf(s.dates[i]!), pos: posOf(i), returns: s.returns.map((r) => r[i] ?? null),
   }));
+}
+/**
+ * Date-matched luck check (decision 0022). In each draw every occasion is
+ * replaced by a random OTHER eligible stock on the same day; beat = % of draws
+ * whose median is below the signal's (ties within NOISE_PCT count half).
+ * Occasions without a main-span return, or on a day with no other stock, are left out.
+ */
+export function matchedLuck(signal: Occasion[], pools: number[][], main: number, draws = DRAWS, seed = 1): Luck | null {
+  const usable = signal.filter((o) => {
+    const r = o.returns[main];
+    const size = pools[o.day]?.length ?? 0;
+    return r != null && size - (o.pos >= 0 ? 1 : 0) >= 1;
+  });
+  if (usable.length === 0) return null;
+  const target = median(usable.map((o) => o.returns[main]!))!;
+  const rand = mulberry32(seed);
+  const pick: number[] = new Array(usable.length);
+  let below = 0;
+  for (let d = 0; d < draws; d++) {
+    usable.forEach((o, t) => {
+      const pool = pools[o.day]!;
+      const others = pool.length - (o.pos >= 0 ? 1 : 0);
+      let k = Math.floor(rand() * others);
+      if (o.pos >= 0 && k >= o.pos) k++; // skip the stock itself
+      pick[t] = pool[k]!;
+    });
+    const m = median(pick)!;
+    if (m < target - NOISE_PCT) below += 1;
+    else if (Math.abs(m - target) <= NOISE_PCT) below += 0.5;
+  }
+  const beat = (below / draws) * 100;
+  return { beat, direction: beat >= 50 ? "better" : "worse", strength: Math.max(beat, 100 - beat) };
+}
+
+export type Part = {
+  n: number; // occasions with a main-span return
+  months: number;
+  medians: (number | null)[];
+  baseline: (number | null)[]; // median, over the occasions' days, of each day's median
+  luck: Luck | null;
+};
+
+export function part(occ: Occasion[], pools: number[][][], dayMedians: (number | null)[][], main: number): Part {
+  const horizons = pools.length;
+  const medians = Array.from({ length: horizons }, (_, h) =>
+    median(occ.map((o) => o.returns[h]).filter((v): v is number => v != null)));
+  const baseline = Array.from({ length: horizons }, (_, h) =>
+    median(occ.filter((o) => o.returns[h] != null).map((o) => dayMedians[h]![o.day]).filter((v): v is number => v != null)));
+  const counted = occ.filter((o) => o.returns[main] != null);
+  return {
+    n: counted.length, months: distinctMonths(counted.map((o) => o.date)),
+    medians, baseline, luck: matchedLuck(occ, pools[main]!, main),
+  };
+}
+
+export type DeliveryResult = {
+  name: string; discovery: Part; holdout: Part;
+  same: number; // other spans on the main span's side of the baseline (discovery)
+  effect: number | null; // discovery median − baseline at the main span, points
+  verdict: Verdict;
+};
+
+export function deliveryVerdict(name: string, discovery: Part, holdout: Part, main: number): DeliveryResult {
+  const same = sameWay(discovery.medians, discovery.baseline, main);
+  const need = Math.min(3, discovery.medians.length - 1);
+  const m = discovery.medians[main];
+  const b = discovery.baseline[main];
+  const effect = m == null || b == null ? null : m - b;
+  const dl = discovery.luck;
+  const hl = holdout.luck;
+  const confirmed = hl !== null && dl !== null && holdout.n >= MIN_EPISODES &&
+    (dl.direction === "better" ? hl.beat >= HOLDOUT_BAR : hl.beat <= 100 - HOLDOUT_BAR);
+  const build = discovery.n >= MIN_EPISODES && dl !== null && dl.strength >= LUCK_BAR && same >= need &&
+    effect !== null && Math.abs(effect) >= MIN_EFFECT && confirmed;
+  const verdict: Verdict = build ? "Build" : same >= need ? "Maybe" : "Don't build";
+  return { name, discovery, holdout, same, effect, verdict };
 }

@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
-import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS } from "../src/research/delivery";
+import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, part, deliveryVerdict, type Occasion } from "../src/research/delivery";
+import { mulberry32 } from "../src/research/volume";
 
 /** n consecutive weekdays from 2021-01-04, all fields filled, liquid. */
 function hist(n: number, over: Partial<Record<keyof History, unknown[]>> = {}): History {
@@ -163,5 +164,81 @@ describe("occasionsOf", () => {
     const occ = occasionsOf(flags, s, (d) => Number(d.slice(-2)), (i) => i + 100);
     expect(occ.map((o) => o.date)).toEqual(["2021-01-01", "2021-01-14"]);
     expect(occ[1]).toEqual({ date: "2021-01-14", day: 14, pos: 113, returns: [13] });
+  });
+});
+const occ = (day: number, pos: number, ret: number): Occasion => ({ date: `2021-01-${String(day + 1).padStart(2, "0")}`, day, pos, returns: [ret] });
+
+describe("matchedLuck", () => {
+  test("a signal far above every other stock on its days is 'better' with strength 100", () => {
+    const pools = [[0, 1, 2, 50], [0, 1, 2, 50]];
+    const l = matchedLuck([occ(0, 3, 50), occ(1, 3, 50)], pools, 0, 200)!;
+    expect(l.direction).toBe("better");
+    expect(l.strength).toBe(100);
+  });
+
+  test("never draws the stock itself, and skips a day with no other stock", () => {
+    // Day 0 holds only the signal stock; day 1 has one other stock at 0.
+    const l = matchedLuck([occ(0, 0, 5), occ(1, 0, 5)], [[5], [5, 0]], 0, 50)!;
+    expect(l.beat).toBe(100); // every draw is [0]: below 5
+  });
+
+  test("is reproducible for a seed", () => {
+    const pools = [[1, 2, 3, 4, 5], [5, 4, 3, 2, 1]];
+    const s = [occ(0, 2, 3), occ(1, 0, 5)];
+    expect(matchedLuck(s, pools, 0, 300, 7)).toEqual(matchedLuck(s, pools, 0, 300, 7));
+  });
+
+  // Calibration: a "signal" that is just random stocks should pass the 97.5 bar ~5% of the time.
+  test("random signals pass the two-sided 97.5 bar about 5% of the time", () => {
+    const rand = mulberry32(42);
+    const pools = Array.from({ length: 200 }, () => Array.from({ length: 30 }, () => rand() * 20 - 10));
+    let passes = 0;
+    const runs = 300;
+    for (let r = 0; r < runs; r++) {
+      const sig = Array.from({ length: 40 }, () => {
+        const day = Math.floor(rand() * pools.length);
+        const pos = Math.floor(rand() * 30);
+        return occ(day, pos, pools[day]![pos]!);
+      });
+      if (matchedLuck(sig, pools, 0, 200, r + 1)!.strength >= 97.5) passes++;
+    }
+    expect(passes / runs).toBeGreaterThan(0.01);
+    expect(passes / runs).toBeLessThan(0.1);
+  });
+});
+
+describe("part and deliveryVerdict", () => {
+  // Two horizons for brevity; main = 0.
+  const mk = (n: number, med: number, base: number, beat: number, same = 1) => ({
+    n, months: 12, medians: [med, med], baseline: [base, base],
+    luck: { beat, direction: beat >= 50 ? "better" as const : "worse" as const, strength: Math.max(beat, 100 - beat) },
+  });
+
+  test("part: baseline is the median of the episode days' medians", () => {
+    const pools = [[[1, 2, 3], [10, 20, 30]]];
+    const dayMedians = [[2, 20]];
+    const p = part([occ(0, 0, 1), occ(1, 0, 10)], pools, dayMedians, 0);
+    expect(p.baseline[0]).toBe(11);
+    expect(p.medians[0]).toBe(5.5);
+    expect(p.n).toBe(2);
+  });
+
+  test("Build needs discovery and hold-out both", () => {
+    const v = deliveryVerdict("x", mk(40, 2, 0, 99), mk(40, 1, 0, 96), 0);
+    expect(v.verdict).toBe("Build");
+  });
+
+  test("a discovery pass that the hold-out doesn't confirm is only Maybe", () => {
+    expect(deliveryVerdict("x", mk(40, 2, 0, 99), mk(40, 1, 0, 80), 0).verdict).toBe("Maybe");
+    expect(deliveryVerdict("x", mk(40, 2, 0, 99), mk(20, 1, 0, 99), 0).verdict).toBe("Maybe");
+  });
+
+  test("an effect under 0.5 points can't Build, however unusual", () => {
+    expect(deliveryVerdict("x", mk(40, 0.3, 0, 100), mk(40, 0.3, 0, 100), 0).verdict).toBe("Maybe");
+  });
+
+  test("a 'worse' signal is confirmed by a hold-out beat of 5 or less", () => {
+    expect(deliveryVerdict("x", mk(40, -2, 0, 1), mk(40, -1, 0, 4), 0).verdict).toBe("Build");
+    expect(deliveryVerdict("x", mk(40, -2, 0, 1), mk(40, -1, 0, 96), 0).verdict).toBe("Maybe");
   });
 });
