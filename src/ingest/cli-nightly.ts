@@ -12,6 +12,7 @@ import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
 import { computeVolumeLeaders } from "../indicators/compute-volume-leaders";
 import { computeMoneyFlow } from "../indicators/compute-money-flow";
+import { analyzeTables } from "../db/maintenance";
 import { refreshFundSymbols } from "../indicators/universe";
 import { ingestIndexLists } from "./index-constituents";
 import { computeIndicators } from "../indicators/compute";
@@ -137,10 +138,9 @@ try {
   console.warn(`[nightly] WARNING money flow not rebuilt: ${e instanceof Error ? e.message : e}`);
 }
 
-// Fresh planner statistics for the tables rebuilt in full tonight (decision 0029):
-// a full replace leaves Postgres guessing until autovacuum gets round to it.
+// Fresh planner statistics for the big raw tables and every table rebuilt tonight (decision 0029).
 try {
-  await sql`analyze daily_indicators, unusual_days, volume_leaders, money_flow, sector_flow_weeks, short_sessions`;
+  await analyzeTables(sql);
   console.log("[nightly] statistics refreshed");
 } catch (e) {
   console.warn(`[nightly] WARNING statistics not refreshed: ${e instanceof Error ? e.message : e}`);
