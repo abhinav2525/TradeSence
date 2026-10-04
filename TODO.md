@@ -75,8 +75,13 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - [x] **Re-run on the whole market** (research 0004, 4 Oct): two real effects, both the
   opposite of "volume confirms": huge volume on an up day −0.9 pts vs other stocks over a
   month; heavy-volume breakout above the 200-day average −1.2 pts (−1.9 at 6 months).
-  Confirmed on 2023–. Owner's call: a sourced caution line on Unusual activity's "Huge
-  volume" up days; don't present heavy-volume crossings as stronger on the Screener.
+  Confirmed on 2023–. Both are big up days, so the study can't separate volume from the
+  jump itself. Owner's call: a sourced caution line on Unusual activity's "Huge volume" up
+  days; don't present heavy-volume crossings as stronger on the Screener.
+- [ ] **Volume or the jump? (follow-up study)**: same-size up moves on ordinary vs huge
+  volume, rules fixed first (research 0004, "Volume or the jump?"). The review's
+  after-the-fact check: ordinary-volume 5%+ jumps lagged as much in 2016–22 but not since
+  2023; heavy-volume breakouts lagged more than light ones in both periods.
 
 ---
 

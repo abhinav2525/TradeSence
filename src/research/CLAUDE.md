@@ -18,7 +18,7 @@ Nothing here writes to the database.
 
 ## Rules here
 - Pass/fail rules are fixed in the study's spec (`docs/superpowers/specs/`) before results are seen; indicator settings are textbook, never tuned.
-- Reuse `judge` / `luckCheck` for a new study rather than new statistics. `luckCheck` draws independent days, which flatters signals that bunch up: switch to random dates before a whole-market run (research 0002 caveats, TODO).
+- Reuse the tested machinery rather than new statistics. Per-stock, whole-market studies use the same-date comparison in `delivery.ts` (`matchedLuck`, `matchedBaseline`, `part`, `deliveryVerdict`, decision 0022); `luckCheck`'s independent days flatter signals that bunch up.
 - Per-member history comes from `loadAdjustedHistory` (`src/indicators/history.ts`), so splits, demergers and renames match the nightly averages.
 - Per-stock signals count only on member days (`memberFlags`, from 2020); episodes merge within `MERGE_GAP` per stock.
 

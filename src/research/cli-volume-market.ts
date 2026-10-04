@@ -12,7 +12,7 @@ import { allFundSymbols, companies } from "../indicators/universe";
 import { STUDY_HORIZONS, fifthCuts } from "./volume";
 import { tradingDays } from "./delivery-data";
 import { DISCOVERY_END, assertAligned, deliveryVerdict, matchedBaseline, occasionsOf, part, type Occasion } from "./delivery";
-import { CHART_HORIZONS, MARKET_SIGNALS, volumeSeries, volumeSignalFlags, type VolumeSeries } from "./volume-market";
+import { CHART_HORIZONS, MARKET_SIGNALS, effectOf, volumeSeries, volumeSignalFlags, type VolumeSeries } from "./volume-market";
 
 const START = "2016-09-28";
 const VERDICT_H = STUDY_HORIZONS.map((h) => CHART_HORIZONS.indexOf(h as (typeof CHART_HORIZONS)[number]));
@@ -41,11 +41,15 @@ async function each(fn: (s: VolumeSeries) => void) {
 const pools: number[][][] = Array.from({ length: H }, () => days.map(() => []));
 const discoveryCmf: number[] = [];
 let eligibleDays = 0;
+let noMainReturn = 0; // eligible stock-days without a 1-month outcome (delisted, moved out of EQ, too recent)
+let companiesEligible = 0; // companies with at least one eligible day: the ones that actually took part
 await each((s) => {
+  if (s.eligible.some(Boolean)) companiesEligible++;
   s.dates.forEach((d, i) => {
     const day = dayIdx.get(d);
     if (day === undefined || !s.eligible[i]) return;
     eligibleDays++;
+    if (s.returns[MAIN_C]![i] == null && d <= DISCOVERY_END) noMainReturn++;
     for (let h = 0; h < H; h++) { const r = s.returns[h]![i]; if (r != null) pools[h]![day]!.push(r); }
     if (d <= DISCOVERY_END && s.cmf[i] != null) discoveryCmf.push(s.cmf[i]!);
   });
@@ -84,7 +88,8 @@ const chart = MARKET_SIGNALS.map((name, k) => {
     name,
     verdict: results[k]!.verdict,
     effect: clean(results[k]!.effect),
-    holdoutEffect: clean(results[k]!.holdout.medians[MAIN_V]! - (results[k]!.holdout.baseline[MAIN_V] ?? NaN)),
+    holdoutEffect: effectOf(results[k]!.holdout.medians[MAIN_V], results[k]!.holdout.baseline[MAIN_V]),
+    missingOutcome: disc.length ? disc.filter((o) => o.returns[MAIN_C] == null).length / disc.length : null,
     episodes: results[k]!.discovery.n,
     holdoutEpisodes: results[k]!.holdout.n,
     path: CHART_HORIZONS.map((hz, c) => ({
@@ -97,7 +102,7 @@ const chart = MARKET_SIGNALS.map((name, k) => {
 
 // print
 const luck = (l: { beat: number; direction: string } | null) => (l ? `${l.beat.toFixed(1)}% (${l.direction})` : "—");
-p(`Generated ${new Date().toISOString().slice(0, 10)} · ${stocksUsed} companies (${funds.size} fund symbols left out) · ${eligibleDays.toLocaleString("en-IN")} eligible stock-days · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+p(`Generated ${new Date().toISOString().slice(0, 10)} · ${companiesEligible} companies took part (of ${stocksUsed} loaded; ${funds.size} fund symbols left out) · ${eligibleDays.toLocaleString("en-IN")} eligible stock-days · ${((Date.now() - t0) / 1000).toFixed(0)}s`);
 p();
 p("## Results (main span: 1 month; discovery 2016–2022, hold-out 2023–)");
 p();
@@ -114,8 +119,18 @@ p(`| Signal | ${CHART_HORIZONS.map((h) => `${h}d`).join(" | ")} |`);
 p(`|---|${CHART_HORIZONS.map(() => "---").join("|")}|`);
 for (const c of chart) p(`| ${c.name} | ${c.path.map((x) => `${f(x.signal)} vs ${f(x.baseline)}`).join(" | ")} |`);
 p();
+p("## Missing outcomes (2016–2022)");
+p();
+p("Episodes with no 1-month return (the stock delisted, moved out of EQ trading, or its next 21 sessions crossed a gap), against all eligible stock-days. A big difference could bias a signal; a small one can't.");
+p();
+p("| Signal | Episodes without a 1-month return |");
+p("|---|---|");
+for (const c of chart) p(`| ${c.name} | ${c.missingOutcome === null ? "—" : `${(c.missingOutcome * 100).toFixed(1)}%`} |`);
+const eligibleDisc = pools[MAIN_C]!.reduce((n, v, d) => (days[d]! <= DISCOVERY_END ? n + v.length : n), 0) + noMainReturn;
+p(`| *All eligible stock-days* | ${((noMainReturn / eligibleDisc) * 100).toFixed(1)}% |`);
+p();
 p(`CMF top-fifth cut (discovery): ${cmfCuts[3]!.toFixed(3)}.`);
 
-if (jsonAt) writeFileSync(jsonAt, JSON.stringify({ generated: new Date().toISOString().slice(0, 10), stocks: stocksUsed, eligibleDays, signals: chart }, null, 2));
+if (jsonAt) writeFileSync(jsonAt, JSON.stringify({ generated: new Date().toISOString().slice(0, 10), companies: companiesEligible, loaded: stocksUsed, eligibleDays, signals: chart }, null, 2));
 console.log(out.join("\n"));
 await sql.end();

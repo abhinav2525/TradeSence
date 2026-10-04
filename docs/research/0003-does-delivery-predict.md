@@ -54,8 +54,8 @@ delivery spike on an up day was, if anything, slightly bad news.
 - **Signals 7–8** instead compare stocks with each other: each day, which stocks had the
   highest (or lowest) delivery over the last 20 sessions.
 - **Which stocks:** every NSE company trading at least ₹1 crore a day (median of the last
-  20 sessions), including companies later delisted: 2,949 companies, about 2.3 million
-  stock-days. **ETFs are left out** (554 fund symbols: gold, silver, liquid and index
+  20 sessions), including companies later delisted: 2,949 companies loaded, of which only
+  the days trading ₹1 crore+ count (about 2.3 million stock-days). **ETFs are left out** (554 fund symbols: gold, silver, liquid and index
   funds). They trade like shares, but their prices follow gold or interest rates, and
   their buyers nearly always hold.
 - **No peeking:** NSE publishes delivery figures in the evening, so every return starts

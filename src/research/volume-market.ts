@@ -78,3 +78,8 @@ export function volumeSignalFlags(s: VolumeSeries, cmfCuts: number[]): boolean[]
   }
   return out;
 }
+
+/** Median minus baseline, or null when either is missing (never a number made from a null). */
+export function effectOf(median: number | null | undefined, baseline: number | null | undefined): number | null {
+  return median == null || baseline == null || !Number.isFinite(median) || !Number.isFinite(baseline) ? null : median - baseline;
+}

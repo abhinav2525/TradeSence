@@ -93,3 +93,53 @@ describe("volumeSignalFlags", () => {
     expect(f[4]![30]).toBe(true);
   });
 });
+
+// ── final-review fixes ──
+import { effectOf } from "../src/research/volume-market";
+
+describe("effectOf", () => {
+  test("median minus baseline, and null when either is missing (never a fake number)", () => {
+    expect(effectOf(-0.5, 0.2)).toBeCloseTo(-0.7, 9);
+    expect(effectOf(null, 0.2)).toBeNull();
+    expect(effectOf(-0.5, null)).toBeNull();
+  });
+});
+
+describe("volumeSignalFlags, spec checks", () => {
+  test("a 1:2 split inside the window fires nothing", () => {
+    const n = 230;
+    const split = (i: number) => i >= 215;
+    const h = hist(n, {
+      close: arr(n, (i) => (split(i) ? 50 : 100)), high: arr(n, (i) => (split(i) ? 50.5 : 101)), low: arr(n, (i) => (split(i) ? 49.5 : 99)),
+      volume: arr(n, (i) => (split(i) ? 2000 : 1000)),
+      factors: arr(n, (i) => (split(i) ? 1 : 2)), shareFactors: arr(n, (i) => (split(i) ? 1 : 2)),
+    });
+    const f = volumeSignalFlags(volumeSeries(h), NO_CMF_CUTS);
+    expect([0, 1, 2, 3].map((k) => f[k]!.some(Boolean))).toEqual([false, false, false, false]);
+  });
+
+  test("a cross needs both days in one segment", () => {
+    const n = 230;
+    const h = hist(n, { close: arr(n, (i) => (i < 220 ? 100 : 110)), volume: arr(n, (i) => (i === 220 ? 3000 : 1000)) });
+    const base = new Date(`${h.dates[219]}T00:00:00Z`).getTime();
+    h.dates = h.dates.map((x, i) => (i >= 220 ? new Date(base + (40 + i - 220) * 86_400_000).toISOString().slice(0, 10) : x));
+    expect(volumeSignalFlags(volumeSeries(h), NO_CMF_CUTS)[2]!.some(Boolean)).toBe(false);
+  });
+
+  test("breakdown below the 200-day average on 2× volume", () => {
+    const n = 230;
+    const close = arr(n, (i) => (i < 219 ? 100 : i === 219 ? 101 : 90)); // yesterday strictly above, today below
+    const f = volumeSignalFlags(volumeSeries(hist(n, { close, high: close.map((c) => c + 1), low: close.map((c) => c - 1), volume: arr(n, (i) => (i === 220 ? 2000 : 1000)) })), NO_CMF_CUTS);
+    expect(f[3]![220]).toBe(true);
+    expect(f[3]!.filter(Boolean)).toHaveLength(1);
+  });
+
+  test("quiet buying: price down over 20 sessions while OBV rose", () => {
+    // gentle decline overall, but big volume on the few up days
+    const n = 60;
+    const close = arr(n, (i) => 100 - i * 0.2 + (i % 5 === 0 ? 0.6 : 0));
+    const volume = arr(n, (i) => (i % 5 === 0 ? 10000 : 1000));
+    const f = volumeSignalFlags(volumeSeries(hist(n, { close, high: close.map((c) => c + 1), low: close.map((c) => c - 1), volume })), NO_CMF_CUTS);
+    expect(f[5]!.some(Boolean)).toBe(true);
+  });
+});
