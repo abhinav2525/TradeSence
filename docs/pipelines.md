@@ -188,7 +188,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **What** | Each session's unusual stock-days: big keeping (delivered ≥ 5× normal), huge volume (traded ≥ 5× normal), delivery jump / collapse (delivery % ±30 points from normal), normal = the stock's last 20 sessions |
 | **Source** | `daily_prices` + `daily_delivery`, through `loadAdjustedHistory` (splits, renames); companies trading ≥ ₹1 crore a day, ETFs out |
 | **Writes** | `unusual_days`, replaced in full in one transaction (~84,000 rows since 27 Oct 2016; ~47 a day lately) |
-| **Nightly** | ✅ After the averages, ~21 s; a failure is a `WARNING` and the old table stays |
+| **Nightly** | ✅ After the averages, ~21 s; first tops up `fund_symbols` from the session's bhavcopy (ISIN "INF…") so new ETFs stay out. A failure is a `WARNING` and the old table stays |
 | **By hand** | `bun run activity` |
 | **Used by** | `/activity` and the Report Card's "Unusual days" card |
 | **Code** | `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts`; `src/query/activity.ts` |
