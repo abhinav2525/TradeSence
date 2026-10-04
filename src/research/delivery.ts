@@ -5,7 +5,7 @@
 import { segmentByGaps } from "../indicators/gaps";
 import type { History } from "../indicators/history";
 import { forwardReturnSafe, median, segmentIds } from "../indicators/signals";
-import { STUDY_HORIZONS } from "./volume";
+import { STUDY_HORIZONS, HEAVY, episodeStarts, fifthCuts, fifthOf } from "./volume";
 
 export const WINDOW = 20; // sessions: "its own normal"
 export const MIN_PRESENT = 15; // of WINDOW sessions with a delivery figure
@@ -80,4 +80,65 @@ export function stockSeries(h: History): StockSeries {
     h.dates.map((_, i) => (i + 1 < n && seg[i + 1] === seg[i] ? forwardReturnSafe(close, seg, i + 1, hz) : null)),
   );
   return { dates: h.dates, dp, rel, spike, level, move, eligible, returns };
+}
+export const SIGNALS = [
+  "Delivery well above its own normal",
+  "Delivery well below its own normal",
+  "Accumulation (high delivery, price up)",
+  "Distribution (high delivery, price down)",
+  "Delivery spike (≥ 2×), price up",
+  "Delivery spike (≥ 2×), price down",
+  "Long-term holders' stock (top fifth of delivery that day)",
+  "Traders' stock (bottom fifth of delivery that day)",
+] as const;
+
+type Flaggable = Pick<StockSeries, "rel" | "spike" | "level" | "move" | "eligible" | "dates">;
+
+/** The eight signals' flags, in SIGNALS order. Only eligible days can fire. */
+export function signalFlags(s: Flaggable, relCuts: number[], levelCutsOf: (date: string) => number[] | undefined): boolean[][] {
+  const out = SIGNALS.map(() => new Array<boolean>(s.dates.length).fill(false));
+  s.dates.forEach((d, i) => {
+    if (!s.eligible[i]) return;
+    const rel = s.rel[i];
+    const mv = s.move[i];
+    const up = mv != null && mv > 0;
+    const down = mv != null && mv < 0;
+    const high = rel != null && fifthOf(rel, relCuts) === 4;
+    out[0]![i] = high;
+    out[1]![i] = rel != null && fifthOf(rel, relCuts) === 0;
+    out[2]![i] = high && up;
+    out[3]![i] = high && down;
+    const sp = s.spike[i];
+    out[4]![i] = sp != null && sp >= HEAVY && up;
+    out[5]![i] = sp != null && sp >= HEAVY && down;
+    const cuts = levelCutsOf(d);
+    const lv = s.level[i];
+    if (cuts && lv != null) {
+      out[6]![i] = fifthOf(lv, cuts) === 4;
+      out[7]![i] = fifthOf(lv, cuts) === 0;
+    }
+  });
+  return out;
+}
+
+/** Fifth cut points of each date's values across stocks; dates with fewer than 5 values get none. */
+export function levelCutsByDate(byDate: Map<string, number[]>): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const [d, v] of byDate) if (v.length >= 5) out.set(d, fifthCuts(v));
+  return out;
+}
+
+export type Occasion = {
+  date: string;
+  day: number; // index into the study's list of trading days
+  pos: number; // this stock's position in that day's main-span pool; −1 if not in it
+  returns: (number | null)[]; // one per STUDY_HORIZONS
+};
+
+export function occasionsOf(
+  flags: boolean[], s: Pick<StockSeries, "dates" | "returns">, dayOf: (date: string) => number, posOf: (i: number) => number,
+): Occasion[] {
+  return episodeStarts(flags).map((i) => ({
+    date: s.dates[i]!, day: dayOf(s.dates[i]!), pos: posOf(i), returns: s.returns.map((r) => r[i] ?? null),
+  }));
 }

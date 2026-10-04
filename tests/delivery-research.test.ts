@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
-import { windowMean, stockSeries, WINDOW } from "../src/research/delivery";
+import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS } from "../src/research/delivery";
 
 /** n consecutive weekdays from 2021-01-04, all fields filled, liquid. */
 function hist(n: number, over: Partial<Record<keyof History, unknown[]>> = {}): History {
@@ -104,5 +104,64 @@ describe("stockSeries", () => {
     const none = Array.from({ length: 30 }, () => null);
     const s = stockSeries(hist(30, { traded: none, delivered: none }));
     expect(s.eligible.some(Boolean)).toBe(false);
+  });
+});
+describe("signalFlags", () => {
+  // A hand-built series: 4 days, all eligible.
+  const s = {
+    dates: ["2021-01-04", "2021-01-05", "2021-01-06", "2021-01-07"],
+    dp: [50, 50, 50, 50], rel: [30, -30, 30, 0], spike: [2.5, 1, 2, 3], level: [80, 20, 50, 50],
+    move: [1, -1, -2, 0], eligible: [true, true, true, false], returns: [],
+  };
+  const relCuts = [-20, -5, 5, 20];
+  const cuts = () => [30, 40, 60, 70];
+  const f = signalFlags(s, relCuts, cuts);
+
+  test("eight signals, in the spec's order", () => {
+    expect(SIGNALS).toHaveLength(8);
+    expect(f).toHaveLength(8);
+  });
+  test("high / low delivery against its own normal", () => {
+    expect(f[0]).toEqual([true, false, true, false]);
+    expect(f[1]).toEqual([false, true, false, false]);
+  });
+  test("accumulation needs a rise, distribution a fall", () => {
+    expect(f[2]).toEqual([true, false, false, false]);
+    expect(f[3]).toEqual([false, false, true, false]);
+  });
+  test("spike at exactly 2× counts; price direction splits it; ineligible days never fire", () => {
+    expect(f[4]).toEqual([true, false, false, false]);
+    expect(f[5]).toEqual([false, false, true, false]);
+  });
+  test("level fifths are cut across stocks on each day", () => {
+    expect(f[6]).toEqual([true, false, false, false]);
+    expect(f[7]).toEqual([false, true, false, false]);
+  });
+  test("a day with no level cuts fires neither level signal", () => {
+    const g = signalFlags(s, relCuts, () => undefined);
+    expect(g[6]!.some(Boolean) || g[7]!.some(Boolean)).toBe(false);
+  });
+});
+
+describe("levelCutsByDate", () => {
+  test("cuts each date's values into fifths; too few values gives no cuts", () => {
+    const m = levelCutsByDate(new Map([["d1", [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]], ["d2", [1, 2]]]));
+    expect(m.get("d1")).toHaveLength(4);
+    expect(m.has("d2")).toBe(false);
+  });
+});
+
+describe("occasionsOf", () => {
+  test("one occasion per episode start, carrying its returns, day and pool position", () => {
+    // Days 1 and 13 are 11 sessions apart (> MERGE_GAP 10): two episodes. Day 12 would merge.
+    const flags = [true, true, false, false, false, false, false, false, false, false, false, false, false, true];
+    const s = {
+      dates: flags.map((_, i) => `2021-01-${String(i + 1).padStart(2, "0")}`),
+      dp: [], rel: [], spike: [], level: [], move: [], eligible: [],
+      returns: [flags.map((_, i) => i * 1.0)],
+    };
+    const occ = occasionsOf(flags, s, (d) => Number(d.slice(-2)), (i) => i + 100);
+    expect(occ.map((o) => o.date)).toEqual(["2021-01-01", "2021-01-14"]);
+    expect(occ[1]).toEqual({ date: "2021-01-14", day: 14, pos: 113, returns: [13] });
   });
 });
