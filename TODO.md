@@ -94,6 +94,28 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   both periods (an after-the-fact side row). Fix the rules first: size measured on each day
   (not today's list), and a stock's own days never used as its controls.
 
+### Who moved the money (data checked 5 Oct 2026) — recommended order
+- [ ] **1. Foreign investor (FII/FPI) flows since 2016.** Daily gross buys, sells and net ₹
+  in Indian shares on the exchanges, from NSDL (official depository):
+  `https://www.fpi.nsdl.co.in/web/Reports/Latest.aspx` (latest day) and `Archive.aspx`
+  (ASP.NET form: post `hdnDate`/`txtDate` as `DD-Mon-YYYY` with `__EVENTTARGET=btnSubmit1`;
+  returns that whole month day by day, checked for Sep 2016). ~120 requests for the backfill,
+  then nightly. Row to use: "Equity / Stock Exchange". Example: 1 Oct 2026 net −₹9,569.57 cr.
+  Show: daily/weekly chart of foreign net buying beside the market. Facts, not signals.
+- [ ] **2. Bulk and block deals, saved nightly from now on.** Latest day only:
+  `nsearchives.nseindia.com/content/equities/bulk.csv` and `block.csv` (columns: Date,
+  Symbol, Security Name, Client Name, Buy/Sell, Quantity, Price; bulk also Remarks). The
+  history is only on NSE's main website, which blocks automated downloads (403); don't try to
+  get round it. History grows from the first night. Show "who traded" on Unusual activity,
+  Money flow's stock list and stock pages once a few weeks exist.
+  - [ ] Optional, owner's call: one-time backfill from files the owner downloads by hand from
+    NSE's bulk/block deals page in a browser; we import them.
+- [ ] **3. Indian institutions (DII) — find a source first.** NSE's daily FII/DII cash figure
+  is on the blocked main website. SEBI publishes mutual funds' daily equity buying/selling,
+  but no downloadable page was found in a quick check. Research before designing.
+- [ ] **Later:** delivery % by sector on Money flow ("holding vs day-trading"), and a volume
+  chart for every Nifty Total Market stock (volume, its normal, delivery %).
+
 ---
 
 ## Explain-terms polish (deferred from the decision 0012 review) — n
