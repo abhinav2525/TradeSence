@@ -200,8 +200,38 @@ export const moneyFlow = pgTable(
     sessions: integer("sessions").notNull(),
     changePct: doublePrecision("change_pct"),
   },
-  (t) => [primaryKey({ columns: [t.symbol, t.period] })],
+  // period first: the page always reads one period (decision 0029)
+  (t) => [primaryKey({ columns: [t.period, t.symbol] })],
 );
+
+/**
+ * Money flow history: each sector's 1-week trading vs normal for the last 52 weeks
+ * (week k = sessions 5k … 5k+4; week 0 = the page's 1-week bar). Keyed by how the
+ * page reads it: one sector, in week order. Rebuilt nightly with money_flow.
+ */
+export const sectorFlowWeeks = pgTable(
+  "sector_flow_weeks",
+  {
+    weekEnd: date("week_end").notNull(),
+    sector: text("sector").notNull(),
+    ratio: doublePrecision("ratio"),
+    medianMove: doublePrecision("median_move"),
+    stocks: integer("stocks").notNull(),
+    shortSession: boolean("short_session").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.sector, t.weekEnd] })],
+);
+
+/**
+ * Sessions where the Nifty Total Market traded under half its usual day (Diwali
+ * Muhurat, special Saturdays): every sector looks quiet then. Found nightly so the
+ * page doesn't sum daily_prices on every view.
+ */
+export const shortSessions = pgTable("short_sessions", {
+  tradeDate: date("trade_date").primaryKey(),
+  marketTurnover: doublePrecision("market_turnover").notNull(),
+  usualTurnover: doublePrecision("usual_turnover").notNull(),
+});
 
 /**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole

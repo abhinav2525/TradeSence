@@ -16,7 +16,7 @@ const price = (tradeDate: string, symbol: string, turnover: number) =>
 
 describe("computeMoneyFlow", () => {
   beforeEach(async () => {
-    for (const t of [schema.dailyPrices, schema.ingestLog, schema.moneyFlow, schema.indexConstituents, schema.symbolChanges]) await db.delete(t);
+    for (const t of [schema.dailyPrices, schema.ingestLog, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions, schema.indexConstituents, schema.symbolChanges]) await db.delete(t);
   });
 
   test("three periods per stock, a renamed stock's normal includes its old symbol, re-run replaces", async () => {
@@ -45,6 +45,25 @@ describe("computeMoneyFlow", () => {
   test("too little history for a normal window: nothing written", async () => {
     const days = weekdays(30);
     await db.insert(schema.ingestLog).values(days.map((d) => ({ tradeDate: d, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 1 })));
-    expect(await computeMoneyFlow()).toEqual({ rows: 0, asOf: null });
+    expect(await computeMoneyFlow()).toEqual({ rows: 0, weeks: 0, shortSessions: 0, asOf: null });
+  });
+
+  test("history: 52 weeks for a 5-stock sector, a low market day flagged, re-run replaces", async () => {
+    const days = weekdays(400);
+    const low = days[390]!; // a short special session near the end
+    const syms = ["S1", "S2", "S3", "S4", "S5"];
+    await db.insert(schema.ingestLog).values(days.map((d) => ({ tradeDate: d, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 5 })));
+    for (const s of syms) {
+      await db.insert(schema.dailyPrices).values(days.map((d) => price(d, s, d === low ? 1e6 : 1e7)));
+    }
+    await db.insert(schema.indexConstituents).values(syms.map((symbol) => ({ indexKey: "total-market", symbol, industry: "Information Technology", fetchedOn: days.at(-1)! })));
+    await computeMoneyFlow();
+    await computeMoneyFlow();
+    const weeks = await db.select().from(schema.sectorFlowWeeks);
+    expect(weeks).toHaveLength(52);
+    expect(weeks.every((w) => w.sector === "Information Technology")).toBe(true);
+    const shortRows = await db.select().from(schema.shortSessions);
+    expect(shortRows.map((r) => r.tradeDate)).toEqual([low]);
+    expect(weeks.filter((w) => w.shortSession)).toHaveLength(1);
   });
 });

@@ -132,9 +132,18 @@ try {
 // Money flow page (spec 2026-10-05): same universe and sectors as Top volume.
 try {
   const mf = await computeMoneyFlow();
-  console.log(`[nightly] money flow: ${mf.rows} rows as of ${mf.asOf}`);
+  console.log(`[nightly] money flow: ${mf.rows} rows, ${mf.weeks} sector-weeks as of ${mf.asOf}`);
 } catch (e) {
   console.warn(`[nightly] WARNING money flow not rebuilt: ${e instanceof Error ? e.message : e}`);
+}
+
+// Fresh planner statistics for the tables rebuilt in full tonight (decision 0029):
+// a full replace leaves Postgres guessing until autovacuum gets round to it.
+try {
+  await sql`analyze daily_indicators, unusual_days, volume_leaders, money_flow, sector_flow_weeks, short_sessions`;
+  console.log("[nightly] statistics refreshed");
+} catch (e) {
+  console.warn(`[nightly] WARNING statistics not refreshed: ${e instanceof Error ? e.message : e}`);
 }
 
 await sql.end();

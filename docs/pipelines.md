@@ -228,9 +228,9 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 
 | | |
 |---|---|
-| **What** | Per Nifty Total Market stock and window (last 1/5/21 market sessions): ₹ traded, its normal ₹ per session over the 63 sessions before the window (needs 40 traded), price move, NSE sector. The page sums these per sector |
-| **Writes** | `money_flow`, replaced in one transaction (~2,250 rows) |
-| **Nightly** | ✅ After Top volume, a few seconds |
+| **What** | Per Nifty Total Market stock and window (last 1/5/21 market sessions): ₹ traded, its normal ₹ per session over the 63 sessions before the window (needs 40 traded), price move, NSE sector (the page sums per sector). Plus each sector's 1-week reading for the last 52 weeks, and short special sessions (market-wide ₹ under half usual) |
+| **Writes** | `money_flow` (~2,250 rows), `sector_flow_weeks` (~1,000), `short_sessions` (a few), replaced together in one transaction; then `ANALYZE` of every table rebuilt nightly |
+| **Nightly** | ✅ After Top volume, ~10 s |
 | **By hand** | `bun run money-flow` |
 | **Used by** | `/money-flow` |
 | **Code** | `src/indicators/money-flow.ts`, `compute-money-flow.ts`; `src/query/money-flow.ts` |

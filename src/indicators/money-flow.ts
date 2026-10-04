@@ -33,10 +33,15 @@ const SHORT_LOOKBACK = 63, SHORT_MIN_HISTORY = 20;
  * trade 9–20% of normal, so every sector looks quiet. `totals` oldest first.
  */
 export function shortSessions(totals: { date: string; turnover: number }[]): string[] {
+  return shortSessionRows(totals).map((r) => r.date);
+}
+
+/** shortSessions with the day's market-wide ₹ and its usual, for the short_sessions table. */
+export function shortSessionRows(totals: { date: string; turnover: number }[]): { date: string; turnover: number; usual: number }[] {
   return totals.flatMap((t, i) => {
     if (i < SHORT_MIN_HISTORY) return [];
     const usual = median(totals.slice(Math.max(0, i - SHORT_LOOKBACK), i).map((x) => x.turnover));
-    return usual !== null && usual > 0 && t.turnover < SHORT_SESSION_X * usual ? [t.date] : [];
+    return usual !== null && usual > 0 && t.turnover < SHORT_SESSION_X * usual ? [{ date: t.date, turnover: t.turnover, usual }] : [];
   });
 }
 

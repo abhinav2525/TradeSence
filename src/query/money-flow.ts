@@ -2,7 +2,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { INDEX_NAME } from "../ingest/nifty50";
-import { FLOW_PERIODS, NORMAL_SESSIONS, shortSessions, type FlowPeriod, type FlowRow } from "../indicators/money-flow";
+import type { FlowPeriod, FlowRow } from "../indicators/money-flow";
 
 export async function moneyFlowRows(period: FlowPeriod): Promise<{ asOf: string | null; rows: FlowRow[] }> {
   const rows = await db.execute<{ symbol: string; sector: string; turnover: number; normal_daily: number | null; change_pct: number | null }>(sql`
@@ -28,21 +28,25 @@ export async function withReportCard(symbols: string[]): Promise<Set<string>> {
   return new Set(r.map((x) => x.symbol));
 }
 
-/**
- * Short special sessions (Muhurat, special Saturdays) inside the period's window,
- * judged on the universe's market-wide ₹ per session, so the page can say why every
- * sector looks quiet. Renamed stocks' old symbols are left out: negligible in a total.
- */
+/** Short special sessions inside the period's window, from the nightly short_sessions table. */
 export async function shortSessionsIn(period: FlowPeriod): Promise<string[]> {
   const days = (await db.execute<{ d: string }>(sql`
     select trade_date::text d from ingest_log where source = 'bhavcopy' and status = 'ok'
-    order by trade_date desc limit ${FLOW_PERIODS.at(-1)! + NORMAL_SESSIONS}`)).map((r) => r.d);
+    order by trade_date desc limit ${period}`)).map((r) => r.d);
   if (days.length < period) return [];
-  const totals = await db.execute<{ d: string; t: number }>(sql`
-    select p.trade_date::text d, sum(p.turnover) t from daily_prices p
-    join index_constituents u on u.index_key = 'total-market' and u.symbol = p.symbol
-    where p.series in ('EQ', 'BE') and p.trade_date >= ${days.at(-1)!}
-    group by 1 order by 1`);
-  const start = days[period - 1]!;
-  return shortSessions(totals.map((x) => ({ date: x.d, turnover: Number(x.t) }))).filter((d) => d >= start);
+  const r = await db.execute<{ d: string }>(sql`
+    select trade_date::text d from short_sessions where trade_date >= ${days.at(-1)!} order by 1`);
+  return r.map((x) => x.d);
+}
+
+export type HistoryPoint = { weekEnd: string; ratio: number | null; medianMove: number | null; shortSession: boolean };
+
+/** One sector's weekly trading vs normal, oldest first (sector_flow_weeks, keyed by sector then week). */
+export async function sectorHistory(sector: string): Promise<HistoryPoint[]> {
+  const r = await db.execute<{ week_end: string; ratio: number | null; median_move: number | null; short_session: boolean }>(sql`
+    select week_end::text, ratio, median_move, short_session from sector_flow_weeks where sector = ${sector} order by week_end`);
+  return r.map((x) => ({
+    weekEnd: x.week_end, ratio: x.ratio === null ? null : Number(x.ratio),
+    medianMove: x.median_move === null ? null : Number(x.median_move), shortSession: x.short_session,
+  }));
 }
