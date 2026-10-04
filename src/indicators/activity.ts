@@ -73,7 +73,7 @@ export type UnusualRow = {
   turnover: number; // ₹ traded that day
 };
 
-const dayGap = (a: string, b: string) => (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000;
+export const dayGap = (a: string, b: string) => (Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000;
 const ratio = (x: number | null, m: number | null) => (x === null || m === null || m === 0 ? null : x / m);
 
 /** One company's unusual sessions: liquid days where at least one kind fires (spec thresholds). */
