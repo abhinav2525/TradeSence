@@ -6,6 +6,7 @@ import StockChecks, { LightSummary, checksOf } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
 import RiskCalculator from "@/components/RiskCalculator";
 import UnusualDaysCard from "@/components/UnusualDaysCard";
+import { chartDrawdown, chartPrice } from "@/lib/chart-data";
 import { recentUnusual } from "@/query/activity";
 import CrashTable from "@/components/CrashTable";
 import StockPriceChart from "@/components/StockPriceChart";
@@ -109,13 +110,13 @@ export default async function Page({
         <RiskCalculator symbol={symbol} horizons={r.horizons} initial={h} firstDate={r.firstDate} />
         <CrashTable crashes={r.crashes} />
         <Card>
-          <StockPriceChart data={r.price} selectedDate={r.requested ? r.date : null} />
+          <StockPriceChart data={chartPrice(r.price)} selectedDate={r.requested ? r.date : null} />
           <CardFooter>Adjusted for splits, bonuses and demergers, in the rupees of {formatDate(r.date)}.</CardFooter>
         </Card>
         <div className="grid gap-cards xl:grid-cols-12">
           <Card className="xl:col-span-8">
             <DrawdownChart
-              data={r.drawdown}
+              data={chartDrawdown(r.drawdown)}
               trough={r.worstFall.stock ? { date: r.worstFall.stock.troughDate, pct: r.worstFall.stock.depthPct } : null}
             />
           </Card>

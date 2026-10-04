@@ -47,3 +47,16 @@ export async function sectorsPresent(): Promise<string[]> {
     select distinct industry from index_constituents where index_key = ${UNIVERSE_KEY} and industry <> '' order by 1`);
   return r.map((x) => x.industry);
 }
+
+/**
+ * The leaderboard in pages of 100 (decision 0026): all 747 rows made a 2.7 MB
+ * page that tripped Next's gzip "MaxListeners" warning and loaded slowly on a
+ * phone. A page past the end shows the last one.
+ */
+export const PAGE_SIZE = 100;
+export function pageOfRows<T>(rows: T[], page: number): { rows: T[]; page: number; pages: number; first: number } {
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const p = Math.min(Math.max(1, page), pages);
+  const first = (p - 1) * PAGE_SIZE;
+  return { rows: rows.slice(first, first + PAGE_SIZE), page: p, pages, first: first + 1 };
+}

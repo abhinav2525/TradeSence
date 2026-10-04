@@ -34,3 +34,13 @@ describe("topVolume", () => {
     expect(await sectorsPresent()).toEqual(["Financial Services", "Information Technology"]);
   });
 });
+
+import { pageOfRows, PAGE_SIZE } from "../src/query/volume";
+test("the leaderboard pages through 100 rows at a time", () => {
+  const rows = Array.from({ length: 250 }, (_, i) => i);
+  expect(PAGE_SIZE).toBe(100);
+  expect(pageOfRows(rows, 1)).toEqual({ rows: rows.slice(0, 100), page: 1, pages: 3, first: 1 });
+  expect(pageOfRows(rows, 3)).toEqual({ rows: rows.slice(200), page: 3, pages: 3, first: 201 });
+  expect(pageOfRows(rows, 9).page).toBe(3); // past the end: the last page
+  expect(pageOfRows([], 1)).toEqual({ rows: [], page: 1, pages: 1, first: 1 });
+});

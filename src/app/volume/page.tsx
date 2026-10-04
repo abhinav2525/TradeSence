@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
 import { INDEX_LISTS, UNIVERSE_KEY } from "@/ingest/index-constituents";
 import type { Period } from "@/indicators/volume-leaders";
-import { sectorsPresent, topVolume, type RankBy, type SizeGroup } from "@/query/volume";
+import { PAGE_SIZE, pageOfRows, sectorsPresent, topVolume, type RankBy, type SizeGroup } from "@/query/volume";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ const select = "h-8 rounded-[8px] border border-input bg-card px-2 text-body-sm 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; period?: string; rank?: string; size?: string; sector?: string; index?: string }>;
+  searchParams: Promise<{ ma?: string; period?: string; rank?: string; size?: string; sector?: string; index?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
@@ -62,8 +62,10 @@ export default async function Page({
   const sector = sp.sector && sectors.includes(sp.sector) ? sp.sector : null;
   const indexKey = sp.index && PICKABLE.some((x) => x.key === sp.index) ? sp.index : null;
   const { asOf, rows } = await topVolume({ period, rank, size, sector, indexKey });
+  const wantedPage = /^[1-9][0-9]{0,2}$/.test(sp.page ?? "") ? Number(sp.page) : 1;
+  const pg = pageOfRows(rows, wantedPage);
 
-  const state = { period: String(period), rank, size: size ?? "", sector: sector ?? "", index: indexKey ?? "" };
+  const state = { period: String(period), rank, size: size ?? "", sector: sector ?? "", index: indexKey ?? "", page: "" };
   const href = (p: Partial<typeof state>) => {
     const q = new URLSearchParams({ ma, ...state, ...p });
     for (const [k, v] of [...q.entries()]) if (v === "") q.delete(k);
@@ -153,7 +155,16 @@ export default async function Page({
             <Badge variant="neutral">{rows.length} {rows.length === 1 ? "stock" : "stocks"}</Badge>
           </div>
 
-          <VolumeTable rows={rows} rank={rank} period={period} empty="No stock matches these filters." />
+          <VolumeTable rows={pg.rows} firstRank={pg.first} rank={rank} period={period} empty="No stock matches these filters." />
+          {pg.pages > 1 && (
+            <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-2 border-t px-card-x py-3 text-[12px] text-foreground-2">
+              <span>Showing {pg.first}–{pg.first + pg.rows.length - 1} of {rows.length}</span>
+              <span className="flex items-center gap-3">
+                {pg.page > 1 && <Link href={href({ page: String(pg.page - 1) })} className="font-medium text-brand hover:underline">Previous {PAGE_SIZE}</Link>}
+                {pg.page < pg.pages && <Link href={href({ page: String(pg.page + 1) })} className="font-medium text-brand hover:underline">Next {PAGE_SIZE}</Link>}
+              </span>
+            </nav>
+          )}
           <CardFooter>
             Index members and sectors as of today, from NSE&apos;s lists. Shares are adjusted for splits and bonuses.
             Report Cards cover stocks that have been in the NIFTY 50 since 2020.

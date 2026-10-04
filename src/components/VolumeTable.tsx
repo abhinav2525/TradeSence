@@ -10,7 +10,7 @@ export const SIZE_LABEL: Record<SizeGroup, string> = { large: "Large", mid: "Mid
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
 /** The leaderboard. The ranked measure is bold; NIFTY 50 Report Cards are linked where one exists. */
-export default function VolumeTable({ rows, rank, period, empty }: { rows: LeaderRow[]; rank: RankBy; period: number; empty: string }) {
+export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }: { rows: LeaderRow[]; firstRank?: number; rank: RankBy; period: number; empty: string }) {
   if (rows.length === 0) return <p className="px-card-x py-8 text-body-sm text-muted-foreground">{empty}</p>;
   return (
     <div className="max-h-[560px] overflow-auto">
@@ -30,7 +30,7 @@ export default function VolumeTable({ rows, rank, period, empty }: { rows: Leade
         <TableBody>
           {rows.map((r, i) => (
             <TableRow key={r.symbol} className="hover:bg-raised">
-              <TableCell className="py-cell pl-card-x pr-2 text-body-sm text-muted-foreground">{i + 1}</TableCell>
+              <TableCell className="py-cell pl-card-x pr-2 text-body-sm text-muted-foreground">{firstRank + i}</TableCell>
               <TableCell className="px-3 py-cell text-body-sm">
                 <span className="font-semibold text-foreground">
                   {r.hasCard ? (
