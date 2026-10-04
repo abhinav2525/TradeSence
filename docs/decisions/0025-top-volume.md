@@ -48,6 +48,27 @@ classified" bucket.
 8. **No research findings on the page.** It says heavy trading shows where money moved,
    not where prices go next; whether to quote research 0004 waits for its follow-up study.
 
+## Found by the independent review (fixed)
+
+- **Stocks in the trade-for-trade segment (BE) were cut short.** Only normal (EQ) days were
+  counted, so the 7 universe stocks currently in BE (HFCL, STLTECH, MTARTECH, E2E, DIACABS,
+  LOTUSDEV, SIGMAADV) vanished from the 1-day and 1-week tabs and showed tiny totals (HFCL's
+  month: ₹394 crore from one EQ day). The page now counts EQ and BE days
+  (`loadAdjustedHistory(…, { series: ["EQ", "BE"] })`; a date with both sums volume and
+  turnover and keeps the EQ price; averages and returns elsewhere stay EQ-only). After:
+  all 747 stocks in every tab; HFCL's month ₹3,616 crore over 21 sessions.
+- **HEGAM's made-up −68% came back here.** The price move now follows decision 0024's rule
+  (no move across a step of more than 5 calendar days) and is shown only when the stock
+  traded on the latest session, since the heading says "to <date>". With BE days included,
+  HEGAM's 7 Sep demerger can be priced: its month reads −8.2%. TradingView shows −9.8%; the
+  1.6-point gap is the demerger ratio (decision 0004's last close ÷ ex-date open gives 2.80,
+  TradingView uses 2.75; NSE's file has no adjusted base price). A known limit of 0004, not
+  of this page (TODO).
+- **A cut-short NSE file can't shrink a list overnight:** a new list under 90% of the stored
+  one is refused and yesterday's kept, with a WARNING. The index-list step is wrapped so a
+  database error there can't skip the rest of the nightly job. Glossary copy no longer
+  hard-codes counts.
+
 ## Limits
 
 NSE publishes only **today's** member lists, so the page shows today's members ranked over

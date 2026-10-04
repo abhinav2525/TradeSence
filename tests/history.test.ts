@@ -47,6 +47,22 @@ describe("loadAdjustedHistory", () => {
     expect(h!.delivered).toEqual([40, null, 150]);
   });
 
+  // Top volume counts trade-for-trade (BE) days too: a stock moved there is often the news.
+  test("series option includes BE days, merged with EQ when both exist on a date", async () => {
+    await db.insert(schema.dailyPrices).values([
+      bar("2026-01-01", "ABC", 100, 10),
+      { ...bar("2026-01-02", "ABC", 90, 20), series: "BE" },
+      bar("2026-01-05", "ABC", 95, 30),
+      { ...bar("2026-01-05", "ABC", 94, 5), series: "BE" },
+    ]);
+    const eqOnly = await loadAdjustedHistory("ABC", []);
+    expect(eqOnly!.dates).toEqual(["2026-01-01", "2026-01-05"]);
+    const both = await loadAdjustedHistory("ABC", [], { series: ["EQ", "BE"] });
+    expect(both!.dates).toEqual(["2026-01-01", "2026-01-02", "2026-01-05"]);
+    expect(both!.volume).toEqual([10, 20, 35]); // the shared date sums both series
+    expect(both!.close).toEqual([100, 90, 95]); // and keeps the EQ price
+  });
+
   test("no prices: null", async () => {
     expect(await loadAdjustedHistory("NOPE", [])).toBeNull();
   });

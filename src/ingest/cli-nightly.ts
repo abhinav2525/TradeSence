@@ -95,10 +95,14 @@ const rows = await computeIndicators("NIFTY50", {
 console.log(`[nightly] indicators: ${rows} rows`);
 
 // Today's NSE index members (Top volume page). Failed lists keep yesterday's members.
-const lists = await ingestIndexLists();
-console.log(`[nightly] index lists: ${lists.ok} loaded`);
-if (lists.failed.length) console.warn(`[nightly] WARNING index lists not refreshed: ${lists.failed.join(", ")}`);
-for (const p of lists.sizeProblems) console.warn(`[nightly] WARNING size group: ${p}`);
+try {
+  const lists = await ingestIndexLists();
+  console.log(`[nightly] index lists: ${lists.ok} loaded`);
+  if (lists.failed.length) console.warn(`[nightly] WARNING index lists not refreshed: ${lists.failed.join(", ")}`);
+  for (const p of lists.sizeProblems) console.warn(`[nightly] WARNING size group: ${p}`);
+} catch (e) {
+  console.warn(`[nightly] WARNING index lists not refreshed: ${e instanceof Error ? e.message : e}`);
+}
 
 // New ETFs first, so a fund listed today can't show up as an unusual company.
 const [lastDay] = await sql<{ d: string | null }[]>`

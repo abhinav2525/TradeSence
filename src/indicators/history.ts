@@ -40,21 +40,48 @@ export async function loadRenames(): Promise<Rename[]> {
   ).map((r) => ({ oldSymbol: r.old_symbol, newSymbol: r.new_symbol, changedOn: r.changed_on }));
 }
 
-export async function loadAdjustedHistory(symbol: string, renames: Rename[]): Promise<History | null> {
+/**
+ * `series` defaults to EQ only, which everything that computes averages and
+ * returns uses. Top volume passes ["EQ", "BE"]: a stock moved to trade-for-trade
+ * (BE) still trades, often while it's in the news (decision 0025). A date with
+ * rows in both series sums volume and turnover and keeps the EQ prices.
+ */
+export async function loadAdjustedHistory(
+  symbol: string, renames: Rename[], opts: { series?: string[] } = {},
+): Promise<History | null> {
   const lineage = symbolLineage(symbol, renames);
-  // The lineage clauses say `symbol = …`, which would be ambiguous inside the
-  // join, so prices are filtered in a subquery first.
-  const prices = await db.execute<{
+  const series = opts.series ?? ["EQ"];
+  const where = sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `);
+  type Row = {
     trade_date: string; open: number; high: number; low: number; close: number; volume: number; turnover: number;
     traded_qty: number | null; deliverable_qty: number | null;
-  }>(
-    sql`select p.trade_date, p.open, p.high, p.low, p.close, p.volume, p.turnover, d.traded_qty, d.deliverable_qty
-        from (select trade_date, symbol, series, open, high, low, close, volume, turnover
-              from daily_prices
-              where series = 'EQ' and (${sql.join(lineage.map((e) => inWindow(sql`trade_date`, e)), sql` or `)})) p
-        left join daily_delivery d on d.trade_date = p.trade_date and d.symbol = p.symbol and d.series = p.series
-        order by p.trade_date asc`,
-  );
+  };
+  // The lineage clauses say `symbol = …`, which would be ambiguous inside the
+  // join, so prices are filtered in a subquery first.
+  const prices = series.length === 1 && series[0] === "EQ"
+    ? await db.execute<Row>(
+      sql`select p.trade_date, p.open, p.high, p.low, p.close, p.volume, p.turnover, d.traded_qty, d.deliverable_qty
+          from (select trade_date, symbol, series, open, high, low, close, volume, turnover
+                from daily_prices
+                where series = 'EQ' and (${where})) p
+          left join daily_delivery d on d.trade_date = p.trade_date and d.symbol = p.symbol and d.series = p.series
+          order by p.trade_date asc`,
+    )
+    : await db.execute<Row>(
+      sql`select p.trade_date,
+                 (array_agg(p.open order by (p.series = 'EQ') desc))[1] as open,
+                 (array_agg(p.high order by (p.series = 'EQ') desc))[1] as high,
+                 (array_agg(p.low order by (p.series = 'EQ') desc))[1] as low,
+                 (array_agg(p.close order by (p.series = 'EQ') desc))[1] as close,
+                 sum(p.volume) as volume, sum(p.turnover) as turnover,
+                 max(d.traded_qty) as traded_qty, max(d.deliverable_qty) as deliverable_qty
+          from (select trade_date, symbol, series, open, high, low, close, volume, turnover
+                from daily_prices
+                where series in (${sql.join(series.map((x) => sql`${x}`), sql`, `)}) and (${where})) p
+          left join daily_delivery d on d.trade_date = p.trade_date and d.symbol = p.symbol and d.series = p.series
+          group by p.trade_date
+          order by p.trade_date asc`,
+    );
   if (prices.length === 0) return null;
 
   // NSE files past actions under the company's *current* symbol (UNOMINDA's

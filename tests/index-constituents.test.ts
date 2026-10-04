@@ -62,3 +62,19 @@ describe("ingestIndexLists", () => {
     expect(SIZE_KEYS.large).toBe("nifty-100");
   });
 });
+
+describe("ingestIndexLists, review fixes", () => {
+  beforeEach(async () => { await db.delete(schema.indexConstituents); });
+  // A cut-short file must not shrink the universe overnight.
+  test("refuses a list far smaller than the one stored, keeping yesterday's", async () => {
+    const today = "2026-10-01";
+    await db.insert(schema.indexConstituents).values(
+      Array.from({ length: 20 }, (_, i) => ({ indexKey: "nifty-50", symbol: `S${i}`, industry: "X", fetchedOn: today })),
+    );
+    const download = async () => ({ kind: "ok" as const, bytes: bytes(FILE) }); // 2 rows
+    const r = await ingestIndexLists({ download, delayMs: 0 });
+    expect(r.failed).toContain("NIFTY 50");
+    const kept = await db.select().from(schema.indexConstituents);
+    expect(kept.filter((k) => k.indexKey === "nifty-50")).toHaveLength(20);
+  });
+});

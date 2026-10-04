@@ -11,6 +11,7 @@ import { download } from "./bhavcopy";
 
 const BASE = "https://nsearchives.nseindia.com/content/indices/";
 const REQUIRED = ["Company Name", "Industry", "Symbol", "Series", "ISIN Code"];
+const MIN_KEEP = 0.9; // a new list must hold at least 90% of the stored one
 
 export const INDEX_LISTS = [
   { key: "total-market", name: "Nifty Total Market", file: "ind_niftytotalmarket_list.csv", group: "broad" },
@@ -111,7 +112,11 @@ export async function ingestIndexLists(opts: { download?: typeof download; delay
   let ok = 0;
   for (const [i, ix] of INDEX_LISTS.entries()) {
     const r = await fetchConstituents(ix.file, { download: opts.download });
-    if (r.status === "error") failed.push(ix.name);
+    // A list far shorter than the stored one is a cut-short file, not a real
+    // change (index sizes are fixed or move a few at a time): keep yesterday's.
+    const stored = (await db.select({ s: schema.indexConstituents.symbol }).from(schema.indexConstituents)
+      .where(eq(schema.indexConstituents.indexKey, ix.key))).length;
+    if (r.status === "error" || (stored > 0 && r.rows.length < stored * MIN_KEEP)) failed.push(ix.name);
     else {
       const rows = [...new Map(r.rows.map((x) => [x.symbol, x])).values()]; // NSE can repeat a row
       await db.transaction(async (tx) => {

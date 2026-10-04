@@ -75,3 +75,46 @@ describe("computeVolumeLeaders", () => {
     expect(rows.find((r) => r.period === 5)).toMatchObject({ turnover: 500, unusualDays: 1, sessions: 5, asOf: days.at(-1) });
   });
 });
+
+// ── final-review fixes ──
+describe("leaderStats, price-move guards", () => {
+  test("no price move when the stock's last trade isn't the latest session", () => {
+    const h = hist(200);
+    const s = starts(h);
+    const later = "2027-01-15"; // the market's latest session, after this stock stopped trading
+    expect(leaderStats(h, s, later).find((x) => x.period === 126)!.changePct).toBeNull();
+  });
+
+  // HEGAM, 22 Sep 2026: EQ, a stretch outside EQ around an unpriced demerger, EQ again: "−68%".
+  test("no price move across a gap of more than 5 calendar days inside the window", () => {
+    const h = hist(200, { close: Array.from({ length: 200 }, (_, i) => (i < 190 ? 728 : 233)) });
+    const base = new Date(`${h.dates[189]}T00:00:00Z`).getTime();
+    h.dates = h.dates.map((d, i) => (i >= 190 ? new Date(base + (17 + i - 190) * 86_400_000).toISOString().slice(0, 10) : d));
+    const s = Object.fromEntries(PERIODS.map((p) => [p, h.dates[h.dates.length - p]!])) as Record<(typeof PERIODS)[number], string>;
+    const st = leaderStats(h, s, h.dates.at(-1)!);
+    expect(st.find((x) => x.period === 21)!.changePct).toBeNull();
+    expect(st.find((x) => x.period === 5)!.changePct).toBeCloseTo(0, 9); // a window after the gap is fine
+  });
+});
+
+describe("computeVolumeLeaders, review fixes", () => {
+  beforeEach(async () => {
+    for (const t of [schema.dailyPrices, schema.ingestLog, schema.volumeLeaders, schema.unusualDays, schema.indexConstituents]) await db.delete(t);
+  });
+  test("counts trade-for-trade (BE) days, and a universe stock with no prices gets no row", async () => {
+    const days = hist(10).dates;
+    await db.insert(schema.ingestLog).values(days.map((d) => ({ tradeDate: d, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 1 })));
+    await db.insert(schema.dailyPrices).values(days.map((d, i) => ({
+      tradeDate: d, symbol: "ABC", series: i >= 7 ? "BE" : "EQ", open: 1, high: 1, low: 1, close: 1, prevClose: 1, volume: 10, turnover: 100,
+    })));
+    await db.insert(schema.indexConstituents).values([
+      { indexKey: "total-market", symbol: "ABC", industry: "Capital Goods", fetchedOn: days.at(-1)! },
+      { indexKey: "total-market", symbol: "DUMMYX", industry: "Capital Goods", fetchedOn: days.at(-1)! },
+    ]);
+    await computeVolumeLeaders();
+    const rows = await db.select().from(schema.volumeLeaders);
+    expect(rows.find((r) => r.period === 1)).toMatchObject({ symbol: "ABC", turnover: 100, sessions: 1 });
+    expect(rows.find((r) => r.period === 5)).toMatchObject({ turnover: 500, sessions: 5 });
+    expect(rows.some((r) => r.symbol === "DUMMYX")).toBe(false);
+  });
+});

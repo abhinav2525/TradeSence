@@ -384,11 +384,12 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     example: "Usually 55% delivered, today 18%: down 37 points.",
     mistakes: ["Assuming the price will fall. It says who traded, not what happens next."],
     related: ["delivery-pct", "delivery-jump", "unusual-activity"],
-  },  "top-volume": {
+  },
+  "top-volume": {
     id: "top-volume", term: "Top volume", topic: "Stocks",
-    short: "The most-traded stocks over a period, ranked by rupees traded or by shares, among the ~750 Nifty Total Market stocks. Where money moved, not where prices go next.",
+    short: "The most-traded stocks over a period, ranked by rupees traded or by shares, among NSE's Nifty Total Market (about 750 companies). Where money moved, not where prices go next.",
     read: "Use it to see where trading money concentrated, by size, sector or index. Compare the price move column to see whether heavy trading came with a rise or a fall.",
-    what: "Each night tradeSence adds up every stock's trading over the last 1, 5, 21, 63 and 126 sessions. The list is NSE's Nifty Total Market, the 750 largest companies by value.",
+    what: "Each night tradeSence adds up every stock's trading over the last 1, 5, 21, 63 and 126 sessions, normal and trade-for-trade days alike. The list is NSE's Nifty Total Market: the Nifty 500 plus the Microcap 250, about 750 companies.",
     calc: { plain: "Rupees traded: the sum of NSE's daily turnover over the period. Shares: the sum of shares traded, adjusted for splits and bonuses so the whole period is in today's shares." },
     example: "Over the month to 1 Oct 2026, HDFCBANK led with about ₹45,359 crore traded.",
     mistakes: ["Reading heavy trading as a buy or sell signal. It shows activity, not direction; check the news and the price move."],
@@ -417,7 +418,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   },
   "nse-sector": {
     id: "nse-sector", term: "Sector (NSE)", topic: "Stocks",
-    short: "NSE's industry for each company, from its index files, such as Financial Services, Capital Goods or Healthcare. There are 22.",
+    short: "NSE's industry for each company, from its index files, such as Financial Services, Capital Goods or Healthcare.",
     read: "Filter by sector to see which companies led trading within one part of the economy.",
     what: "NSE labels every company in its indices with a broad industry. tradeSence uses that label as published.",
     calc: { plain: "The Industry column of NSE's Nifty Total Market list, as of today." },

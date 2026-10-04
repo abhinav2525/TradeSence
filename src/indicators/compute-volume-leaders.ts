@@ -25,7 +25,7 @@ export async function computeVolumeLeaders(opts: { symbols?: string[] } = {}): P
   const renames = await loadRenames();
   const rows: (typeof schema.volumeLeaders.$inferInsert)[] = [];
   for (const symbol of symbols) {
-    const h = await loadAdjustedHistory(symbol, renames);
+    const h = await loadAdjustedHistory(symbol, renames, { series: ["EQ", "BE"] }); // BE: decision 0025
     if (!h) continue;
     const u = unusualBy.get(symbol) ?? [];
     for (const s of leaderStats(h, starts, asOf)) {

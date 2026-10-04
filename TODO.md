@@ -125,6 +125,10 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - [ ] Optional extra checks: delivery % (collected, `daily_delivery`; study first) and valuation.
 
 ## Data to add — a, b, n
+- [ ] **Demerger ratios (revisit decision 0004).** HEGAM's 7 Sep 2026 demerger: our ratio
+  (last close ÷ ex-date open) is 2.80, TradingView's 2.75, so HEGAM's month reads −8.2% here vs
+  −9.8% there. RELIANCE 2023 matched exactly. Find NSE's official cost-split or base price
+  for demergers (the company's announcement gives the cost-of-acquisition split).
 - [x] **Top volume shares** (done 4 Oct, decision 0025): `/volume`, the ~750 Nifty Total Market
   stocks by ₹ or shares over 1/5/21/63/126 sessions, filtered by NSE size list, sector and 43
   index lists. AMFI turned out not to be needed (NSE's size indices). Sector index files NSE
