@@ -5,24 +5,31 @@
 
 Data studies that decide what to build. Each study is a pure, tested module plus a `cli-*.ts`
 runner that reads the database and prints Markdown; the write-up lives in `docs/research/`.
-Nothing here writes to the database.
+Nothing here writes to the database (except `cli-fund-symbols.ts`, which writes one committed text file).
 
 ## Files
 | File | What it's for |
 |---|---|
 | `forward-returns.ts` | Research 0001 helpers: `HORIZONS` (21/63/126 sessions), `BUCKETS` / `bucketOf`, `forwardReturn`, `summarize`; re-exports `findEpisodes`. `HORIZONS` and `BUCKETS` are also used by the Signals page. |
 | `cli-forward-returns.ts` | `bun run research:forward-returns`: breadth (same `breadthSeries` as the dashboard) vs later NIFTY 50 returns. |
-| `volume.ts` | Research 0002: `adjustedBars`, `cmf`, `mfi`, `obv`; market `upShare`, `rollingMean`, `panicThenStampede`; per-stock `quietFlags`, `crossFlags`; and the reusable judging machinery: `excessReturn`, `fifthCuts`/`fifthOf`, `memberFlags`, `episodeStarts`, seeded `luckCheck`, `sameWay`, `verdictOf`, `judge`. |
+| `volume.ts` | Research 0002: `adjustedBars`, `cmf`, `mfi`, `obv`; market `upShare`, `rollingMean`, `panicThenStampede`; per-stock `quietFlags`, `crossFlags`; and the reusable judging machinery: `excessReturn`, `fifthCuts`/`fifthOf`, `memberFlags`, `episodeStarts`, seeded `luckCheck` (`LUCK_BAR` 97.5), `sameWay`, `verdictOf`, `judge`, `STUDY_HORIZONS`. |
 | `volume-data.ts` | Research 0002 reads: `marketTurnover` (₹ of rising vs falling members per day), `niftyCloses`, `memberWindows`, `stockIndicators`. |
 | `cli-volume.ts` | `bun run research:volume` prints the 15-test study; `-- --check SYM,SYM` prints the latest CMF/MFI for a TradingView comparison. |
+| `delivery.ts` | Research 0003 (delivery %), whole market: `stockSeries` (per-stock delivery %, spike, level, move, forward returns), `SIGNALS` / `signalFlags`, `levelCutsByDate`, `occasionsOf`, and the same-date luck check: `matchedLuck`, `matchedBaseline`, `part` (discovery to 2022, `DISCOVERY_END`, vs holdout), `deliveryVerdict`, `assertAligned`. Re-exports the window constants from `../indicators/activity`, shared with the Unusual activity page. |
+| `delivery-data.ts` | `tradingDays(from)`: bhavcopy `ok` days from `ingest_log`; used by both whole-market runners. |
+| `cli-delivery.ts` | `bun run research:delivery`: two passes over every company (pass 1 builds each day's pool and cut points, pass 2 finds signals), so no history is kept in memory. |
+| `volume-market.ts` | Research 0004 (volume, whole market): `volumeSeries`, `volumeSignalFlags`, `MARKET_SIGNALS`, `CHART_HORIZONS`, `HUGE_X`, `effectOf`. Judged with `delivery.ts`'s `part` / `deliveryVerdict`. |
+| `cli-volume-market.ts` | `bun run research:volume-market`; `-- --json <file>` also writes the chart data (`docs/research/0004-charts.html`). |
+| `cli-fund-symbols.ts` | `bun run research:fund-symbols`: writes the committed fund (ETF) symbol list that `indicators/universe.ts` reads, so company-only studies exclude funds. Re-run occasionally. |
 
 ## Rules here
 - Pass/fail rules are fixed in the study's spec (`docs/superpowers/specs/`) before results are seen; indicator settings are textbook, never tuned.
-- Reuse the tested machinery rather than new statistics. Per-stock, whole-market studies use the same-date comparison in `delivery.ts` (`matchedLuck`, `matchedBaseline`, `part`, `deliveryVerdict`, decision 0022); `luckCheck`'s independent days flatter signals that bunch up.
+- Reuse the tested machinery rather than new statistics. Whole-market, per-stock studies (0003, 0004) use the same-date comparison in `delivery.ts` (decision 0022), not `luckCheck`, whose independent days flatter signals that bunch up. `luckCheck` still serves the NIFTY-50 studies.
 - Per-member history comes from `loadAdjustedHistory` (`src/indicators/history.ts`), so splits, demergers and renames match the nightly averages.
-- Per-stock signals count only on member days (`memberFlags`, from 2020); episodes merge within `MERGE_GAP` per stock.
+- Per-stock signals count only on member days (`memberFlags`, from 2020) in the NIFTY-50 study; whole-market studies use `companies()` from `indicators/universe`. Episodes merge within `MERGE_GAP` per stock.
+- Call `assertAligned` before matching: a pool out of step with its day index would silently compare the wrong stocks.
 
 ## See also
-- `docs/research/0001-does-breadth-predict.md`, `0002-does-volume-predict.md`: results; re-run before quoting.
-- Tests: `tests/forward-returns.test.ts`, `volume-research.test.ts`, `volume-data.test.ts`.
+- `docs/research/0001-does-breadth-predict.md`, `0002-does-volume-predict.md`, `0003-does-delivery-predict.md`, `0004-does-volume-predict-whole-market.md`: results; re-run before quoting.
+- Tests: `tests/forward-returns.test.ts`, `volume-research.test.ts`, `volume-data.test.ts`, `volume-market.test.ts`, `delivery.test.ts`, `delivery-research.test.ts`.
 <!-- folder-claude-md:end -->

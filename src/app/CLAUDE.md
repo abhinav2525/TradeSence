@@ -13,8 +13,10 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 | `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3) |
 | `/crossings` | Members ranked by whipsaw count (`crossingStats`). Param `ma` |
 | `/signals` | Washout alarm, what happened next, every episode (`signalsData`); always the 200-day SMA, no date nav. Params `cond` (under/over), `ma` (only carried for nav) |
+| `/activity` | Unusual activity: one day's stocks with big keeping, huge volume or delivery jump/collapse (`activityOn`, `kindCounts`, `filterKinds`). Params `date` (snaps back, own session list), `set` (all/nifty50), `kinds` (comma list of kept/volume/jump/collapse), `ma` (nav only) |
+| `/volume` | Top volume leaderboard (`topVolume`), in pages of 100 (`pageOfRows`). Params `period` (1/5/21/63/126), `rank` (value/shares), `size` (large/mid/small/micro), `sector` and `index` (each must match a list we hold), `page` (1-999), `ma` (nav only). No date nav |
 | `/stock` | Picker of stocks with a Report Card (`supportedStocks`) |
-| `/stock/[symbol]` | Report Card, risk calculator, crash table, adjusted price and drawdown charts (`stockReport`). Params `date`, `h` (1w/1m/3m/1y) |
+| `/stock/[symbol]` | Report Card, risk calculator, crash table, adjusted price and drawdown charts (`stockReport`, charts through `chartPrice`/`chartDrawdown`), and the Unusual days card (`recentUnusual`, last 92 days). Params `date`, `h` (1w/1m/3m/1y) |
 | `/learn`, `/learn/[id]` | Glossary list and one term's page with a live example (`liveExample`); unknown ids 404 |
 
 ## Files
@@ -25,9 +27,10 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 
 ## Rules here
 - `params` and `searchParams` are Promises: `await` them. Every page sets `export const dynamic = "force-dynamic"`.
-- Every search param is validated by strict comparisons with a default fallback (`isMaKind`, `isView`, `isVol`, `isHorizon`, `isCondition`, `cleanDate` regex), copied into each page; a new page copies the pattern (root CLAUDE.md, `sql.raw`).
+- Every search param is validated by strict comparisons with a default fallback (`isMaKind`, `isView`, `isVol`, `isHorizon`, `isCondition`, `isSet`, `cleanKinds`, `cleanPeriod`, `cleanDate` regex), copied into each page; a new page copies the pattern (root CLAUDE.md, `sql.raw`). Free-text params (`sector`, `index`) are accepted only if they match a list read from the database or `INDEX_LISTS`.
 - Dynamic segments are checked before any query: `cleanSymbol` (decode once, `^[A-Z0-9&-]{1,20}$`) and `isTermId` call `notFound()` on anything else.
 - Pages wrap in `AppShell` (its `current` nav key, `asOf` date) and mount `Hotkeys`; pages with sessions use `DateNav`, pages with an average use `MaTabs`.
+- Pages that filter rebuild each link from the current params (`href()` in `/activity`, `/volume`), so changing one control keeps the others; `/volume` deliberately resets `page` to 1 when any filter changes.
 - Empty data renders a "Nothing loaded" card, not an error.
 - New tokens or type sizes go in `globals.css` (and type sizes also in `src/lib/utils.ts`); see root CLAUDE.md "Theme and tokens".
 

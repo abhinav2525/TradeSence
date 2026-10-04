@@ -3,7 +3,7 @@
 
 # src/ingest
 
-Everything that downloads from NSE and writes raw tables: bhavcopy prices, index closes, corporate actions, ticker renames and NIFTY 50 membership. Each `cli-*.ts` is a thin `bun run ingest:*` entry point; the logic lives in the module it imports.
+Everything that downloads from NSE and writes raw tables: bhavcopy prices, index closes, delivery figures, corporate actions, ticker renames, NIFTY 50 membership and today's index member lists. Each `cli-*.ts` is a thin `bun run ingest:*` entry point; the logic lives in the module it imports.
 
 ## Files
 | File | What it's for |
@@ -12,25 +12,30 @@ Everything that downloads from NSE and writes raw tables: bhavcopy prices, index
 | `ingest-day.ts` | `ingestDay`: one session into `daily_prices` then `ingest_log`; `isSettled` (2-day holiday grace), `assertDateMatches` |
 | `backfill.ts` | `daysBetween` (every calendar day, UTC) and `backfill` (oldest-first, a thrown day becomes an `error` result, never ends the run) |
 | `index-prices.ts` | `ind_close_all` index closes into `index_prices`; fetches only days `ingest_log` already has as `ok`, so no second set of holiday rules |
+| `delivery.ts` | NSE `MTO_DDMMYYYY.DAT` into `daily_delivery`: `parseDelivery` (reads rows by position, checks the header and the file's own totals), `fetchDeliveryDay`, `ingestDeliveryDays` (same `ingest_log` rule; a day is done once it has rows, one transaction per day) |
+| `index-constituents.ts` | `INDEX_LISTS` (43 NSE `ind_*list.csv` files) into `index_constituents`; `ingestIndexLists` replaces each index in its own transaction and keeps yesterday's on a failed or >10%-shorter list; `sizeProblems` flags a stock in no or several size groups. `UNIVERSE_KEY`, `SIZE_KEYS` |
 | `corporate-actions.ts` | NSE JSON feed into `corporate_actions`; `classifyAction` reads `subject` into kind + factor, `parseExDate` (also used by `symbol-changes.ts`) |
 | `symbol-changes.ts` | `symbolchange.csv` into `symbol_changes`; `symbolLineage` (every symbol a company traded under, with date windows; handles reused tickers) |
 | `nifty50-history.csv` | Hand-kept membership since 2020, one row per period; comment header explains the columns |
 | `nifty50-history.ts` | Parses/validates that file, `membersOn`, `membershipDrift`, `loadNifty50History` (replaces `index_members` in one transaction); `HISTORY_START` |
 | `nifty50.ts` | `INDEX_NAME = "NIFTY50"` and `fetchNifty50Symbols` (NSE's live list, used only as the nightly drift check) |
-| `cli-nightly.ts` | Cron job: trailing-window backfill, index closes, corporate actions (±1 month), renames, membership drift warning, unparsed-action warnings, then `computeIndicators` |
-| `cli-day.ts`, `cli-backfill.ts`, `cli-indices.ts`, `cli-corporate-actions.ts` (one request per calendar year), `cli-symbol-changes.ts`, `cli-nifty50.ts` | Arg parsing + logging around the functions above; each ends with `sql.end()` |
+| `cli-nightly.ts` | Cron job, in order: trailing-window prices, index closes, delivery, corporate actions (±1 month), renames, membership drift warning, unparsed-action warnings, `computeIndicators`, index lists, `refreshFundSymbols`, `computeUnusualDays`, `computeVolumeLeaders`, then (own process) `src/audit/report-card.ts` and `ops/backup.sh`. Later steps warn and carry on; none stops the rest |
+| `cli-day.ts`, `cli-backfill.ts`, `cli-indices.ts`, `cli-corporate-actions.ts` (one request per calendar year), `cli-symbol-changes.ts`, `cli-nifty50.ts`, `cli-delivery.ts` (`ingest:delivery start end`), `cli-index-lists.ts` | Arg parsing + logging around the functions above; each ends with `sql.end()` |
 
 ## Rules here
 - A fetcher returns an error result on any failure (network, bad JSON, empty parse, wrong header); never treat failure as "nothing there". Empty `symbolchange.csv` parse is an error for that reason.
 - Every parser checks the date inside the file against the date asked for (`assertDateMatches`, `parseIndexClose`) so the log and the rows can't disagree.
-- Rows with no usable close (blank, `-`, zero) are dropped, not stored as 0; only `EQ` and `BE` series are kept (prices and corporate actions alike).
+- Rows with no usable close (blank, `-`, zero) are dropped, not stored as 0; only `EQ` and `BE` series are kept (prices and corporate actions alike; delivery keeps the same set).
+- Index closes and delivery only ask for days `ingest_log` has as `ok`: a 404 there means "not published yet", so it is an error, never a holiday.
 - Writes are upserts chunked at 1000 rows (Postgres' 65535 bind-parameter cap); batches are de-duplicated by key first because NSE repeats rows.
-- Test seams are the injected `deps.download` / `opts.ingest` parameters, not mocks (root CLAUDE.md, Testing).
+- Test seams are the injected `deps.download` / `opts.download` / `opts.ingest` parameters, not mocks (root CLAUDE.md, Testing).
+- A new nightly step goes in `cli-nightly.ts` as warn-and-continue, and in `docs/pipelines.md`.
 - Status rules, write order, header validation and the file quirks are in the root CLAUDE.md; the membership-file rules are under "Membership is point-in-time".
 
 ## See also
-- `src/indicators/` — reads these tables; `computeIndicators` is called from `cli-nightly.ts`
+- `src/indicators/` — reads these tables; `cli-nightly.ts` calls its compute functions
+- `ops/` — `backup.sh` and the launchd job that runs `cli-nightly.ts`
 - `docs/pipelines.md` — update when a nightly step changes
-- docs/decisions 0002–0007 (adjustment, renames, demergers, membership, index closes, weekends)
-- `tests/bhavcopy.test.ts`, `ingest-day.test.ts`, `holiday-provisional.test.ts`, `backfill-resilience.test.ts`, `corporate-actions.test.ts`, `symbol-changes.test.ts`, `nifty50-history.test.ts`, `index-prices.test.ts`
+- docs/decisions 0002–0007 (adjustment, renames, demergers, membership, index closes, weekends), 0021 (delivery, backup), 0025 (index lists, Top volume)
+- `tests/bhavcopy.test.ts`, `ingest-day.test.ts`, `holiday-provisional.test.ts`, `backfill-resilience.test.ts`, `corporate-actions.test.ts`, `symbol-changes.test.ts`, `nifty50-history.test.ts`, `index-prices.test.ts`, `delivery.test.ts`, `index-constituents.test.ts`
 <!-- folder-claude-md:end -->

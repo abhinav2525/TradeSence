@@ -4,7 +4,8 @@
 # src/query
 
 Database reads behind each page: every function here runs SQL against `daily_indicators` /
-`index_members` (and `index_prices`, `corporate_actions`, `symbol_changes` for the Report Card)
+`index_members` (and `index_prices`, `corporate_actions`, `symbol_changes` for the Report Card;
+`unusual_days`, `volume_leaders`, `index_constituents` for the Activity and Volume pages)
 and returns plain objects the pages render. Pure helpers sit next to the query that needs them
 so they can be tested without a database.
 
@@ -17,19 +18,22 @@ so they can be tested without a database.
 | `screener.ts` | `/screener`: `screenerOn` loads every member's history to a date; pure `readSymbol` (cross, run before, 5-session gap), `volumeAtLeast`, `percentile`, `crosserBadge`, `NEAR_PCT = 1`. |
 | `stock-report.ts` | `/stock/[symbol]`: `stockReport` builds the whole Report Card (eight lights, horizons, adjusted price line, events) from `../indicators/risk` and `market-risk`; `supportedStocks` lists current and past members. |
 | `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
+| `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all or NIFTY 50, sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
+| `volume.ts` | `/volume` (Top volume): `topVolume` reads `volume_leaders` joined to NSE's index lists (size group, sector, optional index filter; rank by value or shares); `sectorsPresent`; `PAGE_SIZE = 100` and pure `pageOfRows` (a page past the end shows the last, decision 0026). |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
 
 ## Rules here
-- Membership is joined per trade date everywhere: `trade_date >= added_on and (removed_on is null or trade_date < removed_on)`. Copy that clause, never "current members".
-- `column()` in `breadth.ts` and `crossings.ts` is the only `sql.raw` (see root CLAUDE.md). New queries should do what `screener.ts` does: select `sma_50, sma_200, ema_200` and pick in TypeScript.
+- Membership is joined per trade date everywhere: `trade_date >= added_on and (removed_on is null or trade_date < removed_on)`. Copy that clause, never "current members". (`activity.ts` does it twice: `member` for that day, `has_card` for "ever a member", which decides whether a row links to a Report Card.)
+- `column()` in `breadth.ts` and `crossings.ts` is the only `sql.raw` (see root CLAUDE.md). New queries should do what `screener.ts` does: select `sma_50, sma_200, ema_200` and pick in TypeScript. `volume.ts` and `activity.ts` bind every value with `sql` params; filters are applied in TypeScript or as bound values.
 - A crossing needs two linked sessions: both averages non-null and no hole over `MAX_GAP_DAYS`. `crossingStats` (SQL) and `readSymbol` (TS) enforce the same rule; change both together.
 - Daily moves come from `change_pct`; `advanceDeclineCounts` counts `> 0`, `< 0`, `= 0`. Never derive a move from `prev_close`.
 - Breadth fed into the Report Card's crash check is cut at the shown date (`b.date <= date`) so no hindsight leaks in. Keep it that way for any "as of" figure.
 - A new Report Card number also goes into `src/audit/report-card.ts` (root CLAUDE.md).
-- NSE's index name in `index_prices` is `"Nifty 50"` (`stock-report.ts`, `signals.ts`, `glossary-live.ts` each spell it); membership uses `NIFTY50`.
+- NSE's index name in `index_prices` is `"Nifty 50"` (`stock-report.ts`, `signals.ts`, `glossary-live.ts` each spell it); membership uses `NIFTY50` (`INDEX_NAME` from `ingest/nifty50`).
+- `topVolume` takes its "as of" date from the table, not the rows, so a filter that matches nothing still shows the date.
 
 ## See also
 - `src/indicators/` for the maths these queries call; `src/lib/glossary.ts` for the `TermId`s `glossary-live.ts` switches on.
-- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `glossary-live.test.ts`.
-- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals).
+- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `activity-query.test.ts`, `volume-query.test.ts`, `glossary-live.test.ts`.
+- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals), 0024 (Unusual activity), 0025 (Top volume), 0026 (page size).
 <!-- folder-claude-md:end -->

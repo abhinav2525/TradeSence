@@ -16,13 +16,18 @@ executing-plans skill.
 | `2026-10-02-app-motion.md` | Builds `src/lib/motion.ts`, `src/lib/count.ts`, `<CountUp>`, `<SlidingPill>`, chart animation hook |
 | `2026-10-03-signals-washout.md` | Builds `/signals`: `findEpisodeSpans`, `src/indicators/signals.ts`, `signals-copy.ts`, the Signals cards, the Breadth notice, nav key `g` |
 | `2026-10-03-volume-study.md` | Builds research 0002: `src/indicators/history.ts` (shared loader), `src/research/volume*.ts`, `cli-volume.ts` |
+| `2026-10-04-ui-density.md` | Builds the `data-density` switch: `--density-*` tokens in `globals.css`, compact by default (decision 0020) |
+| `2026-10-04-delivery-study.md` | Builds research 0003: delivery arrays in `loadAdjustedHistory`, `src/research/delivery.ts`, `cli-delivery.ts`, date-matched luck check |
+| `2026-10-04-unusual-activity.md` | Builds `/activity`: `src/indicators/activity.ts` (maths moved out of research), `unusual_days` table, Report Card card |
+| `2026-10-04-volume-whole-market.md` | Builds research 0004: `src/research/volume-market.ts`, `cli-volume-market.ts`, the charts page |
+| `2026-10-04-top-volume.md` | Builds `/volume`: `src/ingest/index-constituents.ts`, `src/indicators/volume-leaders.ts`, `index_constituents` and `volume_leaders` tables |
 
 ## Rules here
 - Each plan opens with Goal, Architecture, Tech Stack, `**Spec:**` path, `## Global Constraints` and (from 2026-10-03) `## Review Focus`, then TDD tasks as `- [ ]` checkboxes.
-- The checkboxes were never ticked; all six plans shipped. Progress was tracked in a git-ignored ledger, not in these files. Don't read an open box as unfinished work.
-- Plans are historical: rulings during the build and review fixes changed some details (e.g. the app-motion plan's `loading.tsx` skeleton was dropped, decision 0015; the Signals bar-chart label moved into the caption, decision 0017). Check the code and decision file first.
+- The checkboxes were never ticked; all eleven plans shipped. Progress was tracked in a git-ignored ledger, not in these files. Don't read an open box as unfinished work.
+- Plans are historical: rulings during the build and review fixes changed some details (e.g. the app-motion plan's `loading.tsx` skeleton was dropped, decision 0015; the Signals bar-chart label moved into the caption, decision 0017; Top volume was paged at 100 rows after the plan, decision 0026). Check the code and decision file first.
 
 ## See also
 - `docs/superpowers/specs/`: the design each plan implements
-- `docs/decisions/`: 0011, 0012, 0014, 0015, 0017 record what was built and why; `docs/research/0002-…` for the volume study
+- `docs/decisions/`: 0011, 0012, 0014, 0015, 0017, 0020, 0022, 0024, 0025 record what was built and why; `docs/research/` for the studies (0002–0004)
 <!-- folder-claude-md:end -->

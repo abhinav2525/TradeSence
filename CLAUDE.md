@@ -95,6 +95,10 @@ Needs local Postgres (`brew services start postgresql@14`) and both `tradesence`
 typechecks after every `.ts`/`.tsx` edit. To look at data, use the `postgres` MCP server
 (`.mcp.json`) rather than throwaway scripts: it connects as `claude_ro`, which can only
 read `tradesence`.
+Keep the shell at the repo root: the bun-test hook checks the cwd before the command runs, so
+a stray `cd` blocks it. Save `bun test > file` output when checking: live NSE tests can fail
+transiently. The MCP refuses EXPLAIN ANALYZE; time queries with
+`psql tradesence -c "set default_transaction_read_only=on" -c "explain (analyze, buffers) …"`.
 
 `ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
 today, so a missed night heals on the next run. It runs from a launchd agent
@@ -146,6 +150,9 @@ Any new per-member history (52-week highs, a new study, a new light) loads throu
 plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only).
 `computeIndicators` and the research scripts share it. Never re-derive adjustment or
 lineage elsewhere, or a renamed member's history silently starts at its rename.
+It is EQ-only by default (averages, returns); totals of trading activity pass
+`{ series: ["EQ", "BE"] }` so a stock moved to trade-for-trade isn't cut short
+([0025](docs/decisions/0025-top-volume.md)).
 
 **Every term is explained once, in `src/lib/glossary.ts`.** A new metric, tile or card
 title needs a glossary entry and a `<Term>` before it ships; `tests/glossary.test.ts`
@@ -219,6 +226,9 @@ raw px; `tests/density.test.ts` enforces it. New spacing tokens are registered i
   (`Fv Splt Frm Rs 10 To Re 1`). `classifyAction` must return `unparsed` — never factor
   1 — for share-count wording it cannot read. A new wording goes into
   `tests/corporate-actions.test.ts` first.
+- The delivery file `MTO_DDMMYYYY.DAT` misspells its date line ("rade Date"): take the date
+  from the `10,MTO,…` summary record, whose row count and delivered total also check the
+  file ([0021](docs/decisions/0021-database-health-and-delivery.md)).
 
 **shadcn components arrive in Tailwind v3 syntax.** `components.json` uses the `"default"`
 style, so `bunx shadcn add` writes `h-[--cell-size]`, which Tailwind v4 silently ignores.
@@ -241,6 +251,20 @@ from `--motion-*` in `globals.css` / `MOTION` in `src/lib/motion.ts`; charts spr
 **Header validation must list every column the parser reads.** `at()` returns `-1` for a
 missing column and `f[-1]` is `undefined`; the old code turned that into `0` and would
 have written zeroed prices silently on the next NSE rename.
+
+**launchd's PATH is bare** (`/usr/bin:/bin`): no `bun`, no `pg_dump`. Nightly sub-processes
+use `process.execPath`; ops scripts prepend Homebrew paths. Test a nightly change with
+`launchctl kickstart gui/$(id -u)/com.tradesence.nightly` and read the log.
+
+**`bun run build` replaces `.next` under a running `:3000` server** (which may be the owner's
+own terminal): restart it after. Preview with `next dev -p 3100` or `next start -p 3200`. A
+build flips `next-env.d.ts`; restore it with `git checkout`.
+
+**Pages over ~400 KB trip Next's gzip `MaxListenersExceededWarning`** (not a leak,
+[0026](docs/decisions/0026-page-size-gzip-warning.md)): page long tables (100 rows) and round
+chart data (`src/lib/chart-data.ts`). Headless UI checks: Playwright at
+`.ds-sync/node_modules/playwright` (import its `index.mjs` by absolute path; run node from the
+repo root).
 
 ## Testing
 

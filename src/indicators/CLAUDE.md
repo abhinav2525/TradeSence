@@ -4,13 +4,14 @@
 # src/indicators
 
 The maths. `compute.ts` writes `daily_indicators` (averages, daily move, volume ratio,
-turnover) for every index member; everything else is pure functions over arrays, used by
-`compute.ts`, the queries in `src/query/` and the research scripts.
+turnover) for every index member; `compute-activity.ts` and `compute-volume-leaders.ts` rebuild the
+whole-market tables for Unusual activity and Top volume. Everything else is pure functions over
+arrays, used by those, the queries in `src/query/` and the research scripts.
 
 ## Files
 | File | What it's for |
 |---|---|
-| `history.ts` | `loadAdjustedHistory(symbol, renames)`: raw OHLCV across the rename lineage plus `factors` (divide prices) and `shareFactors` (multiply volume; never demergers); `loadRenames`. Shared by `compute.ts` and `src/research/`. |
+| `history.ts` | `loadAdjustedHistory(symbol, renames, { series? })`: raw OHLCV across the rename lineage, `traded`/`delivered` (null without a delivery row), plus `factors` (divide prices) and `shareFactors` (multiply volume and delivered shares; never demergers). `series` defaults to EQ; `["EQ","BE"]` sums both series per day (Top volume). `loadRenames`. Shared by `compute*.ts` and `src/research/`. |
 | `compute.ts` | `computeIndicators(indexName)`: per member, loads the history, computes SMA50/SMA200/EMA200, `change_pct` and `vol_ratio` per gap segment on the adjusted series, scales averages back to each day's rupees and upserts in chunks of 1,000. Reports leftover >30% overnight jumps via `onUnexplainedJump`. |
 | `cli.ts` | `bun run indicators` entry point: runs `computeIndicators()` and closes the pool. |
 | `moving-average.ts` | `sma`, `ema` (seeded with the first SMA). Output is the same length as input, `null` until the window fills. |
@@ -21,17 +22,24 @@ turnover) for every index member; everything else is pure functions over arrays,
 | `market-risk.ts` | Lights 6–8: `ewmaVolatility` (RiskMetrics λ=0.94), `rangeHitRate`, `marketCapture` (beta, up/down capture), `crashEpisodes`. |
 | `episodes.ts` | `findEpisodeSpans` (start, last, sessions) and `findEpisodes` (starts only), `MERGE_GAP = 10`: one episode rule for research 0001/0002, the crash light and Signals. |
 | `signals.ts` | Signals page maths: `washoutStatus` (Active < 20, Watching 20–25), `segmentIds`, gap-safe `forwardReturnSafe`, `median`, `episodesOf` (with `pending` horizons), `summarizeHorizons`, `bucketMedians`, `buildSignals`. |
+| `activity.ts` | Unusual activity rules, shared with research 0003: `unusualDays(history)` flags liquid days (median turnover ≥ ₹1 crore) as kept / volume / jump / collapse against the prior 20 sessions; `unusualScore`, `windowMean`, `EXCLUDED_DAYS`, `MAX_MOVE_GAP_DAYS`, thresholds. |
+| `compute-activity.ts`, `cli-activity.ts` | `computeUnusualDays` rebuilds `unusual_days` for every company (not funds) in one transaction; `bun run activity`. |
+| `volume-leaders.ts` | `leaderStats`: one stock's turnover, shares and move over 1/5/21/63/126-session windows (`PERIODS`). |
+| `compute-volume-leaders.ts`, `cli-volume-leaders.ts` | `computeVolumeLeaders` rebuilds `volume_leaders` for the Nifty Total Market list (reads `index_constituents`, counts `unusual_days`) in one transaction; `bun run volume-leaders`. |
+| `universe.ts`, `fund-symbols.txt` | Which symbols are funds (ISIN `INF…`, not `INE…`): `companies(funds)` (one symbol per company), `fundSymbols`, `refreshFundSymbols(date)` (adds a night's new funds to `fund_symbols`), `allFundSymbols` (the committed text file plus that table). The text file is written by `bun run research:fund-symbols`. |
 
 ## Rules here
 - Anything that walks a series splits it with `segmentByGaps` first (root CLAUDE.md). In `risk.ts`/`market-risk.ts` the equivalent is the `segment` field on `LinePoint`; in `signals.ts`, `segmentIds`.
-- Load per-member history through `history.ts`; never re-derive lineage or adjustment elsewhere. Volume uses `shareFactors` only (no demergers).
+- Load per-member history through `history.ts`; never re-derive lineage or adjustment elsewhere. Volume and delivered shares use `shareFactors` only (no demergers).
 - A demerger whose factor can't be priced is dropped, not guessed; the jump check then reports it.
 - Today's symbol picks up all its corporate actions (NSE files old actions under the new name); older lineage symbols only within their date window. Don't "simplify" `inWindow` away.
-- Compare returns with `NOISE_PCT`, never `===`; light cut-offs live only in `THRESHOLDS` (decisions 0011, 0013, 0014).
-- `compute.ts` recomputes everything on each run on purpose; there is no incremental path.
+- Compare returns with `NOISE_PCT`, never `===`; light cut-offs live only in `THRESHOLDS` (decisions 0011, 0013, 0014). Activity thresholds compare with `EPS` for the same reason.
+- A one-day move is null when the step skips more than `MAX_MOVE_GAP_DAYS` (a stretch in BE can hide an unpriced demerger, decision 0024).
+- `compute.ts`, `compute-activity.ts` and `compute-volume-leaders.ts` recompute everything on each run on purpose; there is no incremental path. The last two replace their table inside one transaction.
+- Run order matters nightly: `compute-volume-leaders` reads `unusual_days`, so activity goes first.
 
 ## See also
-- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio), 0017 (Signals).
-- Tests: `tests/indicators.test.ts`, `compute.test.ts`, `history.test.ts`, `adjust.test.ts`, `volume.test.ts`, `risk.test.ts`, `market-risk.test.ts`, `episodes.test.ts`, `signals.test.ts`.
-- `src/ingest/symbol-changes.ts` for `symbolLineage`.
+- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio), 0017 (Signals), 0021 (delivery), 0024 (unusual activity), 0025 (top volume).
+- Tests: `tests/indicators.test.ts`, `compute.test.ts`, `history.test.ts`, `adjust.test.ts`, `volume.test.ts`, `risk.test.ts`, `market-risk.test.ts`, `episodes.test.ts`, `signals.test.ts`, `activity.test.ts`, `volume-leaders.test.ts`.
+- `src/ingest/symbol-changes.ts` for `symbolLineage`; `src/ingest/cli-nightly.ts` for the order of steps.
 <!-- folder-claude-md:end -->

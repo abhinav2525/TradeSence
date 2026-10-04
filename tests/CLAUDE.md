@@ -12,28 +12,31 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 |---|---|
 | `setup.ts` | Preload (from `bunfig.toml`): forces `DATABASE_URL` to `TEST_DATABASE_URL` or `tradesence_test`, throws unless it ends in `_test` |
 | `bhavcopy`, `fetch-bhavcopy`, `download-resilience`, `backfill`, `backfill-resilience`, `ingest-day`, `holiday-provisional` | Bhavcopy parsing (UDiFF and legacy), URLs, live fetches, retries, weekend days, `ingest_log` settle/resume rules |
+| `delivery`, `index-constituents` | NSE delivery file (`parseDelivery` refusals: short file, totals mismatch, wrong day; fetch/ingest idempotency) and the index lists (`parseConstituents`, size-group and universe checks, a failed list keeps yesterday's) |
 | `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history` | Other ingest pipelines: `classifyAction` wordings, `symbolLineage`, index closes, membership CSV checks |
-| `indicators`, `compute`, `history`, `adjust`, `volume`, `episodes` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, the shared `loadAdjustedHistory`, adjustment factors, `volumeRatios`, episode spans |
+| `indicators`, `compute`, `history`, `adjust`, `volume`, `episodes` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, the shared `loadAdjustedHistory` (incl. delivery columns), adjustment factors, `volumeRatios`, episode spans |
+| `activity`, `volume-leaders` | Unusual-day rules and `computeUnusualDays`; `leaderStats` per period and `computeVolumeLeaders` (split-safe shares, price-move guards) |
 | `ma` | `src/lib/ma.ts` stays import-free and matches `breadth.ts`'s columns; MaTabs doesn't import `src/query` |
-| `breadth`, `breakdown-on-date`, `advance-decline`, `crossings`, `screener`, `signals-query` | Page queries in `src/query/` against seeded rows |
+| `breadth`, `breakdown-on-date`, `advance-decline`, `crossings`, `screener`, `signals-query`, `activity-query`, `volume-query` | Page queries in `src/query/` against seeded rows (sessions/neighbours/filters for Activity; `topVolume` ranking, filters, 100-row pages) |
 | `signals`, `signals-copy` | Signals maths (status edges, pending vs gap returns, summaries) and every Signals sentence word for word |
-| `risk`, `market-risk`, `stock-report`, `report-card-ui` | Report Card maths (`src/indicators/risk.ts`, `market-risk.ts`), `stockReport`, calculator wording |
+| `risk`, `market-risk`, `stock-report`, `report-card-ui`, `chart-data` | Report Card maths (`risk.ts`, `market-risk.ts`: crash episodes, EWMA volatility), `stockReport`, calculator wording, chart points rounded (decision 0026) |
+| `audit-step` | `auditWarnings` in `src/audit/nightly.ts`: turns audit output into capped warning lines; a crashed audit is never "all fine" |
 | `glossary`, `glossary-live` | Glossary completeness (entries, related terms, ≤ 220-char popover text, true minus) and live example sentences |
-| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout`, `tailwind-v4`, `density` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys, formatting and ticks, no Tailwind v3 `[--var]` left, density tokens/switch and no raw px for what density controls |
-| `forward-returns`, `volume-research`, `volume-data` | Research studies in `src/research/`: research 0001 helpers; research 0002 indicators, signal flags, luck check and verdict rules; its database reads |
+| `motion`, `count`, `countup`, `hotkeys`, `format`, `readout`, `tailwind-v4`, `density` | UI helpers: motion clock vs CSS tokens, count-up maths, `<CountUp>` server render, hotkeys (`hotkeyTarget`), formatting and ticks, no Tailwind v3 `[--var]` left, density tokens/switch |
+| `forward-returns`, `volume-research`, `volume-data`, `volume-market`, `delivery-research` | Research studies in `src/research/`: helpers, signal flags, luck check, verdict rules, database reads (`volume-market`: market-wide volume signals; `delivery-research`: delivery signals, matched luck, alignment) |
 | `db-url-guard` | `resolveDatabaseUrl` refusing a non-`_test` database |
 | `review-fixes` | Regressions from a code review: header columns, blank closes, corrupt zip, two-digit years, duplicate members, gap restarts |
 
 ## Rules here
 - DB tests clear the tables they use in `beforeEach` (`db.delete(schema.…)`) and seed their own rows; never rely on another file's data.
-- Some tests hit the live NSE archive on purpose (`fetch-bhavcopy`, `backfill`, `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history`). They need a network connection.
+- Some tests hit the live NSE archive on purpose (`fetch-bhavcopy`, `backfill`, `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history`, and one test each in `delivery` and `index-constituents`). They need a network connection.
 - `nifty50-history.test.ts` compares the CSV with NSE's live list, so it fails after a rebalance: add a row to the CSV, don't skip the test.
-- Fakes go through the injected `download` / `ingest` parameters (see `review-fixes`, `index-prices`), not a mocking library.
-- Parser fixtures are rows copied verbatim from NSE files; a new corporate-action wording goes into `corporate-actions.test.ts` first.
+- Fakes go through the injected `download` / `ingest` parameters (see `review-fixes`, `index-prices`, `delivery`, `index-constituents`), not a mocking library.
+- Parser fixtures are rows copied verbatim from NSE files (`delivery` copies MTO_01102026.DAT); a new corporate-action wording goes into `corporate-actions.test.ts` first.
 - `motion.test.ts` reads `src/` files by relative path, so it only passes when run from the repo root.
 - Compare computed decimals with `toBeCloseTo` or after rounding, never exact equality (root CLAUDE.md).
 
 ## See also
 - `src/db/url.ts` — the second half of the test-database guard
-- `docs/decisions/` — several tests name the decision they protect (0002, 0007, 0014, 0015, 0016, 0017)
+- `docs/decisions/` — several tests name the decision they protect (0002, 0007, 0014, 0015, 0016, 0017, 0026)
 <!-- folder-claude-md:end -->

@@ -16,10 +16,15 @@ agreed intent, the chosen approach and its constraints. Each has a matching plan
 | `2026-10-02-app-motion-design.md` | Motion: one clock, count-up, chart draw-in, reduced motion off (decision 0015) |
 | `2026-10-03-signals-washout-design.md` | `/signals` breadth washout alarm, 200-day SMA only, thrust and divergence left out (decision 0017) |
 | `2026-10-03-volume-study-design.md` | Research 0002: 15 volume signals and the verdict rules fixed before results (two-sided 97.5 luck bar) |
+| `2026-10-04-ui-density-design.md` | Compact-by-default density switch (decision 0020) |
+| `2026-10-04-delivery-study-design.md` | Research 0003: 8 delivery-% signals judged against the same dates' other stocks (decision 0022) |
+| `2026-10-04-unusual-activity-design.md` | `/activity` page, nightly `unusual_days` table, Report Card card (decision 0024) |
+| `2026-10-04-volume-whole-market-design.md` | Research 0004: 6 volume signals across the liquid market, rules fixed before any result |
+| `2026-10-04-top-volume-design.md` | `/volume` Top volume: data from NSE index lists, page layout, limits, checks (decision 0025) |
 
 ## Rules here
 - Name new specs `YYYY-MM-DD-<topic>-design.md`, header `**Date:** · **Status:** · **Path:**`, starting with `## Intent (agreed)`.
-- These are pre-build snapshots: the status line still says "awaiting owner review" (or "agreed in conversation") though all shipped. Amendments made while planning are marked "(amended while planning)". What was actually built is in the decision or research file; trust it and the code over the spec.
+- These are pre-build snapshots: the status line still says "awaiting owner review" (or "design agreed in conversation") though all shipped. Amendments made while planning are marked "(amended while planning)". What was actually built is in the decision or research file; trust it and the code over the spec.
 - A study's spec is where its pass/fail rules are fixed before any result is seen; don't change them after.
 
 ## See also

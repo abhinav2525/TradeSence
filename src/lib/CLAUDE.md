@@ -4,13 +4,14 @@
 # src/lib
 
 Shared, framework-light helpers for the UI: the glossary, number and date formatting, chart
-ticks, motion settings and small Report Card wording helpers. No database access here.
+ticks and trimmed chart data, motion settings and small Report Card wording helpers. No database access here.
 
 ## Files
 | File | What it's for |
 |---|---|
 | `glossary.ts` | `GLOSSARY`: every term explained once (`short`, `read`, `what`, `calc`, `example`, `mistakes`, `related`, `seeIt`), keyed by `TermId`; `TOPICS`, `isTermId`, `termHref`, `todayLine`. Drives `<Term>` popovers and `/learn`. |
-| `format.ts` | `formatDate`, `formatMonth`, `formatDayMonth`, `signed` (true minus), `formatInt`, `formatPrice`, `formatRupees`, `ordinal`. Indian grouping (`en-IN`), months by hand so server and browser agree. |
+| `format.ts` | `formatDate`, `formatMonth`, `formatDayMonth`, `signed` (true minus), `formatInt`, `formatPrice`, `formatRupees`, `formatCrore` (₹ in crore), `formatShares` (cr / lakh), `ordinal`. Indian grouping (`en-IN`), months by hand so server and browser agree. |
+| `chart-data.ts` | `chartPrice`, `chartDrawdown`: round Report Card chart series to 2 decimals before they go to the browser (decision 0026). Display only; the report's own numbers are untouched. |
 | `count.ts` | Maths behind `<CountUp>`: `parseShown` reads an on-screen figure, `formatLike` redraws in-between values in the same format, `countFrame` (ease-out), `countPlan`. |
 | `motion.ts` | `MOTION` durations, `EASE_OUT`, `useReducedMotion`, `chartAnimation` / `useChartAnimation` (the props every Recharts series spreads). |
 | `prepaint.ts` | `PREPAINT_SCRIPT`, inlined in `<head>` by `layout.tsx`: applies a stored light theme, a stored density (`data-density`) and sets `data-motion` before first paint. |
@@ -26,10 +27,11 @@ ticks, motion settings and small Report Card wording helpers. No database access
 - A type size added to `@theme` must be added to the `font-size` group in `utils.ts`, or `cn()` drops it (root CLAUDE.md).
 - `ma.ts` must stay import-free: anything it pulled in would reach the browser bundle (decision 0019; `tests/ma.test.ts` checks).
 - Show negatives with the true minus `−`, not `-`, via `signed` / `formatRupees`. `count.ts` parses only that form.
+- A new Report Card chart series sent to a client component goes through `chart-data.ts` (rounded), not raw.
 - `prepaint.ts` is a plain string run before React: keep it self-contained, with every `localStorage`/`matchMedia` call in its own try/catch.
 
 ## See also
 - `src/components/` (`Term`, `CountUp`, charts) for the consumers.
-- Tests: `tests/glossary.test.ts`, `format.test.ts`, `count.test.ts`, `countup.test.ts`, `motion.test.ts`, `report-card-ui.test.ts`.
-- Decisions 0012 (explaining terms), 0015 (motion).
+- Tests: `tests/glossary.test.ts`, `format.test.ts`, `chart-data.test.ts`, `count.test.ts`, `countup.test.ts`, `motion.test.ts`, `report-card-ui.test.ts`.
+- Decisions 0012 (explaining terms), 0015 (motion), 0026 (page size).
 <!-- folder-claude-md:end -->
