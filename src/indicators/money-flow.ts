@@ -62,26 +62,33 @@ export function flowWindows(days: string[]): FlowWindows | null {
 
 export type FlowStat = { period: FlowPeriod; turnover: number; normalDaily: number | null; sessions: number; changePct: number | null };
 
+/** Indices of `dates` (ascending) within [from, to], by binary search. */
+function span(dates: string[], from: string, to: string): [number, number] {
+  const lower = (x: string) => { let lo = 0, hi = dates.length; while (lo < hi) { const m = (lo + hi) >> 1; if (dates[m]! < x) lo = m + 1; else hi = m; } return lo; };
+  return [lower(from), lower(to + "\uffff")]; // [first, end)
+}
+
+/** The shared core of a window's stats: one rule for the bars and the weekly history. */
+function windowStat(h: History, period: FlowPeriod, start: string, end: string, normalFrom: string, normalTo: string): FlowStat | null {
+  const [a, b] = span(h.dates, start, end);
+  const [c, d] = span(h.dates, normalFrom, normalTo);
+  let normalSum = 0;
+  for (let i = c; i < d; i++) normalSum += h.turnover[i]!;
+  const normalDaily = d - c >= MIN_NORMAL ? normalSum / (d - c) : null;
+  if (b === a && normalDaily === null) return null;
+  let turnover = 0;
+  for (let i = a; i < b; i++) turnover += h.turnover[i]!;
+  return { period, turnover, normalDaily, sessions: b - a, changePct: b > a ? windowMove(h, a, b - 1, end) : null };
+}
+
 /**
  * One stock's ₹ traded per window and its normal per session. No row for a window
  * it neither traded in nor has a normal for (nothing to say about it).
  */
 export function flowStats(h: History, w: FlowWindows): FlowStat[] {
   return FLOW_PERIODS.flatMap((p) => {
-    const inWin: number[] = [], inNormal: number[] = [];
-    h.dates.forEach((d, i) => {
-      if (d >= w.starts[p] && d <= w.asOf) inWin.push(i);
-      else if (d >= w.normalFrom[p] && d <= w.normalTo[p]) inNormal.push(i);
-    });
-    const normalDaily = inNormal.length >= MIN_NORMAL ? inNormal.reduce((s, i) => s + h.turnover[i]!, 0) / inNormal.length : null;
-    if (inWin.length === 0 && normalDaily === null) return [];
-    return [{
-      period: p,
-      turnover: inWin.reduce((s, i) => s + h.turnover[i]!, 0),
-      normalDaily,
-      sessions: inWin.length,
-      changePct: inWin.length ? windowMove(h, inWin[0]!, inWin.at(-1)!, w.asOf) : null,
-    }];
+    const s = windowStat(h, p, w.starts[p], w.asOf, w.normalFrom[p], w.normalTo[p]);
+    return s ? [s] : [];
   });
 }
 
@@ -137,4 +144,42 @@ export function sectorStocks(rows: FlowRow[], sector: string, period: FlowPeriod
     })
     .sort((a, b) => (b.extra ?? -Infinity) - (a.extra ?? -Infinity) || b.turnover - a.turnover || a.symbol.localeCompare(b.symbol))
     .slice(0, limit);
+}
+
+// ── History: the 1-week reading for each of the last 52 weeks (spec 2026-10-05 history) ──
+
+export const HISTORY_WEEKS = 52;
+export type WeekWindow = { end: string; start: string; normalFrom: string; normalTo: string };
+
+/** Week k = sessions 5k … 5k+4 (newest first), its normal the 63 after; only weeks with a full normal. Week 0 ≡ flowWindows' 1 week. */
+export function weekWindows(days: string[], weeks = HISTORY_WEEKS): WeekWindow[] {
+  const out: WeekWindow[] = [];
+  for (let k = 0; k < weeks; k++) {
+    const e = 5 * k;
+    if (e + 5 + NORMAL_SESSIONS > days.length) break;
+    out.push({ end: days[e]!, start: days[e + 4]!, normalTo: days[e + 5]!, normalFrom: days[e + 4 + NORMAL_SESSIONS]! });
+  }
+  return out;
+}
+
+export type SectorWeek = { weekEnd: string; sector: string; ratio: number | null; medianMove: number | null; stocks: number; shortSession: boolean };
+
+/** Each sector's 1-week reading per week, through sectorFlows (sectors under 5 stocks with data that week are left out). */
+export function weeklySectorFlows(stocks: { symbol: string; sector: string; h: History }[], weeks: WeekWindow[], short: Set<string>): SectorWeek[] {
+  const shorts = [...short];
+  return weeks.flatMap((wk) => {
+    const rows: FlowRow[] = stocks.flatMap(({ symbol, sector, h }) => {
+      const s = windowStat(h, 5, wk.start, wk.end, wk.normalFrom, wk.normalTo);
+      return s ? [{ symbol, sector, turnover: s.turnover, normalDaily: s.normalDaily, changePct: s.changePct }] : [];
+    });
+    const shortSession = shorts.some((d) => d >= wk.start && d <= wk.end);
+    return sectorFlows(rows, 5).sectors.map((x) => ({ weekEnd: wk.end, sector: x.sector, ratio: x.ratio, medianMove: x.medianMove, stocks: x.stocks, shortSession }));
+  });
+}
+
+/** Market-wide ₹ per session across these histories, oldest first, from a date: input to shortSessions. */
+export function marketTotals(histories: History[], from: string): { date: string; turnover: number }[] {
+  const by = new Map<string, number>();
+  for (const h of histories) h.dates.forEach((d, i) => { if (d >= from) by.set(d, (by.get(d) ?? 0) + h.turnover[i]!); });
+  return [...by.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([date, turnover]) => ({ date, turnover }));
 }

@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
 import {
-  MIN_NORMAL, NORMAL_SESSIONS, cleanFlowPeriod, cleanSector, shortSessions, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
+  HISTORY_WEEKS, MIN_NORMAL, NORMAL_SESSIONS, cleanFlowPeriod, cleanSector, marketTotals, shortSessions, weekWindows, weeklySectorFlows, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
 } from "../src/indicators/money-flow";
 
 /** n weekday sessions from 2026-01-01; `over` replaces whole columns. */
@@ -144,5 +144,51 @@ describe("review fixes", () => {
     totals[67] = { date: "d67", turnover: 60 }; // a quiet day, not short
     expect(shortSessions(totals)).toEqual(["d69"]);
     expect(shortSessions(totals.slice(0, 10))).toEqual([]); // too little history to judge
+  });
+});
+
+describe("weekly history", () => {
+  const sessions = (n: number) => newestFirst(hist(n));
+  test("week 0 is exactly the 1-week window; weeks don't overlap; each normal follows its week", () => {
+    const days = sessions(400);
+    const wk = weekWindows(days);
+    const w = flowWindows(days)!;
+    expect(wk).toHaveLength(HISTORY_WEEKS);
+    expect(wk[0]).toEqual({ end: days[0], start: w.starts[5], normalTo: w.normalTo[5], normalFrom: w.normalFrom[5] });
+    for (let k = 1; k < wk.length; k++) {
+      expect(wk[k]!.end < wk[k - 1]!.start).toBe(true);
+      expect(wk[k]!.normalTo < wk[k]!.start).toBe(true);
+    }
+  });
+  test("only weeks with a full normal window", () => {
+    expect(weekWindows(sessions(10 * 5 + NORMAL_SESSIONS))).toHaveLength(10);
+    expect(weekWindows(sessions(10 * 5 + NORMAL_SESSIONS - 1))).toHaveLength(9);
+  });
+  test("week 0 of a sector equals the bars' 1-week reading", () => {
+    const stocks = ["A", "B", "C", "D", "E"].map((symbol, j) => ({
+      symbol, sector: "IT",
+      h: hist(400, { turnover: Array.from({ length: 400 }, (_, i) => (i >= 395 ? 3e7 : 1e7 + j * 1e6)),
+        close: Array.from({ length: 400 }, (_, i) => (i >= 395 ? 110 : 100)) }),
+    }));
+    const days = newestFirst(stocks[0]!.h);
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set());
+    const bar = sectorFlows(stocks.map((s) => ({ symbol: s.symbol, sector: s.sector, ...flowStats(s.h, flowWindows(days)!).find((x) => x.period === 5)! })), 5).sectors[0]!;
+    const w0 = weeks.find((x) => x.weekEnd === days[0])!;
+    expect(w0.ratio).toBeCloseTo(bar.ratio!, 12);
+    expect(w0.medianMove).toBeCloseTo(bar.medianMove!, 12);
+    expect(w0.stocks).toBe(5);
+    expect(weeks.filter((x) => x.sector === "IT")).toHaveLength(HISTORY_WEEKS);
+  });
+  test("a week containing a short session is marked", () => {
+    const stocks = ["A", "B", "C", "D", "E"].map((symbol) => ({ symbol, sector: "IT", h: hist(400) }));
+    const days = newestFirst(stocks[0]!.h);
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set([days[7]!]));
+    expect(weeks.find((x) => x.weekEnd === days[5])!.shortSession).toBe(true);
+    expect(weeks.find((x) => x.weekEnd === days[0])!.shortSession).toBe(false);
+  });
+  test("marketTotals sums every stock per session, oldest first, from a date", () => {
+    const a = hist(5), b = hist(5, { turnover: Array(5).fill(2e7) });
+    const t = marketTotals([a, b], a.dates[2]!);
+    expect(t).toEqual(a.dates.slice(2).map((date) => ({ date, turnover: 3e7 })));
   });
 });
