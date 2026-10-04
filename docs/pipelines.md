@@ -14,13 +14,14 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 9 | [Index closes](#9-index-closes) | NSE `ind_close_all` (free) | Nightly | ✅ Yes |
 | 10 | [Delivery](#10-delivery) | NSE `MTO` delivery file (free) | Nightly | ✅ Yes |
 | 11 | [Database backup](#11-database-backup) | Postgres | Nightly | ✅ Yes (this Mac + iCloud Drive) |
+| 12 | [Unusual activity](#12-unusual-activity) | Pipelines 1–3 + 10 | Nightly | ✅ Yes |
 | 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
 | 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
 
 **The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 9 → 10 → 2 → 3 → 5's check
-→ 4 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
+→ 4 → 12 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
 ([decision 0001](decisions/0001-nightly-schedule-launchd.md)). Every step is safe to
 re-run, and a failure in one step is logged without stopping the others.
 
@@ -46,6 +47,7 @@ flowchart LR
 | 9 Index closes | ✅ | — | Done |
 | 10 Delivery | ✅ | — | Done |
 | 11 Backup | ✅ | — | Done (this Mac + iCloud Drive) |
+| 12 Unusual activity | ✅ | — | Done |
 | 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
 | 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
 | 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
@@ -179,6 +181,19 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Checked** | A restore into a scratch database matched every table's row count (4 Oct 2026). Run under the real launchd job: local copy ✅, iCloud copy ✅, deleting old iCloud copies blocked by macOS (10-minute limit and a 1.2 GB cap keep that safe; [0021](decisions/0021-database-health-and-delivery.md)) |
 | **Why** | [0021](decisions/0021-database-health-and-delivery.md) |
 
+## 12. Unusual activity
+
+| | |
+|---|---|
+| **What** | Each session's unusual stock-days: big keeping (delivered ≥ 5× normal), huge volume (traded ≥ 5× normal), delivery jump / collapse (delivery % ±30 points from normal), normal = the stock's last 20 sessions |
+| **Source** | `daily_prices` + `daily_delivery`, through `loadAdjustedHistory` (splits, renames); companies trading ≥ ₹1 crore a day, ETFs out |
+| **Writes** | `unusual_days`, replaced in full in one transaction (~84,000 rows since 27 Oct 2016; ~47 a day lately) |
+| **Nightly** | ✅ After the averages, ~21 s; a failure is a `WARNING` and the old table stays |
+| **By hand** | `bun run activity` |
+| **Used by** | `/activity` and the Report Card's "Unusual days" card |
+| **Code** | `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts`; `src/query/activity.ts` |
+| **Why** | [0024](decisions/0024-unusual-activity.md) |
+
 ## 8. One-time setup and backfills
 
 Run once on a new machine (full list in the [README](../README.md#setup)):
@@ -193,5 +208,6 @@ bun run ingest:indices 2020-01-01 <today>        # index closes, ~12 min
 bun run ingest:delivery 2016-09-28 <today>       # delivery figures, resumable
 bun run ingest:nifty50
 bun run indicators
+bun run activity                                  # unusual activity table, ~20 s
 ./ops/install-nightly.sh                         # schedule the nightly job
 ```

@@ -8,13 +8,14 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
-**Where we left off (4 Oct 2026, later).** Database check-up done (decision 0021): Postgres
-tuned, nightly backup (restore tested), index on `daily_indicators(symbol, trade_date)`.
-**Delivery % is collected** (`daily_delivery` since 28 Sep 2016, nightly) **and studied**
-(research 0003): no delivery buy/sell signal passed; four real but small effects, all under
-the cost bar. Next candidates: nightly warnings to the owner (Telegram/email, owner to pick),
-website auto-restart, the breadth-thrust study (Signals). Backups go to this Mac and iCloud Drive. Check Monday's (5 Oct) nightly run (Ops): it
-now also loads delivery and writes a backup.
+**Where we left off (4 Oct 2026, evening).** Shipped today: database check-up and backups
+(0021), delivery % collected and studied (research 0003: no buy/sell signal), the crash-table
+wording fix (0023), and the **Unusual activity** page (`/activity`, 0024): ~47 stocks a day
+whose session was far outside their own normal, whole market or NIFTY 50, plus a card on
+NIFTY 50 Report Cards. Next candidates: nightly warnings to the owner (Telegram or email,
+owner to pick), website auto-restart after a reboot, Report Cards for every stock (would let
+every `/activity` row link somewhere), the breadth-thrust study (Signals). Check Monday's
+(5 Oct) nightly run: it now also rebuilds `unusual_days`, runs the audit and backs up.
 
 ---
 

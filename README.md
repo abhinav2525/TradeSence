@@ -163,6 +163,20 @@ erDiagram
         date changed_on PK "first day under new_symbol"
         text company
     }
+    unusual_days {
+        date trade_date PK
+        text symbol PK "today's symbol"
+        bool kept "delivered >= 5x normal"
+        bool volume "traded >= 5x normal"
+        bool jump "delivery % >= normal + 30"
+        bool collapse "delivery % <= normal - 30"
+        float kept_ratio
+        float volume_ratio
+        float delivery_pct
+        float usual_delivery_pct
+        float change_pct
+        float turnover
+    }
     daily_delivery {
         date trade_date PK
         text symbol PK
@@ -282,6 +296,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:day <date> [--force]` | Ingest one session |
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |
+| `bun run activity` | Rebuild the Unusual activity table (also nightly; ~20 s) |
 | `bun run ingest:nightly` | Cron entry point: ingest recent days + recompute |
 
 ---
@@ -424,6 +439,16 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 |---|---|---|
 | `loadRenames` | `() => Promise<Rename[]>` | Every row of `symbol_changes`. |
 | `loadAdjustedHistory` | `(symbol, renames) => Promise<History \| null>` | Raw OHLCV across the rename lineage, plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only). Shared by `computeIndicators` and research 0002. |
+
+### `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts` and `src/query/activity.ts` — Unusual activity
+
+| Function | Notes |
+|---|---|
+| `windowMean`, `liquidFlags`, `EXCLUDED_DAYS` | Shared with research 0003: mean of the previous 20 sessions (≥ 15 present, never across a gap); median 20-session turnover ≥ ₹1 crore; the five days NSE's two files disagree (0021). |
+| `unusualDays(h)`, `unusualScore` | One company's unusual days (the four kinds, thresholds `KEPT_X`, `VOLUME_X`, `JUMP_PTS`); sort key = largest measure ÷ its threshold. Share counts split-adjusted. |
+| `computeUnusualDays` | Every company through `loadAdjustedHistory`, `unusual_days` replaced in one transaction. `bun run activity` and nightly. |
+| `companies(funds)`, `fundSymbols`, `readFundSymbols` | `universe.ts`: each company once under its latest symbol, ETFs out (`fund-symbols.txt`). |
+| `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all or NIFTY 50 members on that date), counts, a stock's last 92 days. |
 
 ### `src/research/delivery.ts`, `delivery-data.ts`, `cli-delivery.ts` — research 0003
 
