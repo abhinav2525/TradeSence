@@ -72,10 +72,11 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   when more data or the whole market is tested).
 - ~~C: Screener volume-confirmed breakouts~~: heavy-volume crossings were no better than
   light ones. The existing "Volume vs 20d" column stays as information.
-- [ ] Re-run research 0002 on the whole NSE market once averages exist for every stock
-  (Broader universes), and add delivery % (Data to add) as a test. **First** replace the
-  luck check's random stock-days with random *dates* (one random member per date), because
-  signals bunch up; record that in `docs/decisions/` (research 0002 caveats).
+- [x] **Re-run on the whole market** (research 0004, 4 Oct): two real effects, both the
+  opposite of "volume confirms": huge volume on an up day −0.9 pts vs other stocks over a
+  month; heavy-volume breakout above the 200-day average −1.2 pts (−1.9 at 6 months).
+  Confirmed on 2023–. Owner's call: a sourced caution line on Unusual activity's "Huge
+  volume" up days; don't present heavy-volume crossings as stronger on the Screener.
 
 ---
 

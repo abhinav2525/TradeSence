@@ -78,6 +78,7 @@ bun run audit:report-card [date]               # independent recalculation; exit
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study
 bun run research:delivery                      # delivery % signals, whole market (~2 min)
+bun run research:volume-market                 # volume signals, whole market (~75s); -- --json for chart data
 bun run research:fund-symbols                  # rebuild the ETF list studies leave out (~15s)
 bun run ingest:nightly                         # cron entry point
 ```

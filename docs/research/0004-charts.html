@@ -1,0 +1,258 @@
+<title>Does Volume Predict?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of cards, answer first, then the three charts, then the numbers. tradeSence's own tokens. */
+:root {
+  --bg: #f4f6f9; --card: #ffffff; --raised: #f0f2f6;
+  --fg: #0e1218; --fg-2: #475163; --muted: #5f697b;
+  --border: #e3e7ed; --border-strong: #c4ccd7; --grid: #edf0f4;
+  --brand: #2a62e8; --up: #067132; --down: #d00021; --down-soft: rgba(208,0,33,0.09);
+  --neutral-mark: #b4bdca; --cost: rgba(14,18,24,0.06);
+  --shadow: 0 1px 2px rgba(14,18,24,0.05), 0 1px 1px rgba(14,18,24,0.03);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d11; --card: #12151b; --raised: #191d25;
+  --fg: #edf0f5; --fg-2: #a9b1bf; --muted: #808a9a;
+  --border: #232934; --border-strong: #3a4250; --grid: #1d222b;
+  --brand: #5b93ff; --up: #3ee0a0; --down: #f2545b; --down-soft: rgba(242,84,91,0.14);
+  --neutral-mark: #4b5465; --cost: rgba(237,240,245,0.05);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b0d11; --card: #12151b; --raised: #191d25;
+  --fg: #edf0f5; --fg-2: #a9b1bf; --muted: #808a9a;
+  --border: #232934; --border-strong: #3a4250; --grid: #1d222b;
+  --brand: #5b93ff; --up: #3ee0a0; --down: #f2545b; --down-soft: rgba(242,84,91,0.14);
+  --neutral-mark: #4b5465; --cost: rgba(237,240,245,0.05);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+.page { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 48px; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; margin: 4px 0 0; text-wrap: balance; }
+.lede { color: var(--fg-2); max-width: 68ch; margin: 8px 0 0; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 18px 20px 20px; min-width: 0; }
+.card h2 { font-size: 15px; line-height: 20px; font-weight: 600; margin: 0; text-wrap: balance; }
+.card .sub { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; max-width: 72ch; }
+.answer { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px; }
+.verdict { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--raised); min-width: 0; }
+.verdict .k { font-size: 12px; color: var(--muted); }
+.verdict .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.verdict .v small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.verdict p { margin: 4px 0 0; color: var(--fg-2); font-size: 12.5px; }
+.chart { margin-top: 14px; overflow-x: auto; }
+svg text { font-family: var(--sans); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.multiples { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; margin-top: 14px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 6px; min-width: 0; }
+.mini h3 { font-size: 12.5px; font-weight: 600; margin: 0; line-height: 1.35; min-height: 2.7em; }
+.mini .tag { font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+.tag.build { background: var(--down-soft); color: var(--down); }
+.tag.other { background: var(--raised); color: var(--fg-2); border: 1px solid var(--border); }
+.tip { position: fixed; pointer-events: none; background: var(--card); color: var(--fg); border: 1px solid var(--border-strong);
+  border-radius: 8px; padding: 7px 9px; font-size: 12px; line-height: 1.4; box-shadow: 0 6px 20px rgba(0,0,0,0.18); max-width: 260px; z-index: 10; }
+.tip b { font-weight: 600; } .tip .m { color: var(--muted); }
+details { margin-top: 4px; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+summary:focus-visible, button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.tablewrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 220px; }
+th { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.notes { color: var(--fg-2); font-size: 13px; }
+.notes ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
+.foot { color: var(--muted); font-size: 12px; }
+@media (prefers-reduced-motion: no-preference) { .bar, .dot { transition: opacity .15s; } }
+</style>
+
+<main class="page">
+  <header>
+    <div class="eyebrow">tradeSence · Research 0004 · NSE, Sep 2016 – Oct 2026</div>
+    <h1>Does volume predict the next month?</h1>
+    <p class="lede">We tested six popular volume signals on 2,949 NSE companies (₹1 crore+ a day, ETFs left out). Each signal is compared with other stocks on the same days, decided on 2016–2022 and checked again on 2023–2026.</p>
+  </header>
+
+  <section class="card" aria-labelledby="a-h">
+    <h2 id="a-h">The answer</h2>
+    <p class="sub">Two signals held up in both periods, and both were followed by stocks doing <strong>worse</strong> than others. The four others were too small or not reliable. "pts" is the gap in percentage points between those stocks' return and other stocks' return on the same days.</p>
+    <div class="answer">
+      <div class="verdict">
+        <div class="k">Huge volume (5× usual) on a rising day</div>
+        <div class="v">−0.9 <small>pts in a month</small></div>
+        <p>Behind other stocks the same day, mostly in the first week; the gap closes by 6 months. 2023–26: −0.7 pts. 12,617 cases.</p>
+      </div>
+      <div class="verdict">
+        <div class="k">Breakout above the 200-day average on 2× volume</div>
+        <div class="v">−1.2 <small>pts in a month</small></div>
+        <p>Behind, and the gap kept growing for 6 months. 2023–26: −1.0 pts. 3,612 cases.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="c1-h">
+    <h2 id="c1-h">Which signals mattered?</h2>
+    <p class="sub">Return over the month after the signal, minus the typical stock on the same days (2016–2022). Coloured bars passed every rule; grey ones didn't. The shaded band is ±0.5 pts, roughly what a round trip costs.</p>
+    <div class="chart" id="c1"></div>
+  </section>
+
+  <section class="card" aria-labelledby="c2-h">
+    <h2 id="c2-h">What happened after, day by day?</h2>
+    <p class="sub">How far ahead of (above 0) or behind (below 0) the typical same-day stock each signal ran, from 1 session to 6 months after the next day's close. Same scale in every panel.</p>
+    <div class="multiples" id="c2"></div>
+  </section>
+
+  <section class="card" aria-labelledby="c3-h">
+    <h2 id="c3-h">Does it still hold today?</h2>
+    <p class="sub">The one-month gap in 2016–2022 (hollow) and in 2023–2026 (filled). A real effect lands on the same side both times.</p>
+    <div class="chart" id="c3"></div>
+    <div class="legend"><span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--card)" stroke="var(--fg-2)" stroke-width="2"/></svg>2016–2022 (rules decided here)</span><span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--fg-2)"/></svg>2023–2026 (the check)</span></div>
+  </section>
+
+  <section class="card notes" aria-labelledby="n-h">
+    <h2 id="n-h">How to read this</h2>
+    <ul>
+      <li><strong>"pts" means percentage points:</strong> the gap between two returns. If signal stocks returned −0.7% in a month and other stocks on the same days +0.2%, the gap is −0.9 pts.</li>
+      <li><strong>Facts, not tips.</strong> "Behind by 0.9 pts" is a typical result over thousands of cases. Plenty of single stocks did the opposite.</li>
+      <li><strong>The surprise is the direction.</strong> Heavy volume on an up day and heavy-volume breakouts are usually read as strength. Across the whole market since 2016, both were followed by weaker-than-average months.</li>
+      <li><strong>Same days, other stocks.</strong> Every signal is compared with random other stocks on the same dates, so a rising or falling market can't make a signal look good or bad.</li>
+      <li><strong>Six tests at once.</strong> One could have passed the 2016–22 rules by luck. The 2023–26 check is the guard, and both winners passed it.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="t-h">
+    <details>
+      <summary id="t-h">See the numbers</summary>
+      <div class="tablewrap" id="t"></div>
+    </details>
+  </section>
+
+  <p class="foot">Generated 4 Oct 2026 from <code>bun run research:volume-market</code> · 23,27,719 eligible stock-days · full write-up: docs/research/0004 in the tradeSence repo.</p>
+</main>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const DATA = {"signals":[{"name":"Huge volume (≥ 5×), price up","short":"Huge volume, price up","verdict":"Build","effect":-0.87,"holdoutEffect":-0.72,"episodes":12617,"holdoutEpisodes":14456,"path":[[1,-0.34,-0.09],[3,-0.63,-0.14],[5,-0.81,-0.16],[10,-0.65,-0.04],[21,-0.69,0.18],[42,-0.65,0.27],[63,-0.02,0.47],[126,1.42,1.59]]},{"name":"Huge volume (≥ 5×), price down","short":"Huge volume, price down","verdict":"Maybe","effect":-0.16,"holdoutEffect":-0.32,"episodes":3819,"holdoutEpisodes":4286,"path":[[1,-0.11,-0.1],[3,-0.27,-0.22],[5,-0.35,-0.31],[10,-0.39,-0.3],[21,-0.27,-0.1],[42,-0.11,0],[63,0,0],[126,-0.34,-0.11]]},{"name":"Breakout above the 200-day average on heavy volume (≥ 2×)","short":"Breakout, heavy volume","verdict":"Build","effect":-1.17,"holdoutEffect":-0.98,"episodes":3612,"holdoutEpisodes":4518,"path":[[1,-0.34,-0.09],[3,-0.56,-0.08],[5,-0.81,-0.14],[10,-1.15,-0.12],[21,-1.3,-0.14],[42,-2.17,-0.76],[63,-2.73,-1.08],[126,-3.43,-1.58]]},{"name":"Breakdown below the 200-day average on heavy volume (≥ 2×)","short":"Breakdown, heavy volume","verdict":"Maybe","effect":-0.38,"holdoutEffect":-0.56,"episodes":1280,"holdoutEpisodes":1701,"path":[[1,-0.13,-0.08],[3,-0.24,-0.3],[5,-0.54,-0.46],[10,-0.79,-0.58],[21,-0.98,-0.6],[42,-1.25,-0.99],[63,-2.26,-1.46],[126,-3.15,-3.3]]},{"name":"Buyers in control (Chaikin Money Flow, top fifth)","short":"Buyers in control","verdict":"Don't build","effect":-0.28,"holdoutEffect":0,"episodes":16929,"holdoutEpisodes":16399,"path":[[1,-0.17,-0.1],[3,-0.32,-0.14],[5,-0.44,-0.16],[10,-0.33,-0.06],[21,-0.1,0.18],[42,0.1,0.25],[63,0.47,0.4],[126,1.68,1.46]]},{"name":"Quiet buying (price down, On-Balance Volume up, 20 sessions)","short":"Quiet buying","verdict":"Maybe","effect":-0.04,"holdoutEffect":-0.26,"episodes":24641,"holdoutEpisodes":23091,"path":[[1,-0.11,-0.09],[3,-0.15,-0.15],[5,-0.17,-0.13],[10,-0.26,-0.17],[21,-0.06,-0.02],[42,0.22,0.47],[63,0.13,0.43],[126,0.75,1.33]]}]};
+
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
+const fmt = (v, d = 2) => (v === null ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d));
+const tip = document.getElementById("tip");
+function showTip(evt, html) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect(); let x = evt.clientX + 14, y = evt.clientY + 14; if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - 14; if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - 14; tip.style.left = x + "px"; tip.style.top = y + "px"; }
+const hideTip = () => { tip.hidden = true; };
+const isBuild = (s) => s.verdict === "Build";
+
+// Charts 1 and 3 share one geometry: labels beside the marks on wide screens, above them on phones.
+function geometry(host, rows, extraBottom) {
+  const width = Math.max(300, host.clientWidth || 900), narrow = width < 560;
+  const W = narrow ? width : 900, labelW = narrow ? 8 : 280, right = narrow ? 52 : 70;
+  const rowH = narrow ? 50 : 34, top = 26, H = top + rows * rowH + extraBottom;
+  const min = -1.5, max = 0.75, x = (v) => labelW + ((v - min) / (max - min)) * (W - labelW - right);
+  // on phones the label sits above the mark, so the mark drops a little inside its row
+  const markY = (cy) => (narrow ? cy + 8 : cy), labelAt = (cy) => (narrow ? { x: labelW, y: cy - 10, anchor: "start" } : { x: labelW - 12, y: cy + 4, anchor: "end" });
+  return { W, labelW, right, rowH, top, H, x, narrow, markY, labelAt };
+}
+
+// Chart 1: diverging bars of the 1-month effect, sorted, with the ±0.5 cost band.
+(function chart1() {
+  const host = document.getElementById("c1");
+  const rows = [...DATA.signals].sort((a, b) => a.effect - b.effect);
+  const { W, labelW, rowH, top, H, x, markY, labelAt } = geometry(host, rows.length, 24);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "One-month effect per signal versus the typical same-day stock" }, host);
+  el("rect", { x: x(-0.5), y: top - 6, width: x(0.5) - x(-0.5), height: rows.length * rowH + 4, fill: "var(--cost)" }, svg);
+  for (const t of [-1.5, -1, -0.5, 0, 0.5]) {
+    el("line", { x1: x(t), x2: x(t), y1: top - 6, y2: H - 18, stroke: t === 0 ? "var(--border-strong)" : "var(--grid)", "stroke-width": 1 }, svg);
+    const tx = el("text", { x: x(t), y: 14, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, svg); tx.textContent = (t === 0 ? "0" : fmt(t, 1)) + (t === 0 ? "" : "");
+  }
+  const lab = el("text", { x: x(-0.5) + (x(0.5) - x(-0.5)) / 2, y: H - 4, "text-anchor": "middle", "font-size": 10.5, fill: "var(--muted)" }, svg); lab.textContent = "cost band ±0.5";
+  rows.forEach((s, i) => {
+    const row = top + i * rowH + rowH / 2, cy = markY(row), la = labelAt(row);
+    const name = el("text", { x: la.x, y: la.y, "text-anchor": la.anchor, "font-size": 12.5, fill: "var(--fg)", "font-weight": isBuild(s) ? 600 : 400 }, svg); name.textContent = s.short;
+    const x0 = x(0), x1 = x(s.effect), bx = Math.min(x0, x1), bw = Math.max(2, Math.abs(x1 - x0));
+    const bar = el("rect", { class: "bar", x: bx, y: cy - 8, width: bw, height: 16, rx: 4, fill: isBuild(s) ? "var(--down)" : "var(--neutral-mark)" }, svg);
+    const val = el("text", { x: x1 + (s.effect < 0 ? -6 : 6), y: cy + 4, "text-anchor": s.effect < 0 ? "end" : "start", "font-size": 12, fill: "var(--fg-2)", "font-variant-numeric": "tabular-nums" }, svg);
+    val.textContent = fmt(s.effect) + " pts";
+    if (s.effect < 0 && x1 - 60 < labelW) { val.setAttribute("x", x0 + 6); val.setAttribute("text-anchor", "start"); }
+    const hit = el("rect", { x: 0, y: row - rowH / 2, width: W, height: rowH, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => showTip(e, `<b>${s.name}</b><br>${fmt(s.effect)} pts vs other stocks, 1 month<br><span class="m">${s.episodes.toLocaleString("en-IN")} cases · verdict: ${s.verdict}</span>`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+})();
+
+// Chart 2: small multiples, the gap (signal − typical same-day stock) over 1…126 sessions, shared y scale, log-spaced x.
+(function chart2() {
+  const host = document.getElementById("c2");
+  const all = DATA.signals.flatMap((s) => s.path.map((p) => p[1] - p[2]));
+  const lo = Math.min(-2, Math.floor(Math.min(...all) * 2) / 2), hi = Math.max(0.5, Math.ceil(Math.max(...all) * 2) / 2);
+  const W = 280, H = 150, L = 34, R = 10, T = 8, B = 22;
+  const lx = (n) => Math.log(n), x = (n) => L + ((lx(n) - lx(1)) / (lx(126) - lx(1))) * (W - L - R);
+  const y = (v) => T + ((hi - v) / (hi - lo)) * (H - T - B);
+  const ticksX = [[1, "1d"], [5, "1w"], [21, "1m"], [63, "3m"], [126, "6m"]];
+  const ticksY = []; for (let v = Math.ceil(lo); v <= hi + 1e-9; v += 1) ticksY.push(v);
+  for (const s of DATA.signals) {
+    const box = document.createElement("div"); box.className = "mini";
+    box.innerHTML = `<h3>${s.short}<span class="tag ${isBuild(s) ? "build" : "other"}">${s.verdict}</span></h3>`;
+    host.appendChild(box);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": `${s.short}: gap versus the typical same-day stock over six months` }, box);
+    el("rect", { x: L, y: y(0.5), width: W - L - R, height: y(-0.5) - y(0.5), fill: "var(--cost)" }, svg);
+    for (const v of ticksY) {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--border-strong)" : "var(--grid)", "stroke-width": 1 }, svg);
+      const t = el("text", { x: L - 6, y: y(v) + 3.5, "text-anchor": "end", "font-size": 10, fill: "var(--muted)" }, svg); t.textContent = v === 0 ? "0" : fmt(v, 0);
+    }
+    for (const [n, lbl] of ticksX) { const t = el("text", { x: x(n), y: H - 6, "text-anchor": "middle", "font-size": 10, fill: "var(--muted)" }, svg); t.textContent = lbl; }
+    const pts = s.path.map(([n, a, b]) => [x(n), y(a - b), n, a - b, a, b]);
+    const colour = isBuild(s) ? "var(--down)" : "var(--fg-2)";
+    el("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" "), fill: "none", stroke: colour, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    const end = pts[pts.length - 1];
+    el("circle", { cx: end[0], cy: end[1], r: 4, fill: colour, stroke: "var(--card)", "stroke-width": 2 }, svg);
+    const hover = el("circle", { r: 4, fill: colour, stroke: "var(--card)", "stroke-width": 2, opacity: 0 }, svg);
+    const rule = el("line", { y1: T, y2: H - B, stroke: "var(--fg)", "stroke-opacity": 0.25, "stroke-width": 1, opacity: 0 }, svg);
+    const hit = el("rect", { x: L, y: 0, width: W - L - R, height: H - B, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => {
+      const r = svg.getBoundingClientRect(), mx = ((e.clientX - r.left) / r.width) * W;
+      const p = pts.reduce((a, b) => (Math.abs(b[0] - mx) < Math.abs(a[0] - mx) ? b : a));
+      hover.setAttribute("cx", p[0]); hover.setAttribute("cy", p[1]); hover.setAttribute("opacity", 1);
+      rule.setAttribute("x1", p[0]); rule.setAttribute("x2", p[0]); rule.setAttribute("opacity", 1);
+      showTip(e, `<b>${p[2]} session${p[2] === 1 ? "" : "s"} after</b><br>Gap: ${fmt(p[3])} pts<br><span class="m">signal ${fmt(p[4])}% · typical stock ${fmt(p[5])}%</span>`);
+    });
+    hit.addEventListener("mouseleave", () => { hover.setAttribute("opacity", 0); rule.setAttribute("opacity", 0); hideTip(); });
+  }
+})();
+
+// Chart 3: dumbbell, 2016–22 (hollow) vs 2023–26 (filled), one row per signal, same order as chart 1.
+(function chart3() {
+  const host = document.getElementById("c3");
+  const rows = [...DATA.signals].sort((a, b) => a.effect - b.effect);
+  const { W, rowH, top, H, x, markY, labelAt } = geometry(host, rows.length, 4);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "One-month gap in 2016–2022 and in 2023–2026 per signal" }, host);
+  el("rect", { x: x(-0.5), y: top - 6, width: x(0.5) - x(-0.5), height: rows.length * rowH + 2, fill: "var(--cost)" }, svg);
+  for (const t of [-1.5, -1, -0.5, 0, 0.5]) {
+    el("line", { x1: x(t), x2: x(t), y1: top - 6, y2: H - 4, stroke: t === 0 ? "var(--border-strong)" : "var(--grid)", "stroke-width": 1 }, svg);
+    const tx = el("text", { x: x(t), y: 14, "text-anchor": "middle", "font-size": 11, fill: "var(--muted)" }, svg); tx.textContent = t === 0 ? "0" : fmt(t, 1);
+  }
+  rows.forEach((s, i) => {
+    const row = top + i * rowH + rowH / 2, cy = markY(row), la = labelAt(row);
+    const name = el("text", { x: la.x, y: la.y, "text-anchor": la.anchor, "font-size": 12.5, fill: "var(--fg)", "font-weight": isBuild(s) ? 600 : 400 }, svg); name.textContent = s.short;
+    const c = isBuild(s) ? "var(--down)" : "var(--fg-2)";
+    el("line", { x1: x(s.effect), x2: x(s.holdoutEffect), y1: cy, y2: cy, stroke: c, "stroke-opacity": 0.45, "stroke-width": 2 }, svg);
+    el("circle", { class: "dot", cx: x(s.effect), cy, r: 5.5, fill: "var(--card)", stroke: c, "stroke-width": 2 }, svg);
+    el("circle", { class: "dot", cx: x(s.holdoutEffect), cy, r: 5.5, fill: c, stroke: "var(--card)", "stroke-width": 2 }, svg);
+    const hit = el("rect", { x: 0, y: row - rowH / 2, width: W, height: rowH, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => showTip(e, `<b>${s.name}</b><br>2016–22: ${fmt(s.effect)} pts (${s.episodes.toLocaleString("en-IN")} cases)<br>2023–26: ${fmt(s.holdoutEffect)} pts (${s.holdoutEpisodes.toLocaleString("en-IN")} cases)`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+})();
+
+// The numbers, as a table (accessible view of all three charts).
+(function table() {
+  const head = ["Signal", "Verdict", "1 month, 2016–22", "1 month, 2023–26", "Cases 2016–22", "1d", "1w", "1m", "3m", "6m"];
+  const pick = (s, n) => { const p = s.path.find((q) => q[0] === n); return fmt(p[1] - p[2]); };
+  const rows = DATA.signals.map((s) => [s.name, s.verdict, fmt(s.effect) + " pts", fmt(s.holdoutEffect) + " pts", s.episodes.toLocaleString("en-IN"), pick(s, 1), pick(s, 5), pick(s, 21), pick(s, 63), pick(s, 126)]);
+  document.getElementById("t").innerHTML = `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table><p class="foot" style="margin-top:8px">Day columns: gap vs the typical same-day stock, in points, 2016–22.</p>`;
+})();
+</script>

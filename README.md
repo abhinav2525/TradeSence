@@ -290,6 +290,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:delivery <start> <end>` | Load delivered vs traded shares per stock (resumable) |
 | `bun run db:backup` | Compressed `pg_dump` to `~/Backups/tradesence`, newest 7 kept (also nightly) |
 | `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
+| `bun run research:volume-market` | Print the whole-market volume study (research 0004); `-- --json file` writes the chart data; ~75 s |
 | `bun run research:delivery` | Print the delivery study (research 0003) as Markdown; whole liquid market, about 2 minutes |
 | `bun run research:fund-symbols` | Rebuild `src/research/fund-symbols.txt` (NSE ETFs since 2016, by ISIN); ~15 s |
 | `bun run research:volume` | Print the volume study (research 0002) as Markdown; `-- --check SYM,SYM` prints the latest CMF/MFI |
@@ -449,6 +450,13 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `computeUnusualDays` | Every company through `loadAdjustedHistory`, `unusual_days` replaced in one transaction. `bun run activity` and nightly. |
 | `companies(funds)`, `fundSymbols`, `readFundSymbols` | `universe.ts`: each company once under its latest symbol, ETFs out (`fund-symbols.txt`). |
 | `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all or NIFTY 50 members on that date), counts, a stock's last 92 days. |
+
+### `src/research/volume-market.ts`, `cli-volume-market.ts` — research 0004
+
+| Function | Notes |
+|---|---|
+| `volumeSeries(h)` | Per stock: adjusted close, volume vs previous-20 mean (split-adjusted), the day's move (none across a stretch outside EQ), SMA 200 per segment, CMF(20), quiet-buying flags, liquidity, returns from the next close at `CHART_HORIZONS` (1…126). |
+| `volumeSignalFlags(s, cmfCuts)` | The six signals in `MARKET_SIGNALS` order: huge volume (≥ 5×) up / down, heavy (≥ 2×) cross above / below the 200-day SMA, CMF top fifth, quiet buying. |
 
 ### `src/research/delivery.ts`, `delivery-data.ts`, `cli-delivery.ts` — research 0003
 
