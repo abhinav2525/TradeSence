@@ -17,18 +17,21 @@ well over the next month, the jump explains everything and the volume adds nothi
 
 ## The short answer
 
-**The lag after those days comes from the jump, not the volume.** Same-size jumps on
-*ordinary* volume lagged even more. Whether heavy volume actually *helps* is **not settled**:
-the two methods we fixed in advance disagree.
+**For huge-volume up days, the volume is not what goes with the lag.** Same-size jumps on
+*ordinary* volume lagged at least as much (in fact more). Whether huge volume actually
+*helps* is **not settled**: the two methods we fixed in advance disagree. **For breakouts,
+the answer is weaker:** across the whole market heavy and light breakouts did about the same
+by the fixed rule, but that verdict sits right on its line and flips with one reasonable
+change (see Q2).
 
 | Question | Next month: heavy volume vs ordinary volume, same jump | 2023– check | Second method | Verdict |
 |---|---|---|---|---|
 | **Huge volume (≥ 5×) vs ordinary (< 1.5×)**, jumps of +3% or more | **Ahead by 1.06 pts** (8,915 matched cases), beat every random draw | Ahead by 0.41 pts, beat 99.9% | Regression: **no volume effect** in 2016–22 (t = 0.00); weak and positive since 2023 (t = 2.57, short of the 3 bar) | **Not settled** |
-| **Breakouts: heavy (≥ 2×) vs light (< 1.5×) volume**, same jump | Behind by 0.29 pts (2,818 cases), beat 3.6% | Ahead by 0.07 pts | Not run (too few breakouts per day) | **The jump explains it** (one method) |
+| **Breakouts: heavy (≥ 2×) vs light (< 1.5×) volume**, same jump | Behind by 0.29 pts (2,818 cases), beat 3.6% | Ahead by 0.07 pts | Not run (too few breakouts per day) | **The jump explains it** (one method; borderline, see Q2) |
 
 **In one line:** a big up day on huge volume is followed by a weaker month than the typical
-stock, but a same-size jump on quiet volume is followed by an even weaker one. Volume is not
-the warning sign; the jump is.
+stock, but a same-size jump on quiet volume is followed by an even weaker one. For those days,
+huge volume is not the warning sign; the size of the jump goes with the weakness.
 
 **What the verdicts mean.** "Volume adds" needed the matched comparison to pass every rule
 in both periods *and* the regression to agree with a t of at least 3. "The jump explains it"
@@ -58,7 +61,7 @@ needed the gap under 0.3 pts in both periods. Anything else is "Not settled".
 The matched comparison passed every rule: 8,915 matched cases in 2016–22, strength 100%,
 a gap of +1.06 pts (well over the 0.5 cost bar), the same side at all four other spans, and
 confirmed in 2023– (+0.41 pts, beat 99.9%). The gap grows with time: +0.10 pts at a week,
-+1.06 at a month, +3.59 at six months in 2016–22 (+1.43 at six months since 2023).
++1.06 at a month, +3.62 at six months in 2016–22 (+1.43 at six months since 2023).
 
 **The regression didn't agree.** Across every up day, with the jump, the previous month's
 return and company size held constant, volume's average effect in 2016–22 was −0.00006
@@ -66,7 +69,9 @@ per unit of ln(volume ÷ normal), with t = 0.00: nothing at all. Since 2023 it w
 (t = 2.57), which for a 5× day works out to about +0.24 pts a month: positive, small, and
 short of the bar.
 
-**Why the two methods can disagree.** The matched comparison looks at the extremes: 5×
+**Why the two methods can disagree (possible reasons, not tested).** First, the matched
+comparison compares medians, the regression averages, and averages are pulled around by a
+few extreme stocks. Second, the matched comparison looks at the extremes: 5×
 volume against under 1.5×, on jumps of +3% or more. The regression uses every up day,
 mostly small ones, and assumes volume works on a sliding scale. The matched edge sits
 mostly in the larger jumps (+8–12%: +2.03 pts in 2016–22, +1.50 since 2023), while in
@@ -89,10 +94,22 @@ bar) and were ahead by 0.07 pts since 2023. Both are under the 0.3 line, so the 
 results swing from one period to the next (+8% or more: −1.94 in 2016–22, +4.07 since 2023,
 on 376 and 419 cases), so no size band tells a steady story.
 
+**The verdict is fragile.** A breakout's control can be the same stock on another day of
+the same month, for example when it slips back and crosses again on light volume a week
+later; the two returns then overlap and pull the gap toward zero. The fixed rules allowed
+that. The independent review asked what happens without it, and the runner now prints that
+check: the 2016–22 gap becomes **−0.30 pts** (beat 3.4%), no longer under the 0.3 line, so
+the verdict would read "Not settled". Huge-volume jumps barely move (+1.06, then +0.44).
+The fixed verdict stands, but read it as "no clear difference across the whole market",
+not as proof that volume plays no part in breakouts. Note also that light-volume breakouts
+lagged *less* than heavy ones in 2016–22 (−0.4% vs −0.7% against the typical stock).
+
 ### Side check: the bigger stocks (no verdict)
 
 The spec asked for the same comparison with **sector** added to the groups, on the ~750
-Nifty Total Market stocks. Its results pointed the other way from the main ones, so after the
+Nifty Total Market stocks. That list is **today's** list, so for 2016–22 it leans towards
+companies that later did well enough to be in it (the same look-ahead the main matching
+avoids by ranking size on each day). Treat these rows as rough. Its results pointed the other way from the main ones, so after the
 first run we added one more row, the same stocks **without** sector (marked †), to tell apart
 the two possible reasons: the smaller set of stocks, or the finer groups.
 
@@ -105,15 +122,15 @@ the two possible reasons: the smaller set of stocks, or the finer groups.
 | Breakout · bigger stocks † | −1.10 | −0.88 | 1,523 (615) |
 | Breakout · bigger, by sector | −0.89 | −1.33 | 607 (1,532) |
 
-- **Huge volume:** the edge is weaker among bigger stocks (+0.37, then about zero) and turns
+- **Huge volume:** the edge is weaker among these stocks (+0.37, then about zero) and turns
   negative when sector is added, though that version leaves out more than half its cases.
-  The Q1 edge is mostly a smaller-company effect, and it moves with how the matching is
+  The Q1 edge may be stronger in smaller companies, and it moves with how the matching is
   done. That is one more reason it stays "Not settled".
 - **Breakouts:** among bigger stocks, heavy-volume breakouts lagged light-volume ones by
   about 1 point a month, **in both periods, with or without sector**. The whole-market
   result hides this. It is a lead, not a finding: it was not a fixed question, and the †
-  row was chosen after seeing results. A follow-up study with this question fixed first
-  would settle it (TODO).
+  row was chosen after seeing results, on today's list. A follow-up study with this question
+  fixed first, with size measured on each day rather than today's list, would settle it (TODO).
 
 ## How this fits what others found
 
@@ -129,14 +146,18 @@ the two possible reasons: the smaller set of stocks, or the finer groups.
 ## Caveats (please read)
 
 - **Two questions, two methods, several side checks.** Only the fixed verdict rules decide;
-  the band table and the bigger-stock rows are descriptions. The † row was added after
-  the first run and is labelled everywhere it appears.
+  the band table, the bigger-stock rows and the same-stock check are descriptions. The †
+  row was added after the first run and the same-stock check after the review; both are
+  labelled where they appear.
+- **The breakout verdict sits on its line** (−0.29 against 0.3) and flips when a stock's own
+  days are removed from its controls (Q2).
 - **Left out for lack of a match:** 15% of huge-volume jumps (1,542 in 2016–22, 1,930 since
-  2023) and 22% of heavy-volume breakouts (801 and 1,037) had no ordinary-volume day in
-  their group. Their results aren't in the comparison.
+  2023) and 22% of heavy-volume breakouts (801 and 1,037) had no ordinary-volume day with a
+  one-month result in their group. Since 2023 this includes the latest month, whose
+  comparison days have no one-month result yet. Their results aren't in the comparison.
 - **Size, not sector, in the main matching.** Company size is ranked on each day's own
   turnover, so no future information leaks in. Sector comes from today's NSE list (only
-  for the side check).
+  for the side check, and the bigger-stock rows use today's index list).
 - **Liquid companies only** (₹1 crore a day median turnover), ETFs left out, as in 0003
   and 0004.
 - **Medians, not guarantees.** Plenty of single stocks did the opposite.
@@ -150,7 +171,8 @@ the day's move uses the adjusted close with the 5-day gap rule; volume ratio aga
 previous 20-session mean; thresholds allow 1e-9 so a computed 4.999999999999999× counts as
 5×. Excess return = the stock's return from the next session's close minus that day's
 median among eligible stocks. Matched comparison and luck check: research 0003's `part`,
-with each group playing the role of a day. Regression: for each session, least squares
+with each group playing the role of a day; at every span a signal counts only if its
+group has a control with a return at that span. Regression: for each session, least squares
 across eligible up days (at least 100 stocks; 1,462 days in 2016–22, 888 since), averaged
 over days with Newey–West errors (20 lags, since one-month returns that start on
 neighbouring days overlap). Spot check: in the first 300 companies, all 2,875 huge-volume
@@ -163,14 +185,16 @@ jump days are also 0004 "huge volume, price up" days. Code:
 - **Unusual activity page:** **don't** add a caution line that blames huge volume. Days with
   huge volume on a rising stock did lag the typical stock (study 0004), but same-size jumps
   on quiet volume lagged more, so a line saying "huge volume is a warning" would point at
-  the wrong cause. If a line is wanted, the supported one is about the jump: *"Big one-day
+  the wrong thing. If a line is wanted, the supported one is about the jump: *"Big one-day
   jumps have tended to give back some ground over the next month (studies 0004, 0005)."*
   Owner's call.
 - **Screener:** keep heavy-volume crossings neutral, as now. Across the whole market, heavy
-  and light breakouts did about the same; among bigger stocks heavy ones did worse (a lead).
+  and light breakouts did about the same by the fixed rule (a borderline call); among bigger
+  stocks heavy ones did worse (a rough lead).
   Don't present heavy volume as confirmation.
-- **Next study (proposed):** heavy vs light breakouts on the bigger (~750) stocks only,
-  rules fixed first.
+- **Next study (proposed):** heavy vs light breakouts on bigger stocks, rules fixed first:
+  size measured on each day (e.g. top third by turnover), and a stock's own days never used
+  as its controls.
 
 ## Appendix: full results (generated)
 
@@ -185,10 +209,10 @@ jump days are also 0004 "huge volume, price up" days. Code:
 
 | Question | 5d | 10d | 21d | 63d | 126d |
 |---|---|---|---|---|---|
-| Q1 2016–22 | +0.10 | +0.57 | +1.06 | +2.74 | +3.59 |
-| Q1 2023– | -0.19 | +0.16 | +0.41 | +1.45 | +1.43 |
-| Q2 2016–22 | -0.26 | -0.52 | -0.29 | +0.20 | +0.27 |
-| Q2 2023– | +0.02 | +0.28 | +0.07 | -1.44 | -0.57 |
+| Q1 2016–22 | +0.10 | +0.57 | +1.06 | +2.75 | +3.62 |
+| Q1 2023– | -0.19 | +0.16 | +0.41 | +1.47 | +1.43 |
+| Q2 2016–22 | -0.26 | -0.52 | -0.29 | +0.18 | +0.34 |
+| Q2 2023– | +0.02 | +0.28 | +0.07 | -1.42 | -0.49 |
 
 ### Fama–MacBeth (Q1's second method): daily fits across eligible up days, ≥ 100 stocks, Newey–West 20 lags
 
@@ -214,6 +238,15 @@ Days fitted: 1462 (2016–22), 888 (2023–); skipped for fewer than 100 stocks 
 | Q2 | +3 to +5% | 953 | -0.35 | 1205 | -0.70 |
 | Q2 | +5 to +8% | 824 | -0.52 | 1153 | +0.62 |
 | Q2 | +8% or more | 376 | -1.94 | 419 | +4.07 |
+
+### Side check after review: the signal's own stock removed from its controls (1 month)
+
+A control can be the same stock on another day in the same month (e.g. it crossed again on light volume a week later); the two returns overlap. This check, added after the independent review, removes them. It decides nothing; the verdicts above follow the fixed rules.
+
+| Question | Matched 2016–22 | Effect | Beats | Matched 2023– | Effect | Beats | Both under 0.3 pts? |
+|---|---|---|---|---|---|---|---|
+| Q1 | 8914 | +1.06 | 100.0% | 10833 | +0.44 | 99.9% | no |
+| Q2 | 2817 | -0.30 | 3.4% | 3590 | +0.13 | 77.9% | no |
 
 ### Secondary: sector added to the groups (Nifty Total Market stocks only; no verdict)
 

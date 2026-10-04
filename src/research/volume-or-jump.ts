@@ -160,3 +160,30 @@ export function prevReturn(close: number[], dates: string[], h: number): (number
     return a >= 0 && seg[a] === seg[i] ? (close[b]! / close[a]! - 1) * 100 : null;
   });
 }
+
+/**
+ * Null each signal's return at spans where its group has no control, so the
+ * signal median and the matched baseline describe the same days at every span
+ * (the baseline skips such signals; the median would otherwise keep them).
+ */
+export function alignToPools<T extends { day: number; returns: (number | null)[] }>(occ: T[], pools: number[][][]): T[] {
+  return occ.map((o) => ({ ...o, returns: o.returns.map((r, v) => ((pools[v]?.[o.day]?.length ?? 0) > 0 ? r : null)) }));
+}
+
+/**
+ * Side check (added after review): each signal gets its own pool, its group's
+ * controls minus those from the same stock (a same-month light-volume repeat of
+ * the same stock overlaps its returns). Signals left with no control are dropped.
+ * `pool[g]` and `syms[g]` are parallel; returns the occasions re-indexed to their pools.
+ */
+export function excludeSelf<T extends { day: number; symbol: string }>(occ: T[], pool: number[][], syms: string[][]) {
+  const pools: number[][] = [];
+  const kept: T[] = [];
+  for (const o of occ) {
+    const own = (pool[o.day] ?? []).filter((_, k) => syms[o.day]![k] !== o.symbol);
+    if (own.length === 0) continue;
+    kept.push({ ...o, day: pools.length });
+    pools.push(own);
+  }
+  return { occ: kept, pools, dropped: occ.length - kept.length };
+}

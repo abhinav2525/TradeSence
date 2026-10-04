@@ -16,7 +16,7 @@ import { tradingDays } from "./delivery-data";
 import { DISCOVERY_END, part, type Occasion, type Part } from "./delivery";
 import { CHART_HORIZONS, effectOf, volumeSeries } from "./volume-market";
 import {
-  FM_T, JUMP_FLOOR, Q1_BANDS, Q2_BANDS, addRow, bandOf, breakoutFlags, droppedCount, groupKey, jumpFlags,
+  FM_T, JUMP_FLOOR, SETTLED_BELOW, alignToPools, excludeSelf, Q1_BANDS, Q2_BANDS, addRow, bandOf, breakoutFlags, droppedCount, groupKey, jumpFlags,
   medianTurnover, neweyWest, normalEq, prevReturn, solveEq, thirdCuts, thirdOf, verdict5, type NormalEq,
 } from "./volume-or-jump";
 
@@ -73,8 +73,9 @@ const cuts = sizes.map((v) => (v.length >= 3 ? thirdCuts(v) : null));
 pools.length = 0; // pass 2 needs only the medians
 
 // pass 2: matched groups (per question, and with sector added) and daily regressions
-type Study = { groups: Map<string, number>; controls: number[][][]; occ: (Occasion & { band: number })[] };
-const study = (): Study => ({ groups: new Map(), controls: SPAN_C.map(() => []), occ: [] });
+// ctrlSym[g] runs parallel to controls[MAIN_V][g]: which stock each 1-month control came from
+type Study = { groups: Map<string, number>; controls: number[][][]; ctrlSym: string[][]; occ: (Occasion & { band: number; symbol: string })[] };
+const study = (): Study => ({ groups: new Map(), controls: SPAN_C.map(() => []), ctrlSym: [], occ: [] });
 const Q = { jump: study(), breakout: study(), jumpSector: study(), breakoutSector: study(), jumpTm: study(), breakoutTm: study() };
 const fm: NormalEq[] = days.map(() => normalEq(FM_K));
 const groupOf = (st: Study, key: string) => {
@@ -82,6 +83,7 @@ const groupOf = (st: Study, key: string) => {
   if (g === undefined) {
     g = st.groups.size; st.groups.set(key, g);
     st.controls.forEach((c) => c.push([]));
+    st.ctrlSym.push([]);
   }
   return g;
 };
@@ -109,11 +111,15 @@ await each((s) => {
     flags.control.forEach((on, i) => {
       if (!on) return;
       const g = groupAt(i);
-      if (g) excess[i]!.forEach((e, v) => { if (e != null) st.controls[v]![g[0]]!.push(e); });
+      if (g) excess[i]!.forEach((e, v) => {
+        if (e == null) return;
+        st.controls[v]![g[0]]!.push(e);
+        if (v === MAIN_V) st.ctrlSym[g[0]]!.push(s.symbol);
+      });
     });
     for (const i of episodeStarts(flags.signal)) {
       const g = groupAt(i);
-      if (g) st.occ.push({ date: s.dates[i]!, day: g[0], pos: -1, returns: excess[i]!, band: g[1] });
+      if (g) st.occ.push({ date: s.dates[i]!, day: g[0], pos: -1, returns: excess[i]!, band: g[1], symbol: s.symbol });
     }
   };
   const jf = jumpFlags(s), bf = breakoutFlags(s);
@@ -137,7 +143,7 @@ await each((s) => {
 type Res = { disc: Part; hold: Part; dropped: { disc: number; hold: number }; signals: number };
 function compare(st: Study, filter: (o: Study["occ"][number]) => boolean = () => true): Res {
   const pick = (inDisc: boolean) => st.occ.filter((o) => filter(o) && (o.date <= DISCOVERY_END) === inDisc);
-  const matched = (occ: Occasion[]) => occ.filter((o) => (st.controls[MAIN_V]![o.day]?.length ?? 0) > 0);
+  const matched = (occ: Occasion[]) => alignToPools(occ.filter((o) => (st.controls[MAIN_V]![o.day]?.length ?? 0) > 0), st.controls);
   const d = pick(true), h = pick(false);
   return {
     disc: part(matched(d), st.controls, MAIN_V), hold: part(matched(h), st.controls, MAIN_V),
@@ -173,6 +179,19 @@ const bands = (st: Study, cutsList: readonly number[], floor: number | null) =>
     return { band: bandLabel(cutsList, floor, b), n: r.disc.n, effect: clean(eff(r.disc)), holdN: r.hold.n, holdEffect: clean(eff(r.hold)) };
   });
 const q1Bands = bands(Q.jump, Q1_BANDS, JUMP_FLOOR), q2Bands = bands(Q.breakout, Q2_BANDS, null);
+// side check added after the independent review: controls from the signal's own stock removed (1 month only)
+function selfExcluded(st: Study) {
+  const one = (inDisc: boolean) => {
+    const occ = st.occ.filter((o) => (o.date <= DISCOVERY_END) === inDisc && (st.controls[MAIN_V]![o.day]?.length ?? 0) > 0);
+    const r = excludeSelf(occ, st.controls[MAIN_V]!, st.ctrlSym);
+    const pt = part(r.occ, SPAN_C.map((_, v) => (v === MAIN_V ? r.pools : r.pools.map(() => []))), MAIN_V);
+    return { n: pt.n, dropped: r.dropped, effect: clean(eff(pt)), beat: clean(pt.luck?.beat) };
+  };
+  const disc = one(true), hold = one(false);
+  const under = disc.effect !== null && hold.effect !== null && Math.abs(disc.effect) < SETTLED_BELOW && Math.abs(hold.effect) < SETTLED_BELOW;
+  return { disc, hold, under };
+}
+const x1 = selfExcluded(Q.jump), x2 = selfExcluded(Q.breakout);
 const s1 = compare(Q.jumpSector), s2 = compare(Q.breakoutSector);
 const t1 = compare(Q.jumpTm), t2 = compare(Q.breakoutTm); // added after the first run, to explain s1/s2
 
@@ -217,6 +236,17 @@ p("|---|---|---|---|---|---|");
 for (const b of q1Bands) p(`| Q1 | ${b.band} | ${b.n} | ${f(b.effect, 2)} | ${b.holdN} | ${f(b.holdEffect, 2)} |`);
 for (const b of q2Bands) p(`| Q2 | ${b.band} | ${b.n} | ${f(b.effect, 2)} | ${b.holdN} | ${f(b.holdEffect, 2)} |`);
 p();
+p("## Side check after review: the signal's own stock removed from its controls (1 month)");
+p();
+p("A control can be the same stock on another day in the same month (e.g. it crossed again on light volume a week later); the two returns overlap. This check, added after the independent review, removes them. It decides nothing; the verdicts above follow the fixed rules.");
+p();
+p("| Question | Matched 2016–22 | Effect | Beats | Matched 2023– | Effect | Beats | Both under 0.3 pts? |");
+p("|---|---|---|---|---|---|---|---|");
+[["Q1", x1], ["Q2", x2]].forEach(([n, r]) => {
+  const x = r as ReturnType<typeof selfExcluded>;
+  p(`| ${n} | ${x.disc.n} | ${f(x.disc.effect, 2)} | ${x.disc.beat?.toFixed(1) ?? "—"}% | ${x.hold.n} | ${f(x.hold.effect, 2)} | ${x.hold.beat?.toFixed(1) ?? "—"}% | ${x.under ? "yes" : "no"} |`);
+});
+p();
 p("## Secondary: sector added to the groups (Nifty Total Market stocks only; no verdict)");
 p();
 p("Rows marked † were added after the first run, to tell apart the two reasons the sector rows could differ from the main result: the smaller set of stocks, or the finer groups.");
@@ -242,6 +272,7 @@ if (jsonAt) {
     fm: Object.fromEntries(([["disc", fmDisc], ["hold", fmHold]] as const).map(([k, x]) =>
       [k, { days: x.days, skipped: x.skipped, vol: nw(x.vol), move: nw(x.move), prev: nw(x.prev), size: nw(x.size) }])),
     fmBar: FM_T,
+    selfExcluded: { q1: x1, q2: x2 },
     secondary: Object.fromEntries(([["q1Sector", s1], ["q1Tm", t1], ["q2Sector", s2], ["q2Tm", t2]] as const).map(([k, r]) => [k, { matched: r.disc.n, effect: clean(eff(r.disc)), holdEffect: clean(eff(r.hold)), beat: clean(r.disc.luck?.beat) }])),
   }, null, 2));
 }

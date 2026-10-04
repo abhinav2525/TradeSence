@@ -102,8 +102,10 @@ explains it. Since 2023 the huge-volume version kept lagging while the ordinary 
 and heavy-volume breakouts lagged more than light ones in both periods, so volume may add
 something. **A follow-up study with this comparison fixed in advance (same-size move,
 ordinary vs huge volume) would settle it.** It ran as
-[research 0005](0005-volume-or-jump.md): the lag comes from the jump (same-size jumps on
-ordinary volume lagged more); whether volume helps is not settled.
+[research 0005](0005-volume-or-jump.md): for huge-volume up days, same-size jumps on
+ordinary volume lagged more, so the volume isn't what goes with the lag (whether it helps
+is not settled); for breakouts, heavy and light did about the same across the market, a
+borderline call.
 
 ## Caveats (please read)
 
@@ -135,8 +137,8 @@ merge firing days within 10 sessions per stock. Code: `src/research/volume-marke
   sourced line, e.g. *"After days like this, stocks typically lagged other stocks by just
   under 1 percentage point (0.7 to 0.9) over the next month (study 0004)."* It describes
   big up days on huge volume, not volume alone. Never a sell instruction. Owner's call,
-  ideally after the follow-up study. *Update: research 0005 found the jump, not the volume,
-  carries the lag, so any line should talk about the jump, not the volume.*
+  ideally after the follow-up study. *Update: research 0005 found that same-size jumps on
+  ordinary volume lagged at least as much, so any line should talk about the jump, not the volume.*
 - **Top volume leaderboard (TODO):** the same caution applies to stocks topping the
   volume table on a big up day.
 - **Screener:** heavy-volume crossings above the 200-day average shouldn't be presented as

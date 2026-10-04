@@ -2,7 +2,7 @@ import { test, expect, describe } from "bun:test";
 import { bandOf, thirdCuts, thirdOf, groupKey, ols, neweyWest, verdict5, Q1_BANDS, Q2_BANDS } from "../src/research/volume-or-jump";
 import { mulberry32 } from "../src/research/volume";
 import { matchedLuck } from "../src/research/delivery";
-import { droppedCount, jumpFlags, breakoutFlags, medianTurnover, prevReturn, normalEq, addRow, solveEq } from "../src/research/volume-or-jump";
+import { alignToPools, excludeSelf, droppedCount, jumpFlags, breakoutFlags, medianTurnover, prevReturn, normalEq, addRow, solveEq } from "../src/research/volume-or-jump";
 
 describe("bands, thirds, groups", () => {
   test("Q1 bands start at +3%, exactly 3 counts", () => {
@@ -149,5 +149,26 @@ describe("normal equations, row by row", () => {
     const a = ols(X, y)!, b = solveEq(acc)!;
     a.forEach((v, i) => expect(b[i]).toBeCloseTo(v, 9));
     expect(acc.n).toBe(300);
+  });
+});
+
+describe("review fixes", () => {
+  test("alignToPools: a span whose group has no control carries no signal return", () => {
+    const occ = [{ date: "2021-03-15", day: 0, pos: -1, returns: [1, 2, 3] as (number | null)[] }];
+    const pools = [[[5]], [[]], [[7]]]; // [span][group]
+    expect(alignToPools(occ, pools)[0]!.returns).toEqual([1, null, 3]);
+  });
+  test("excludeSelf: each signal is compared only with other stocks' controls in its group", () => {
+    const occ = [
+      { date: "2021-03-15", day: 0, pos: -1, returns: [9], symbol: "A" },
+      { date: "2021-03-20", day: 0, pos: -1, returns: [9], symbol: "B" },
+      { date: "2021-03-22", day: 1, pos: -1, returns: [9], symbol: "C" },
+    ];
+    const pool = [[1, 2, 3], [4]];
+    const syms = [["A", "B", "A"], ["C"]];
+    const r = excludeSelf(occ, pool, syms);
+    expect(r.pools).toEqual([[2], [1, 3]]); // A sees only B's control; B sees A's two; C has none left: dropped
+    expect(r.occ.map((o) => o.day)).toEqual([0, 1]);
+    expect(r.dropped).toBe(1);
   });
 });
