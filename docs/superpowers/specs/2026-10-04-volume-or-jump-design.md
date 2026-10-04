@@ -46,16 +46,35 @@ eligible return), so mixing days inside a month can't let the market's move in.
 
 A signal day with no control in its group is left out, and the count is reported.
 
+## Second method: Fama–MacBeth regression (added before results)
+
+The standard cross-sectional method in asset pricing (Fama & MacBeth 1973), used so the
+answer doesn't rest on one technique. For **every session** in the period, across all
+eligible stocks, an ordinary least-squares fit of
+
+> next-21-session excess return (from D+1) = a + **b · ln(volume ÷ normal)** + c · day's move
+> + d · previous-21-session return (to D−1) + e · ln(median 20-session turnover)
+
+Each day gives a **b**; the answer is the average **b** over all days, with a t-statistic
+from the day-to-day variation of b, **Newey–West adjusted with 20 lags** (one-month returns
+starting on consecutive days overlap). The controls are the day's jump, short-term reversal
+and size, the forces the literature says could otherwise be mistaken for a volume effect.
+Days with fewer than 100 eligible stocks are skipped. Up days only (day's move > 0) for Q1's
+regression, so it asks the same question as the matched comparison.
+
 ## The comparison and the verdict (fixed before results)
 
 - **Effect** = median excess return of signal days − median excess return of their matched
   controls, at **1 month (21 sessions)**; also shown at 1 week, 2 weeks, 3 and 6 months.
 - **Luck check:** 1,000 seeded draws; each draw replaces every signal day with a random
   control from its own group. "Beats" = share of draws the signal beat (ties count half).
-- **"Volume adds"** only if all of: discovery (2016–2022) has ≥ 30 matched signal days;
+- **"Volume adds"** (Q1) only if all of: discovery (2016–2022) has ≥ 30 matched signal days;
   strength ≥ **97.5**; |effect| ≥ **0.5 pts**, pointing the same way as the luck check; the
-  same side at ≥ 3 of the other 4 spans; and **2023 onward confirms** (≥ 30 days, beat ≥ 95
-  in the same direction, one-sided).
+  same side at ≥ 3 of the other 4 spans; **2023 onward confirms** (≥ 30 days, beat ≥ 95 in
+  the same direction, one-sided); **and** the discovery Fama–MacBeth volume coefficient has
+  the same sign with **|t| ≥ 3** (Harvey, Liu & Zhu 2016: the bar for a new factor). Q2 uses
+  the matched comparison only (breakouts are too rare per day for a daily regression); its
+  verdict is labelled as one method.
 - **"The jump explains it"** if the effect is under 0.3 pts at 1 month in discovery
   **and** in 2023 onward.
 - **"Not settled"** otherwise.
@@ -68,6 +87,16 @@ Nifty Total Market stocks only (NSE's sector, as of today; sectors rarely change
 - Volume thresholds allow 1e-9 (a 2× computed as 1.9999999 counts).
 - Up / down days use the day's move ≥ +3% here, so no exact-zero comparison is involved;
   a day's move is null across a stretch outside EQ (5-day rule).
+
+## Context from the literature (checked 4 Oct 2026)
+
+- US: unusually high volume was followed by *higher* returns over the next month
+  (Gervais, Kaniel & Mingelgrin 2001, the "high-volume return premium"), attributed to
+  attention bringing new buyers.
+- Individual investors buy attention-grabbing stocks (high abnormal volume, extreme one-day
+  returns), which then underperform (Barber & Odean 2008).
+- Indian stocks reverse after large price moves for up to six months, more after bigger moves
+  (NSE studies), so the day's jump must be held constant.
 
 ## Output
 
