@@ -183,6 +183,27 @@ export const volumeLeaders = pgTable(
 );
 
 /**
+ * Money flow page (spec 2026-10-05): each Nifty Total Market stock's ₹ traded over
+ * the last 1, 5 and 21 sessions ending `as_of`, its normal ₹ per session over the
+ * 63 sessions before that window (null with fewer than 40 traded), and its sector.
+ * Rebuilt in full nightly in one transaction; the page sums per sector.
+ */
+export const moneyFlow = pgTable(
+  "money_flow",
+  {
+    asOf: date("as_of").notNull(),
+    symbol: text("symbol").notNull(),
+    sector: text("sector").notNull(),
+    period: integer("period").notNull(),
+    turnover: doublePrecision("turnover").notNull(),
+    normalDaily: doublePrecision("normal_daily"),
+    sessions: integer("sessions").notNull(),
+    changePct: doublePrecision("change_pct"),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.period] })],
+);
+
+/**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
  * market, exactly as NSE words them.
  *

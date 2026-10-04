@@ -23,6 +23,7 @@
     "indicators": "bun run src/indicators/cli.ts",
     "activity": "bun run src/indicators/cli-activity.ts",
     "volume-leaders": "bun run src/indicators/cli-volume-leaders.ts",
+    "money-flow": "bun run src/indicators/cli-money-flow.ts",
     "ingest:nightly": "bun run src/ingest/cli-nightly.ts",
     "research:forward-returns": "bun run src/research/cli-forward-returns.ts",
     "research:volume": "bun run src/research/cli-volume.ts",

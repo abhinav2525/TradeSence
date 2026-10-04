@@ -11,6 +11,7 @@ import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
 import { computeVolumeLeaders } from "../indicators/compute-volume-leaders";
+import { computeMoneyFlow } from "../indicators/compute-money-flow";
 import { refreshFundSymbols } from "../indicators/universe";
 import { ingestIndexLists } from "./index-constituents";
 import { computeIndicators } from "../indicators/compute";
@@ -126,6 +127,14 @@ try {
   console.log(`[nightly] top volume: ${vl.rows} rows as of ${vl.asOf}`);
 } catch (e) {
   console.warn(`[nightly] WARNING top volume not rebuilt: ${e instanceof Error ? e.message : e}`);
+}
+
+// Money flow page (spec 2026-10-05): same universe and sectors as Top volume.
+try {
+  const mf = await computeMoneyFlow();
+  console.log(`[nightly] money flow: ${mf.rows} rows as of ${mf.asOf}`);
+} catch (e) {
+  console.warn(`[nightly] WARNING money flow not rebuilt: ${e instanceof Error ? e.message : e}`);
 }
 
 await sql.end();

@@ -17,6 +17,7 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 12 | [Unusual activity](#12-unusual-activity) | Pipelines 1–3 + 10 | Nightly | ✅ Yes |
 | 13 | [Index member lists](#13-index-member-lists) | NSE `ind_*list.csv` (free) | Nightly | ✅ Yes |
 | 14 | [Top volume](#14-top-volume) | Pipelines 1, 3, 12, 13 | Nightly | ✅ Yes |
+| 15 | [Money flow](#15-money-flow) | Pipelines 1, 3, 13 | Nightly | ✅ Yes |
 | 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
@@ -52,6 +53,7 @@ flowchart LR
 | 12 Unusual activity | ✅ | — | Done |
 | 13 Index lists | ✅ | — | Done |
 | 14 Top volume | ✅ | — | Done |
+| 15 Money flow | ✅ | — | Done |
 | 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
 | 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
 | 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
@@ -221,6 +223,18 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Used by** | `/volume` |
 | **Code** | `src/indicators/volume-leaders.ts`, `compute-volume-leaders.ts`; `src/query/volume.ts` |
 | **Why** | [0025](decisions/0025-top-volume.md) |
+
+## 15. Money flow
+
+| | |
+|---|---|
+| **What** | Per Nifty Total Market stock and window (last 1/5/21 market sessions): ₹ traded, its normal ₹ per session over the 63 sessions before the window (needs 40 traded), price move, NSE sector. The page sums these per sector |
+| **Writes** | `money_flow`, replaced in one transaction (~2,250 rows) |
+| **Nightly** | ✅ After Top volume, a few seconds |
+| **By hand** | `bun run money-flow` |
+| **Used by** | `/money-flow` |
+| **Code** | `src/indicators/money-flow.ts`, `compute-money-flow.ts`; `src/query/money-flow.ts` |
+| **Why** | [0028](decisions/0028-money-flow.md) |
 
 ## 8. One-time setup and backfills
 
