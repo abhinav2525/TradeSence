@@ -4,7 +4,7 @@ import { liveExample } from "../src/query/glossary-live";
 import { GLOSSARY, type TermId } from "../src/lib/glossary";
 
 async function empty() {
-  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges, schema.unusualDays, schema.dailyDelivery, schema.volumeLeaders, schema.indexConstituents]) await db.delete(t);
+  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges, schema.unusualDays, schema.dailyDelivery, schema.volumeLeaders, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions, schema.indexConstituents]) await db.delete(t);
 }
 
 describe("liveExample", () => {

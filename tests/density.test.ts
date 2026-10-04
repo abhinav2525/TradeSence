@@ -170,7 +170,7 @@ describe("spacing follows density", () => {
   test("every chart height scales with density", () => {
     expect(hits(/<ChartContainer\b/).length).toBeGreaterThanOrEqual(7);
     expect(hits(/<ChartContainer\b[^>]*\bh-\[\d+px\]/)).toEqual([]);
-    expect(hits(/h-\[calc\(\d+px\*var\(--density-chart\)\)\]/).length).toBe(7);
+    expect(hits(/h-\[calc\(\d+px\*var\(--density-chart\)\)\]/).length).toBe(8); // + Money flow history
   });
 });
 
