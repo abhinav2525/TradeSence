@@ -174,7 +174,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Nightly** | ✅ Last step of the nightly job; a failure is a `WARNING` line and changes nothing |
 | **By hand** | `bun run db:backup`. Restore: `createdb tradesence_restore && pg_restore -d tradesence_restore <file>` |
 | **Code** | `ops/backup.sh` |
-| **Checked** | A restore into a scratch database matched every table's row count (4 Oct 2026) |
+| **Checked** | A restore into a scratch database matched every table's row count (4 Oct 2026). Run under the real launchd job: local copy ✅, iCloud copy ✅, deleting old iCloud copies blocked by macOS (10-minute limit and a 1.2 GB cap keep that safe; [0021](decisions/0021-database-health-and-delivery.md)) |
 | **Why** | [0021](decisions/0021-database-health-and-delivery.md) |
 
 ## 8. One-time setup and backfills

@@ -148,6 +148,37 @@ join daily_prices p using (trade_date, symbol, series)
 where p.volume <> v.traded_qty group by 1 order by 1;
 ```
 
+## Found while testing the backup under the real nightly scheduler (fixed)
+
+The backup had only been run from a terminal. Running the actual launchd job showed
+three problems, each confirmed before fixing:
+
+1. **`pg_dump` not found.** launchd starts jobs with a bare program path
+   (`/usr/bin:/bin:/usr/sbin:/sbin`); Homebrew's tools aren't on it. Monday's backup would
+   have failed. Fixed: the script adds Postgres 14's own folder first (matching the
+   server version even if a newer Postgres is installed later).
+2. **A same-day second run hung on the rename into iCloud.** It was replacing the earlier
+   copy, which iCloud was still uploading; macOS makes the replace wait. Fixed: every
+   backup's name carries the time (`tradesence-2026-10-04-153106.dump`), so nothing is
+   ever replaced.
+3. **The scheduled job can create files in iCloud Drive but cannot list or delete them.**
+   It hung in `opendir` (listing the folder) and in `rm`, while the same commands from a
+   terminal worked instantly at the same moment, so it's how macOS treats the background
+   job, not iCloud being slow. macOS likely wants a privacy permission granted to the job.
+   Fixed so it can never hurt:
+   - the folder is never listed: the iCloud copies are tracked in a small file on the Mac
+     (`~/Backups/tradesence/.mirrored`) and deleted by exact name;
+   - the whole iCloud step runs under a **10-minute limit**; if it stalls it is stopped,
+     a warning is logged, and the job ends normally (tested for real under launchd);
+   - a half-copied file left by a stopped step is recorded and deleted on the next run;
+   - **iCloud can't fill up:** if old copies haven't been deletable for 3 nights, the job
+     stops adding new ones (at most ~1.2 GB) and says so in the log.
+
+   What's still open: whether old iCloud copies get deleted automatically depends on
+   that permission. Until it's granted, the newest copies still reach iCloud each night
+   and the cap protects the storage; deletion can also be done by running
+   `bun run db:backup` from a terminal.
+
 ## Revisit when
 
 - Whole-market averages are built: run `CLUSTER` (problem 3) and time it.
