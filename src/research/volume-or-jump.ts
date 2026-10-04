@@ -1,0 +1,96 @@
+/**
+ * Research 0005: volume or the jump? Pure helpers; runner cli-volume-or-jump.ts.
+ * Spec: docs/superpowers/specs/2026-10-04-volume-or-jump-design.md.
+ */
+import { quantile, sameWay } from "./volume";
+import { HOLDOUT_BAR, MIN_EFFECT, MIN_EPISODES, type Part } from "./delivery";
+
+const EPS = 1e-9;
+export const Q1_BANDS = [3, 5, 8, 12] as const; // day's move, %: [3,5) [5,8) [8,12) [12,∞)
+export const Q2_BANDS = [1, 3, 5, 8] as const; // breakouts: (−∞,1) [1,3) [3,5) [5,8) [8,∞)
+export const JUMP_FLOOR = 3;
+export const SETTLED_BELOW = 0.3; // pts: "the jump explains it" in both periods
+export const FM_T = 3; // Harvey, Liu & Zhu (2016)
+
+export function bandOf(move: number | null, cuts: readonly number[], floor: number | null): number | null {
+  if (move === null) return null;
+  if (floor !== null && move < floor - EPS) return null;
+  let k = 0;
+  while (k < cuts.length && move >= cuts[k]! - EPS) k++;
+  return floor !== null ? k - 1 : k;
+}
+
+export function thirdCuts(values: number[]): [number, number] {
+  const s = [...values].sort((a, b) => a - b);
+  return [quantile(s, 1 / 3), quantile(s, 2 / 3)];
+}
+export function thirdOf(v: number, cuts: [number, number]): 0 | 1 | 2 {
+  return v < cuts[0] ? 0 : v < cuts[1] ? 1 : 2;
+}
+
+export function groupKey(date: string, band: number, third: number, sector?: string): string {
+  return `${date.slice(0, 7)}|${band}|${third}${sector ? `|${sector}` : ""}`;
+}
+
+/** Least squares by the normal equations (Gaussian elimination, partial pivoting); null if singular. */
+export function ols(X: number[][], y: number[]): number[] | null {
+  const k = X[0]?.length ?? 0;
+  const A = Array.from({ length: k }, () => new Array<number>(k + 1).fill(0));
+  for (let r = 0; r < X.length; r++) {
+    const x = X[r]!;
+    for (let i = 0; i < k; i++) {
+      for (let j = 0; j < k; j++) A[i]![j]! += x[i]! * x[j]!;
+      A[i]![k]! += x[i]! * y[r]!;
+    }
+  }
+  for (let c = 0; c < k; c++) {
+    let p = c;
+    for (let r = c + 1; r < k; r++) if (Math.abs(A[r]![c]!) > Math.abs(A[p]![c]!)) p = r;
+    if (Math.abs(A[p]![c]!) < 1e-12) return null;
+    [A[c], A[p]] = [A[p]!, A[c]!];
+    for (let r = 0; r < k; r++) {
+      if (r === c) continue;
+      const f = A[r]![c]! / A[c]![c]!;
+      for (let j = c; j <= k; j++) A[r]![j]! -= f * A[c]![j]!;
+    }
+  }
+  const out = A.map((row, i) => row[k]! / row[i]!);
+  return out.every(Number.isFinite) ? out : null;
+}
+
+/** Mean of a time series with a Newey–West (Bartlett) standard error; null if too short. */
+export function neweyWest(series: number[], lags: number): { mean: number; se: number; t: number } | null {
+  const n = series.length;
+  if (n < Math.max(3, lags + 2)) return null;
+  const mean = series.reduce((a, v) => a + v, 0) / n;
+  const e = series.map((v) => v - mean);
+  let s = e.reduce((a, v) => a + v * v, 0) / n;
+  for (let L = 1; L <= lags; L++) {
+    let c = 0;
+    for (let t = L; t < n; t++) c += e[t]! * e[t - L]!;
+    s += 2 * (1 - L / (lags + 1)) * (c / n);
+  }
+  const se = Math.sqrt(Math.max(s, 0) / n);
+  return { mean, se, t: se > 0 ? mean / se : 0 };
+}
+
+export type Verdict5 = "Volume adds" | "The jump explains it" | "Not settled";
+
+export function verdict5(o: { disc: Part; hold: Part; main: number; fmT: number | null; fmB: number | null; needFm: boolean }): Verdict5 {
+  const eff = (p: Part) => (p.medians[o.main] == null || p.baseline[o.main] == null ? null : p.medians[o.main]! - p.baseline[o.main]!);
+  const dE = eff(o.disc), hE = eff(o.hold), dl = o.disc.luck, hl = o.hold.luck;
+  const same = sameWay(o.disc.medians, o.disc.baseline, o.main);
+  const dir = dE === null ? 0 : Math.sign(dE);
+  const matched = o.disc.n >= MIN_EPISODES && dl !== null && dl.strength >= 97.5 && dE !== null && Math.abs(dE) >= MIN_EFFECT &&
+    dir === (dl.direction === "better" ? 1 : -1) && same >= 3 &&
+    o.hold.n >= MIN_EPISODES && hl !== null && (dir > 0 ? hl.beat >= HOLDOUT_BAR : hl.beat <= 100 - HOLDOUT_BAR);
+  const fm = !o.needFm || (o.fmT !== null && o.fmB !== null && Math.abs(o.fmT) >= FM_T && Math.sign(o.fmB) === dir);
+  if (matched && fm) return "Volume adds";
+  if (dE !== null && hE !== null && Math.abs(dE) < SETTLED_BELOW && Math.abs(hE) < SETTLED_BELOW) return "The jump explains it";
+  return "Not settled";
+}
+
+/** Signal days left out because their group has no control day (pools indexed by group). */
+export function droppedCount(occ: { day: number }[], pools: number[][]): number {
+  return occ.filter((o) => (pools[o.day]?.length ?? 0) === 0).length;
+}
