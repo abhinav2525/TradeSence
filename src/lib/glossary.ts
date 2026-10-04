@@ -15,7 +15,7 @@ const IDS = [
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
   "crossing", "whipsaw", "volume-ratio", "near-the-line",
   "unusual-activity", "big-keeping", "huge-volume", "big-price-jump", "delivery-pct", "delivery-jump", "delivery-collapse",
-  "top-volume", "value-traded", "size-group", "nse-sector", "money-flow", "trading-vs-normal", "share-of-trading",
+  "top-volume", "value-traded", "size-group", "nse-sector", "money-flow", "trading-vs-normal", "share-of-trading", "whole-market-breadth",
   "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
 ] as const;
 
@@ -371,6 +371,16 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     ],
     related: ["trading-vs-normal", "share-of-trading", "nse-sector", "value-traded"],
     seeIt: { label: "Money flow", href: "/money-flow" },
+  },
+  "whole-market-breadth": {
+    id: "whole-market-breadth", term: "Whole-market breadth", topic: "Breadth",
+    short: "Breadth across every NSE company trading ₹1 crore or more a day (ETFs left out), counted on each day with the companies trading then. Honest history since 2016.",
+    read: "Like NIFTY 50 breadth, but for about 1,300 companies of every size, so it shows whether a move is broad or carried by a few big names.",
+    what: "On each day tradeSence takes every company whose median trading over the last 20 sessions was at least ₹1 crore that day, and counts how many closed above their average. Because the set is chosen day by day, no knowledge of later years leaks into the past. Index lists other than the NIFTY 50 use today's members, so their history is saved night by night from October 2026 instead of drawn backwards.",
+    calc: { plain: "Liquid companies above their average ÷ liquid companies with that average, × 100, per day. Same averages as the NIFTY 50 (split-adjusted, renames followed)." },
+    example: "On 1 Oct 2026, 608 of 1,296 liquid companies (46.9%) closed above their 200-day average.",
+    mistakes: ["Comparing it directly with NIFTY 50 breadth: small companies swing more, so whole-market readings reach extremes the NIFTY 50 rarely does."],
+    related: ["breadth", "liquidity"],
   },
   "trading-vs-normal": {
     id: "trading-vs-normal", term: "Trading vs normal", topic: "Stocks",

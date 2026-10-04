@@ -190,3 +190,18 @@ export async function breakdownOn(
 export async function latestBreakdown(ma: MaKind, indexName = "NIFTY50") {
   return breakdownOn(ma, undefined, indexName);
 }
+
+/**
+ * Breadth for the whole market or an NSE index list, from the nightly breadth_daily
+ * table (decision 0030); the NIFTY 50 keeps breadthSeries. `ma` is a bound value, not
+ * a column name, so no raw SQL is involved.
+ */
+export async function universeSeries(universe: string, ma: MaKind): Promise<BreadthPoint[]> {
+  const rows = await db.execute<{ date: string; above: number; total: number }>(sql`
+    select trade_date::text as date, above, total from breadth_daily
+    where universe = ${universe} and ma = ${ma} and total > 0 order by trade_date`);
+  return rows.map((r) => {
+    const above = Number(r.above), total = Number(r.total);
+    return { date: r.date, above, below: total - above, total, pctAbove: (above / total) * 100 };
+  });
+}

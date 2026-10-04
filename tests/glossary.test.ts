@@ -44,6 +44,7 @@ describe("the glossary", () => {
     for (const id of ["top-volume", "value-traded", "size-group", "nse-sector"]) expect(isTermId(id)).toBe(true);
     expect(isTermId("big-price-jump")).toBe(true);
     for (const id of ["money-flow", "trading-vs-normal", "share-of-trading"]) expect(isTermId(id)).toBe(true);
+    expect(isTermId("whole-market-breadth")).toBe(true);
   });
 
   test("text uses a true minus, never a hyphen before a digit", () => {

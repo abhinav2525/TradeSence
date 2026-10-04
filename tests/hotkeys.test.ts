@@ -52,3 +52,9 @@ test("m opens Money flow, and 1-3 do nothing there", () => {
   expect(hotkeyTarget("m", { page: "volume", ma: "sma200" })).toBe("/money-flow?ma=sma200");
   expect(hotkeyTarget("1", { page: "money-flow", ma: "sma200" })).toBeNull();
 });
+
+test("on Breadth, 1-3 and the arrows keep the chosen universe", () => {
+  const c = { page: "breadth" as const, ma: "sma200", prev: "2026-09-30", next: null, extra: "&u=market" };
+  expect(hotkeyTarget("2", c)).toBe("/?ma=ema200&u=market");
+  expect(hotkeyTarget("ArrowLeft", c)).toBe("/?ma=sma200&date=2026-09-30&u=market");
+});

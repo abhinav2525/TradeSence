@@ -16,6 +16,10 @@ type Props = {
   bins: Bin[];
   current: number;
   sessions: number;
+  /** Who is counted, for the sentence under the number (default: the NIFTY 50). */
+  of?: string;
+  /** Replaces the rarity sentence, e.g. while a universe's history is still building. */
+  rarityNote?: string;
   className?: string;
 };
 
@@ -25,14 +29,14 @@ type Props = {
  * shows the same position and also how unusual that position is.
  */
 export default function BreadthHero({
-  pct, above, total, maLabel, date, percentile, bins, current, sessions, className,
+  pct, above, total, maLabel, date, percentile, bins, current, sessions, of = "NIFTY 50 constituents", rarityNote, className,
 }: Props) {
   const below = total - above;
   const max = Math.max(...bins.map((b) => b.count), 1);
-  const rarity =
+  const rarity = rarityNote ?? (
     percentile <= 50
       ? `Only ${percentile.toFixed(1)}% of sessions closed this weak or weaker.`
-      : `Only ${(100 - percentile).toFixed(1)}% of sessions closed this strong or stronger.`;
+      : `Only ${(100 - percentile).toFixed(1)}% of sessions closed this strong or stronger.`);
 
   return (
     <Card className={cn("flex flex-col gap-6 px-card-x py-card sm:comfortable:p-6 md:flex-row", className)}>
@@ -43,7 +47,7 @@ export default function BreadthHero({
           <span className="ml-1 text-[0.45em] font-medium tracking-normal text-muted-foreground">%</span>
         </p>
         <p className="mt-3 text-body-sm leading-5 text-foreground-2">
-          of NIFTY 50 constituents closed above their {maLabel} on{" "}
+          of {of} closed above their {maLabel} on{" "}
           <time dateTime={date} className="font-medium text-foreground">
             {formatDate(date)}
           </time>
@@ -70,7 +74,7 @@ export default function BreadthHero({
       <div className="flex min-w-0 flex-1 flex-col md:border-l md:pl-6">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-heading text-foreground"><Term id="percentile" today={percentile.toFixed(1)}>Where today sits</Term></h2>
-          <span className="text-[12px] tabular-nums text-muted-foreground">{formatInt(sessions)} sessions</span>
+          <span className="text-[12px] tabular-nums text-muted-foreground">{formatInt(sessions)} session{sessions === 1 ? "" : "s"}</span>
         </div>
         <p className="mt-1 text-[12px] leading-4 text-foreground-2">{rarity}</p>
 

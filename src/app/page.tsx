@@ -11,9 +11,11 @@ import WashoutNotice from "@/components/WashoutNotice";
 import { noticeText, noticeVisible } from "@/components/signals-copy";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, signed } from "@/lib/format";
+import Term from "@/components/Term";
 import {
-  breadthSeries, breakdownOn, adjacentSessions, MA_LABELS, type BreadthPoint, type MaKind,
+  breadthSeries, breakdownOn, adjacentSessions, universeSeries, MA_LABELS, type BreadthPoint, type MaKind,
 } from "@/query/breadth";
+import { LIST_UNIVERSES, cleanUniverse, type Universe } from "@/indicators/breadth-universes";
 import { signalsData } from "@/query/signals";
 
 export const dynamic = "force-dynamic";
@@ -37,24 +39,52 @@ function binOf(pct: number): number {
   return Math.min(19, Math.max(0, Math.floor(pct / 5)));
 }
 
+// Breadth beyond the NIFTY 50 (decision 0030). `u` is checked by cleanUniverse against
+// fixed keys; the NIFTY 50 path below is unchanged.
+const GROUP_LABEL = { broad: "Broad market", sector: "Sectors", theme: "Themes" } as const;
+const universeName = (u: Universe) => (u === "nifty50" ? "NIFTY 50" : u === "market" ? "Whole market" : LIST_UNIVERSES.find((x) => x.key === u)!.name);
+const universeOf = (u: Universe) => (u === "nifty50" ? "NIFTY 50 constituents" : u === "market" ? "liquid NSE companies" : `${universeName(u)} members`);
+const MIN_HISTORY = 20; // sessions before a percentile means anything
+
+/** The session to show from a universe's own dates: the requested day, else the last one on or before it. */
+function pickSession(series: BreadthPoint[], wanted: string | undefined) {
+  if (series.length === 0) return { date: null as string | null, requested: wanted ?? null, snapped: false };
+  if (!wanted) return { date: series.at(-1)!.date, requested: null, snapped: false };
+  const onOrBefore = series.filter((p) => p.date <= wanted).at(-1) ?? series[0]!;
+  return { date: onOrBefore.date, requested: wanted, snapped: onOrBefore.date !== wanted };
+}
+
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; date?: string }>;
+  searchParams: Promise<{ ma?: string; date?: string; u?: string }>;
 }) {
-  const { ma: rawMa, date: rawDate } = await searchParams;
+  const { ma: rawMa, date: rawDate, u: rawU } = await searchParams;
+  const u = cleanUniverse(rawU);
+  const isNifty = u === "nifty50";
+  const keep = isNifty ? "" : `&u=${u}`;
   const ma: MaKind = isMaKind(rawMa) ? rawMa : "sma200";
   const label = MA_LABELS[ma];
   const wanted = cleanDate(rawDate);
 
-  const [series, view, signals] = await Promise.all([breadthSeries(ma), breakdownOn(ma, wanted), signalsData()]);
+  const [series, niftyView, signals] = await Promise.all([
+    isNifty ? breadthSeries(ma) : universeSeries(u, ma),
+    isNifty ? breakdownOn(ma, wanted) : null,
+    signalsData(),
+  ]);
+  const view = niftyView ?? { ...pickSession(series, wanted), above: [], below: [] };
   const idx = view.date ? series.findIndex((p) => p.date === view.date) : series.length - 1;
   const point = idx >= 0 ? series[idx] : undefined;
 
   // Today's washout, only while it is Active and the reader is on the latest session.
   const six = signals.horizons.under.find((h) => h.key === "6m");
-  const notice = six && noticeVisible(signals.washout?.status, view.date, signals.washout?.date) ? noticeText(six) : null;
-  const nav = view.date ? await adjacentSessions(ma, view.date) : { prev: null, next: null };
+  const notice = isNifty && six && noticeVisible(signals.washout?.status, view.date, signals.washout?.date) ? noticeText(six) : null;
+  const at = view.date ? series.findIndex((p) => p.date === view.date) : -1;
+  const nav = !view.date ? { prev: null, next: null }
+    : isNifty ? await adjacentSessions(ma, view.date)
+    : { prev: series[at - 1]?.date ?? null, next: series[at + 1]?.date ?? null };
+  const since = series[0] ? series[0].date.slice(0, 4) : "";
+  const building = series.length < MIN_HISTORY;
 
   // Trimmed for the wire: the chart needs four fields, not the whole row.
   const chart: AreaPoint[] = series.map((p) => ({
@@ -81,7 +111,13 @@ export default async function Page({
 
   const tiles: Tile[] = point
     ? [
-        {
+        building ? {
+          label: "Percentile",
+          term: "percentile",
+          value: "—",
+          badge: { text: "History building", tone: "neutral" },
+          sub: `${series.length} session${series.length === 1 ? "" : "s"} saved since ${formatDate(series[0]!.date)}; a percentile needs ${MIN_HISTORY}`,
+        } : {
           label: "Percentile",
           term: "percentile",
           value: percentile.toFixed(1),
@@ -95,8 +131,8 @@ export default async function Page({
           fillTone: percentile <= 20 ? "down" : percentile >= 80 ? "up" : "neutral",
           sub:
             percentile <= 50
-              ? `Weaker than ${(100 - percentile).toFixed(0)}% of sessions since 2020`
-              : `Stronger than ${percentile.toFixed(0)}% of sessions since 2020`,
+              ? `Weaker than ${(100 - percentile).toFixed(0)}% of sessions since ${since}`
+              : `Stronger than ${percentile.toFixed(0)}% of sessions since ${since}`,
         },
         {
           label: "Five-session change",
@@ -110,7 +146,7 @@ export default async function Page({
               : `${delta > 0 ? "Improving" : delta < 0 ? "Deteriorating" : "Flat"} since ${formatDate(prior!.date)}`,
         },
         {
-          label: "Average since 2020",
+          label: `Average since ${since}`,
           today: null,
           term: "breadth",
           value: average.toFixed(0),
@@ -125,23 +161,28 @@ export default async function Page({
           value: `${yearLo.toFixed(0)}–${yearHi.toFixed(0)}`,
           unit: "%",
           range: { lo: yearLo, hi: yearHi, now: point.pctAbove },
-          sub: `Low and high of the last ${year.length} sessions`,
+          sub: `Low and high of the last ${year.length} session${year.length === 1 ? "" : "s"}`,
         },
       ]
     : [];
 
   return (
     <AppShell current="breadth" ma={ma} asOf={series.at(-1)?.date}>
-      <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="breadth" />
+      <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="breadth" extra={keep} />
 
       <PageHeader
-        eyebrow="NIFTY 50 · Market breadth"
+        eyebrow={`${universeName(u)} · Market breadth`}
         title="Breadth"
-        description="How many of the fifty constituents close above their moving average, and how rare that is against every session since 2020."
+        description={
+          isNifty ? "How many of the fifty constituents close above their moving average, and how rare that is against every session since 2020."
+          : u === "market" ? `How many liquid NSE companies close above their moving average, and how rare that is against every session since ${since || "2016"}.`
+          : `How many ${universeName(u)} members close above their moving average, using today's members. Saved every night from October 2026.`
+        }
         actions={
           <>
-            <MaTabs base="/" ma={ma} date={wanted} />
+            <MaTabs base="/" ma={ma} date={wanted} extra={keep} />
             <DateNav
+              extra={keep}
               ma={ma}
               date={view.date}
               requested={view.requested}
@@ -155,12 +196,34 @@ export default async function Page({
         }
       />
 
+      <form action="/" method="get" className="mb-4 flex flex-wrap items-center gap-2 text-body-sm">
+        <input type="hidden" name="ma" value={ma} />
+        <label htmlFor="u" className="text-muted-foreground">Breadth of</label>
+        <select id="u" name="u" defaultValue={u} className="h-8 rounded-[8px] border border-input bg-card px-2 text-body-sm text-foreground">
+          <option value="nifty50">NIFTY 50 (since 2020)</option>
+          <option value="market">Whole market (all liquid stocks)</option>
+          {(["broad", "sector", "theme"] as const).map((g) => (
+            <optgroup key={g} label={GROUP_LABEL[g]}>
+              {LIST_UNIVERSES.filter((x) => x.group === g).map((x) => <option key={x.key} value={x.key}>{x.name}</option>)}
+            </optgroup>
+          ))}
+        </select>
+        <button type="submit" className="h-8 rounded-[8px] border px-3 text-body-sm font-medium text-foreground hover:bg-raised">Show</button>
+        {u === "market" && <span className="text-[12px] text-muted-foreground"><Term id="whole-market-breadth">What counts as the whole market</Term></span>}
+      </form>
+
       {!point ? (
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
           <p className="mt-2 text-body-sm text-foreground-2">
-            Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run ingest:backfill</code>{" "}
-            then <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
+            {isNifty ? (
+              <>
+                Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run ingest:backfill</code>{" "}
+                then <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
+              </>
+            ) : (
+              <>Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run breadth</code> (it also runs every night).</>
+            )}
           </p>
         </Card>
       ) : (
@@ -177,6 +240,8 @@ export default async function Page({
             bins={histogram(series)}
             current={binOf(point.pctAbove)}
             sessions={series.length}
+            of={universeOf(u)}
+            rarityNote={building ? `History is building: ${series.length} session${series.length === 1 ? "" : "s"} saved so far.` : undefined}
           />
           <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4" tiles={tiles} />
 
@@ -188,8 +253,18 @@ export default async function Page({
             </CardFooter>
           </Card>
 
-          <MemberTable className="lg:col-span-12 xl:col-span-6" title="Above" rows={view.above} tone="up" maLabel={label} />
-          <MemberTable className="lg:col-span-12 xl:col-span-6" title="Below" rows={view.below} tone="down" maLabel={label} />
+          {isNifty ? (
+            <>
+              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Above" rows={view.above} tone="up" maLabel={label} />
+              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Below" rows={view.below} tone="down" maLabel={label} />
+            </>
+          ) : (
+            <Card className="px-card-x py-card text-body-sm text-foreground-2 lg:col-span-12">
+              {u === "market"
+                ? "Each day counts every NSE company trading ₹1 crore or more a day then (ETFs left out), so the history has no hindsight in it. Stock-by-stock lists are kept for the NIFTY 50."
+                : `Counted on ${universeName(u)}'s members as NSE lists them today. History for index lists is saved night by night from ${formatDate(series[0]!.date)} instead of drawn backwards with today's members, which would flatter the past. Stock-by-stock lists are kept for the NIFTY 50.`}
+            </Card>
+          )}
         </div>
       )}
     </AppShell>

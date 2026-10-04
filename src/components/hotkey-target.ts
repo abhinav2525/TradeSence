@@ -36,7 +36,7 @@ export function hotkeyTarget(key: string, c: HotkeyContext): string | null {
   if (key === "ArrowRight") return c.next ? `${base}?ma=${c.ma}&date=${c.next}${extra}` : null;
   if (key === "1" || key === "2" || key === "3") {
     if (c.page === "stock" || c.page === "signals" || c.page === "activity" || c.page === "volume" || c.page === "money-flow") return null;
-    return `${base}?ma=${{ "1": "sma200", "2": "ema200", "3": "sma50" }[key]}`;
+    return `${base}?ma=${{ "1": "sma200", "2": "ema200", "3": "sma50" }[key]}${extra}`;
   }
   if (key === "b") return `/?ma=${c.ma}`;
   if (key === "a") return `/advance-decline?ma=${c.ma}`;

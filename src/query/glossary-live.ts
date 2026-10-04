@@ -3,7 +3,7 @@
  * a Learn page's "Today in tradeSence" can't disagree with the page itself.
  * Returns null (never throws) when there's nothing to show yet.
  */
-import { breadthSeries, resolveSession } from "./breadth";
+import { breadthSeries, resolveSession, universeSeries } from "./breadth";
 import { advanceDeclineSeries } from "./advance-decline";
 import { screenerOn } from "./screener";
 import { crossingStats } from "./crossings";
@@ -104,6 +104,11 @@ async function build(id: TermId): Promise<string | null> {
       const n = { "unusual-activity": row.n, "big-keeping": row.kept, "huge-volume": row.volume, "delivery-jump": row.jump, "delivery-collapse": row.collapse }[id];
       const what = id === "unusual-activity" ? "had an unusual day" : "qualified";
       return `${formatInt(n)} ${n === 1 ? "stock" : "stocks"} ${what} on ${formatDate(row.d)}.`;
+    }
+    case "whole-market-breadth": {
+      const s = await universeSeries("market", "sma200");
+      const p = s.at(-1);
+      return p ? `On ${formatDate(p.date)}, ${formatInt(p.above)} of ${formatInt(p.total)} liquid NSE companies (${p.pctAbove.toFixed(1)}%) closed above their 200-day average.` : null;
     }
     case "money-flow": case "trading-vs-normal": case "share-of-trading": {
       const rows = await moneyFlowRows(5);
