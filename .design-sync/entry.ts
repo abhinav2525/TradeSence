@@ -39,6 +39,7 @@ export { default as StockList } from "../src/components/StockList";
 export { default as StockPriceChart } from "../src/components/StockPriceChart";
 export { default as Term } from "../src/components/Term";
 export { default as ThemeToggle } from "../src/components/ThemeToggle";
+export { default as DensityToggle } from "../src/components/DensityToggle";
 export { default as VolumeTrack } from "../src/components/VolumeTrack";
 export { default as WashoutCard } from "../src/components/WashoutCard";
 export { default as WashoutNotice } from "../src/components/WashoutNotice";

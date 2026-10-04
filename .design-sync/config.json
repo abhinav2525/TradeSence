@@ -55,7 +55,8 @@
     "Card": "src/components/ui/card.tsx",
     "ChartContainer": "src/components/ui/chart.tsx",
     "Popover": "src/components/ui/popover.tsx",
-    "Table": "src/components/ui/table.tsx"
+    "Table": "src/components/ui/table.tsx",
+    "DensityToggle": "src/components/DensityToggle.tsx"
   },
   "guidelinesGlob": [
     "docs/design/system/README.md"
@@ -105,7 +106,8 @@
     "StockEvents": ".design-sync/groups/page-sections.md",
     "StockList": ".design-sync/groups/page-sections.md",
     "RiskCalculator": ".design-sync/groups/page-sections.md",
-    "LearnList": ".design-sync/groups/page-sections.md"
+    "LearnList": ".design-sync/groups/page-sections.md",
+    "DensityToggle": ".design-sync/groups/navigation.md"
   },
   "libOverrides": {
     "dts.mjs": "app repo with no published .d.ts: read tsc-generated declarations in .design-sync/.cache/types"

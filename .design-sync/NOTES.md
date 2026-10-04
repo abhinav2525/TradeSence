@@ -38,6 +38,11 @@ authored"): AdRecentTable, CrashTable, DateNav, DatePicker, DrawdownChart, Forwa
 RiskCalculator, ScreenerTable, SiteNav, StockChecks, StockPriceChart. The other 12 render without an
 authored preview. All 45 are importable either way; floor cards are authorable on any re-sync.
 
+Re-sync 4 Oct 2026 (density, decision 0020): +DensityToggle (46 components, render-only card like
+ThemeToggle); the other 45 carried forward. Previews render **compact** because `ThemeRoot` sets no
+`data-density` and the compact values sit on `:root`. The remote `_ds_sync.json` was taken from the
+local `ds-bundle/_ds_sync.json` after matching `styleSha`/`auxSha`/`bundleSha12` with the project's.
+
 ## Fixes made for the bundle
 
 - `process is not defined`: Next's client code reads `process.env.__NEXT_*`.
@@ -89,6 +94,9 @@ authored preview. All 45 are importable either way; floor cards are authorable o
 - `entry.ts`, `componentSrcMap`, `docsMap` are enumerations: a new component is silently
   missing until added to all three.
 - `dtsPropsFor.Term` inlines the glossary id list; it goes stale when the glossary grows.
+- `build-css.mjs` scans the whole repo, docs included: example classes written in Markdown
+  (e.g. `h-[calc(Npx*var(--density-chart))]`) compile into harmless, unused rules and add
+  "undefined token" noise (`--chart-scale` came from the density spec's old name).
 - Previews carry hand-written sample data shaped like `src/query/*` types; a type change
   breaks the preview compile (the component falls back to its floor card).
 - `process-shim.ts` and the stand-in router depend on Next 16 internals
