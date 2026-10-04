@@ -63,10 +63,9 @@ transaction, like `unusual_days`): for each universe stock and each period of th
   unusual days (linking to `/activity` for that stock), sorted by the chosen measure.
   NIFTY 50 Report Card links where one exists. Scrolls inside its card under a sticky header;
   phones drop the least important columns.
-- **Header line:** "As of {latest session}. Index members as of today, from NSE." plus a
-  short note that heavy trading is a fact, not a signal (research 0004 found big up days on
-  huge volume were followed by weaker months; the page does not repeat findings beyond
-  that one line).
+- **Header line:** "As of {latest session}. Index members as of today, from NSE." plus
+  "Heavy trading shows where money moved, not where prices go next." No research findings
+  on the page (the owner decides on those after the "volume or the jump?" study).
 - Glossary entries and `<Term>`s for: Top volume, ₹ value traded, Size group, Sector (NSE
   industry).
 
