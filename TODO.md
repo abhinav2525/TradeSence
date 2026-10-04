@@ -78,10 +78,14 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   Confirmed on 2023–. Both are big up days, so the study can't separate volume from the
   jump itself. Owner's call: a sourced caution line on Unusual activity's "Huge volume" up
   days; don't present heavy-volume crossings as stronger on the Screener.
-- [ ] **Volume or the jump? (follow-up study)**: same-size up moves on ordinary vs huge
-  volume, rules fixed first (research 0004, "Volume or the jump?"). The review's
-  after-the-fact check: ordinary-volume 5%+ jumps lagged as much in 2016–22 but not since
-  2023; heavy-volume breakouts lagged more than light ones in both periods.
+- [x] **Volume or the jump?** (research 0005, 4 Oct): the lag comes from the jump; same-size
+  jumps on quiet volume lagged more. Whether huge volume helps is "Not settled" (matched
+  +1.06 pts, regression t 0.00). Breakouts: "The jump explains it" across the market.
+  So: **no** caution line blaming volume on Unusual activity; at most one about big jumps
+  (owner's call). Screener stays neutral on heavy-volume crossings.
+- [ ] **Heavy vs light breakouts on the bigger stocks** (follow-up to 0005): among the ~750
+  Nifty Total Market stocks heavy-volume breakouts lagged light ones by ~1 pt a month in
+  both periods (an after-the-fact side row). Fix the rules first, then test.
 
 ---
 

@@ -83,6 +83,7 @@ bun run research:forward-returns               # breadth -> later NIFTY return s
 bun run research:volume                        # volume indicators -> later returns study
 bun run research:delivery                      # delivery % signals, whole market (~2 min)
 bun run research:volume-market                 # volume signals, whole market (~75s); -- --json for chart data
+bun run research:volume-or-jump                # 0005: heavy vs ordinary volume, same-size jumps (~75s)
 bun run research:fund-symbols                  # rebuild the ETF list studies leave out (~15s)
 bun run ingest:nightly                         # cron entry point
 ```

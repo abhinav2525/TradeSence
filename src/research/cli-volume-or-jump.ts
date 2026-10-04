@@ -239,7 +239,9 @@ if (jsonAt) {
   writeFileSync(jsonAt, JSON.stringify({
     generated: new Date().toISOString().slice(0, 10), companies: companiesEligible, eligibleDays,
     q1: { ...qJson(q1, v1), bands: q1Bands }, q2: { ...qJson(q2, v2), bands: q2Bands },
-    fm: { bar: FM_T, disc: { days: fmDisc.days, vol: nw(fmDisc.vol) }, hold: { days: fmHold.days, vol: nw(fmHold.vol) } },
+    fm: Object.fromEntries(([["disc", fmDisc], ["hold", fmHold]] as const).map(([k, x]) =>
+      [k, { days: x.days, skipped: x.skipped, vol: nw(x.vol), move: nw(x.move), prev: nw(x.prev), size: nw(x.size) }])),
+    fmBar: FM_T,
     secondary: Object.fromEntries(([["q1Sector", s1], ["q1Tm", t1], ["q2Sector", s2], ["q2Tm", t2]] as const).map(([k, r]) => [k, { matched: r.disc.n, effect: clean(eff(r.disc)), holdEffect: clean(eff(r.hold)), beat: clean(r.disc.luck?.beat) }])),
   }, null, 2));
 }

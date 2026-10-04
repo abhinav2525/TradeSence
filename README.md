@@ -307,6 +307,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run db:backup` | Compressed `pg_dump` to `~/Backups/tradesence`, newest 7 kept (also nightly) |
 | `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
 | `bun run research:volume-market` | Print the whole-market volume study (research 0004); `-- --json file` writes the chart data; ~75 s |
+| `bun run research:volume-or-jump` | Print research 0005 (heavy vs ordinary volume on same-size jumps; matched comparison + Fama–MacBeth); `-- --json file` writes the chart data; ~75 s |
 | `bun run research:delivery` | Print the delivery study (research 0003) as Markdown; whole liquid market, about 2 minutes |
 | `bun run research:fund-symbols` | Rebuild `src/research/fund-symbols.txt` (NSE ETFs since 2016, by ISIN); ~15 s |
 | `bun run research:volume` | Print the volume study (research 0002) as Markdown; `-- --check SYM,SYM` prints the latest CMF/MFI |
@@ -485,6 +486,16 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 |---|---|
 | `volumeSeries(h)` | Per stock: adjusted close, volume vs previous-20 mean (split-adjusted), the day's move (none across a stretch outside EQ), SMA 200 per segment, CMF(20), quiet-buying flags, liquidity, returns from the next close at `CHART_HORIZONS` (1…126). |
 | `volumeSignalFlags(s, cmfCuts)` | The six signals in `MARKET_SIGNALS` order: huge volume (≥ 5×) up / down, heavy (≥ 2×) cross above / below the 200-day SMA, CMF top fifth, quiet buying. |
+
+### `src/research/volume-or-jump.ts`, `cli-volume-or-jump.ts` — research 0005
+
+| Function | Notes |
+|---|---|
+| `jumpFlags`, `breakoutFlags` | Signal / control days: up day ≥ +3% on ≥ 5× vs < 1.5× volume; close crosses above the 200-day SMA on ≥ 2× vs < 1.5×. Thresholds allow 1e-9; eligible days only. |
+| `bandOf`, `thirdCuts` / `thirdOf`, `groupKey` | Matching groups: jump-size band (`Q1_BANDS`, `Q2_BANDS`), company-size third that day, calendar month (+ sector for the side check). |
+| `medianTurnover`, `prevReturn` | The size measure (median 20-session turnover) and the previous-21-session return, both per segment. |
+| `normalEq` / `addRow` / `solveEq`, `ols`, `neweyWest` | One least-squares fit per day from running sums (no rows kept); the mean of a daily coefficient with a Newey–West (Bartlett) error. |
+| `droppedCount`, `verdict5` | Signal days with no control in their group; the verdict (Volume adds / The jump explains it / Not settled; Fama–MacBeth \|t\| ≥ 3 required for Q1). |
 
 ### `src/research/delivery.ts`, `delivery-data.ts`, `cli-delivery.ts` — research 0003
 

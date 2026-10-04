@@ -1,0 +1,326 @@
+<title>Volume or the Jump?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column of cards, answer first, then four charts, then the numbers. tradeSence's own tokens (as research 0004's page). */
+:root {
+  --bg: #f4f6f9; --card: #ffffff; --raised: #f0f2f6;
+  --fg: #0e1218; --fg-2: #475163; --muted: #5f697b;
+  --border: #e3e7ed; --border-strong: #c4ccd7; --grid: #edf0f4;
+  --brand: #2a62e8; --up: #067132; --down: #d00021; --up-soft: rgba(6,113,50,0.09); --down-soft: rgba(208,0,33,0.09);
+  --cost: rgba(14,18,24,0.06);
+  --shadow: 0 1px 2px rgba(14,18,24,0.05), 0 1px 1px rgba(14,18,24,0.03); --shadow-pop: 0 6px 20px rgba(14,18,24,0.14);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b0d11; --card: #12151b; --raised: #191d25;
+  --fg: #edf0f5; --fg-2: #a9b1bf; --muted: #808a9a;
+  --border: #232934; --border-strong: #3a4250; --grid: #1d222b;
+  --brand: #5b93ff; --up: #3ee0a0; --down: #f2545b; --up-soft: rgba(62,224,160,0.12); --down-soft: rgba(242,84,91,0.14);
+  --cost: rgba(237,240,245,0.05);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4); --shadow-pop: 0 6px 20px rgba(0,0,0,0.5); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0b0d11; --card: #12151b; --raised: #191d25;
+  --fg: #edf0f5; --fg-2: #a9b1bf; --muted: #808a9a;
+  --border: #232934; --border-strong: #3a4250; --grid: #1d222b;
+  --brand: #5b93ff; --up: #3ee0a0; --down: #f2545b; --up-soft: rgba(62,224,160,0.12); --down-soft: rgba(242,84,91,0.14);
+  --cost: rgba(237,240,245,0.05);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4); --shadow-pop: 0 6px 20px rgba(0,0,0,0.5); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+.page { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 48px; display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; margin: 4px 0 0; text-wrap: balance; }
+.lede { color: var(--fg-2); max-width: 68ch; margin: 8px 0 0; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 18px 20px 20px; min-width: 0; }
+.card h2 { font-size: 15px; line-height: 20px; font-weight: 600; margin: 0; text-wrap: balance; }
+.card .sub { color: var(--muted); font-size: 12.5px; margin: 4px 0 0; max-width: 72ch; }
+.answer { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+.verdict { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--raised); min-width: 0; }
+.verdict .k { font-size: 12px; color: var(--muted); }
+.verdict .tag { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-top: 6px; background: var(--card); border: 1px solid var(--border-strong); color: var(--fg); }
+.verdict .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 6px; }
+.verdict .v small { font-size: 13px; color: var(--muted); font-weight: 500; }
+.verdict p { margin: 4px 0 0; color: var(--fg-2); font-size: 12.5px; }
+.chart { margin-top: 14px; overflow-x: auto; }
+svg text { font-family: var(--sans); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; font-size: 12px; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.multiples { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px 6px; min-width: 0; }
+.mini h3 { font-size: 12.5px; font-weight: 600; margin: 0; line-height: 1.35; }
+.mini .tag { font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; background: var(--raised); color: var(--fg-2); border: 1px solid var(--border); }
+.tip { position: fixed; pointer-events: none; background: var(--card); color: var(--fg); border: 1px solid var(--border-strong);
+  border-radius: 8px; padding: 7px 9px; font-size: 12px; line-height: 1.4; box-shadow: var(--shadow-pop); max-width: 280px; z-index: 10; }
+.tip b { font-weight: 600; } .tip .m { color: var(--muted); }
+details { margin-top: 4px; }
+summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+.tablewrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 200px; }
+th { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+h4 { font-size: 12.5px; margin: 18px 0 0; }
+.notes { color: var(--fg-2); font-size: 13px; }
+.notes ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; }
+.foot { color: var(--muted); font-size: 12px; }
+</style>
+
+<main class="page">
+  <header>
+    <div class="eyebrow">tradeSence · Research 0005 · NSE, Sep 2016 – Oct 2026</div>
+    <h1>Volume or the jump?</h1>
+    <p class="lede">Study 0004 found that stocks lagged after big up days on heavy volume. Big one-day jumps often give back ground anyway, so here every heavy-volume day is compared only with days that jumped by the same amount, in the same month, on a stock of similar size, but on ordinary volume. <span id="lede-n"></span></p>
+  </header>
+
+  <section class="card" aria-labelledby="a-h">
+    <h2 id="a-h">The answer</h2>
+    <p class="sub">The lag comes from the jump, not the volume. Same-size jumps on ordinary volume lagged even more. Whether heavy volume actually <em>helps</em> is not settled: the two methods disagree.</p>
+    <div class="answer">
+      <div class="verdict">
+        <div class="k">Huge volume (5× usual) vs ordinary volume, same-size jump (+3% or more)</div>
+        <span class="tag" id="v1-tag"></span>
+        <div class="v" id="v1-v"></div>
+        <p id="v1-p"></p>
+      </div>
+      <div class="verdict">
+        <div class="k">Breakout above the 200-day average: heavy (2×) vs light volume, same-size jump</div>
+        <span class="tag" id="v2-tag"></span>
+        <div class="v" id="v2-v"></div>
+        <p id="v2-p"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="c1-h">
+    <h2 id="c1-h">Heavy volume vs ordinary volume, from a week to six months</h2>
+    <p class="sub">Gap between heavy-volume days and their matched ordinary-volume days. Above 0 means the heavy-volume days did better. The shaded band is ±0.5 pts, about what a round trip costs.</p>
+    <div class="multiples" id="c1"></div>
+    <div class="legend" id="lg1"></div>
+  </section>
+
+  <section class="card" aria-labelledby="c2-h">
+    <h2 id="c2-h">Does the size of the jump matter?</h2>
+    <p class="sub">The one-month gap for each jump size. The huge-volume edge sits mostly in +8 to +12% jumps; breakouts swing from one period to the next.</p>
+    <div class="multiples" id="c2"></div>
+    <div class="legend" id="lg2"></div>
+  </section>
+
+  <section class="card" aria-labelledby="c3-h">
+    <h2 id="c3-h">The second method: what explains the next month?</h2>
+    <p class="sub">A daily regression across every up day (Fama–MacBeth), with volume, the jump, the previous month's return and company size side by side. Bars show the strength of evidence (t). Only a bar past ±3 counts. The jump passes in 2016–22 and nearly does since 2023; volume shows nothing in 2016–22 and a weak positive since.</p>
+    <div class="chart" id="c3"></div>
+    <div class="legend" id="lg3"></div>
+  </section>
+
+  <section class="card" aria-labelledby="c4-h">
+    <h2 id="c4-h">Does it hold for the bigger stocks?</h2>
+    <p class="sub">The same one-month gap on the ~750 Nifty Total Market stocks, with and without sector added to the matching. These are side checks, not verdicts. The † rows were added after the first run, to explain why the sector rows differ.</p>
+    <div class="chart" id="c4"></div>
+    <div class="legend" id="lg4"></div>
+  </section>
+
+  <section class="card notes" aria-labelledby="n-h">
+    <h2 id="n-h">How to read this</h2>
+    <ul>
+      <li><strong>"pts" means percentage points:</strong> the gap between two returns. If heavy-volume jumps returned −0.8% in a month (against the typical stock that day) and matched ordinary-volume jumps −1.9%, the gap is +1.1 pts.</li>
+      <li><strong>Like with like.</strong> Each heavy-volume day is compared only with ordinary-volume days in the same calendar month, with a jump of the same size band and a company of similar size (trading turnover, ranked that day). Days with no such match are left out and counted.</li>
+      <li><strong>Two methods.</strong> The matched comparison looks at the extremes (5× volume against under 1.5×, on +3% jumps). The regression uses every up day and treats volume as a sliding scale. Q1 needed both to agree; they didn't, so it is "Not settled".</li>
+      <li><strong>"The jump explains it"</strong> means the gap was under 0.3 pts in both periods. For breakouts it was −0.29 and +0.07: only just under the line, so read it as "no clear difference across the whole market".</li>
+      <li><strong>Bigger stocks behave differently.</strong> Among the ~750 bigger stocks, heavy-volume breakouts lagged light ones in both periods. That needs its own study before anyone acts on it.</li>
+      <li><strong>Facts, not tips.</strong> These are typical results over thousands of cases; plenty of single stocks did the opposite.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="t-h">
+    <details>
+      <summary id="t-h">See the numbers</summary>
+      <div class="tablewrap" id="t"></div>
+    </details>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</main>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+// Written by the generator from `bun run research:volume-or-jump -- --json`; do not edit by hand.
+const RAW = {"generated":"2026-10-04","companies":2367,"eligibleDays":2327719,"q1":{"verdict":"Not settled","matched":8915,"holdMatched":10834,"dropped":{"disc":1542,"hold":1930},"effect":1.0639711704526489,"holdEffect":0.4123455071563249,"beat":100,"holdBeat":99.9,"spans":[{"sessions":5,"disc":0.0988332852071172,"hold":-0.18545252914784482},{"sessions":10,"disc":0.5698885782050385,"hold":0.1648264168765179},{"sessions":21,"disc":1.0639711704526489,"hold":0.4123455071563249},{"sessions":63,"disc":2.7425227984312905,"hold":1.4535493435966496},{"sessions":126,"disc":3.5915161127296233,"hold":1.4275981256239758}],"bands":[{"band":"+3 to +5%","n":2185,"effect":0.4671823850377672,"holdN":2598,"holdEffect":0.05620089193570976},{"band":"+5 to +8%","n":3274,"effect":0.2503127725650367,"holdN":4315,"holdEffect":-0.17132015347701146},{"band":"+8 to +12%","n":2651,"effect":2.0313498243510923,"holdN":3181,"holdEffect":1.4994977528837161},{"band":"+12% or more","n":805,"effect":1.9333631742118387,"holdN":740,"holdEffect":-0.1252398791899645}]},"q2":{"verdict":"The jump explains it","matched":2818,"holdMatched":3594,"dropped":{"disc":801,"hold":1037},"effect":-0.29347597238664225,"holdEffect":0.06926757919809523,"beat":3.5999999999999996,"holdBeat":80.10000000000001,"spans":[{"sessions":5,"disc":-0.26224772947545105,"hold":0.018287240379954994},{"sessions":10,"disc":-0.520229269437567,"hold":0.28003264291299734},{"sessions":21,"disc":-0.29347597238664225,"hold":0.06926757919809523},{"sessions":63,"disc":0.1951881125199728,"hold":-1.4443866527934621},{"sessions":126,"disc":0.27246157472507937,"hold":-0.5706235269156914}],"bands":[{"band":"under +1%","n":61,"effect":-0.12319159947058456,"holdN":91,"holdEffect":-0.1686484582281933},{"band":"+1 to +3%","n":604,"effect":0.5126403261483727,"holdN":726,"holdEffect":0.12016540712325441},{"band":"+3 to +5%","n":953,"effect":-0.3463491939043841,"holdN":1205,"holdEffect":-0.7024905062395561},{"band":"+5 to +8%","n":824,"effect":-0.5249107873277259,"holdN":1153,"holdEffect":0.615416514937539},{"band":"+8% or more","n":376,"effect":-1.9423473945677978,"holdN":419,"holdEffect":4.067997478436002}]},"fm":{"disc":{"days":1462,"skipped":68,"vol":{"mean":-5.806154730042124e-05,"se":0.07241354232266914,"t":-0.0008018050966448166},"move":{"mean":-0.1629224138025986,"se":0.03310607191763092,"t":-4.9212245478096985},"prev":{"mean":0.017883263098917787,"se":0.00969755287966123,"t":1.8441006015470693},"size":{"mean":-0.17856698762462384,"se":0.08157565201596584,"t":-2.1889740775798523}},"hold":{"days":888,"skipped":20,"vol":{"mean":0.15087269926220512,"se":0.05878880291909836,"t":2.5663509336944164},"move":{"mean":-0.0920568946035942,"se":0.03132279609514134,"t":-2.938974359887165},"prev":{"mean":0.007943994177456943,"se":0.008368233309013125,"t":0.9493036205026395},"size":{"mean":0.03592223269090423,"se":0.08247651959414284,"t":0.4355449631928368}}},"fmBar":3,"secondary":{"q1Sector":{"matched":2458,"effect":-0.47839720523839,"holdEffect":-0.6720550930018951,"beat":0.1},"q1Tm":{"matched":4053,"effect":0.37151241138174695,"holdEffect":-0.0404776658998407,"beat":95.5},"q2Sector":{"matched":607,"effect":-0.8903496266323314,"holdEffect":-1.333806863926723,"beat":0},"q2Tm":{"matched":1523,"effect":-1.1020596481126632,"holdEffect":-0.8825397199858587,"beat":0}}};
+
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
+const txt = (parent, x, y, s, attrs = {}) => { const t = el("text", { x, y, "font-size": 11, fill: "var(--muted)", ...attrs }, parent); t.textContent = s; return t; };
+const fmt = (v, d = 2) => (v === null || v === undefined ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d));
+const num = (n) => n.toLocaleString("en-IN");
+const tip = document.getElementById("tip");
+function showTip(evt, html) { tip.innerHTML = html; tip.hidden = false; const r = tip.getBoundingClientRect(); let x = evt.clientX + 14, y = evt.clientY + 14; if (x + r.width > innerWidth - 8) x = evt.clientX - r.width - 14; if (y + r.height > innerHeight - 8) y = evt.clientY - r.height - 14; tip.style.left = x + "px"; tip.style.top = y + "px"; }
+const hideTip = () => { tip.hidden = true; };
+const DISC = "var(--fg-2)", HOLD = "var(--brand)";
+const legendPeriods = (id) => { document.getElementById(id).innerHTML =
+  `<span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="var(--card)" stroke="${DISC}" stroke-width="2"/></svg>2016–2022 (rules decided here)</span>` +
+  `<span><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="${HOLD}"/></svg>2023–2026 (the check)</span>`; };
+const Q = [{ key: "q1", name: "Huge-volume jumps vs ordinary-volume jumps", d: RAW.q1 }, { key: "q2", name: "Heavy-volume breakouts vs light-volume breakouts", d: RAW.q2 }];
+
+// header, answer tiles and footer, all from the run
+document.getElementById("lede-n").textContent = `${num(RAW.companies)} companies trading ₹1 crore+ a day; decided on 2016–2022, checked on 2023–2026.`;
+[["v1", RAW.q1], ["v2", RAW.q2]].forEach(([id, q], k) => {
+  document.getElementById(id + "-tag").textContent = q.verdict + (k === 1 ? " (one method)" : "");
+  document.getElementById(id + "-v").innerHTML = `${fmt(q.effect, 1)} <small>pts in a month, 2016–22</small>`;
+  document.getElementById(id + "-p").textContent = k === 0
+    ? `Huge-volume jumps did better than matched ordinary-volume jumps; 2023–26: ${fmt(q.holdEffect, 1)} pts. The regression found no volume effect in 2016–22 (t ${fmt(RAW.fm.disc.vol.t, 2)}) and a weak one since (t ${fmt(RAW.fm.hold.vol.t, 2)}, short of 3). ${num(q.matched)} matched cases.`
+    : `No clear difference across the whole market; 2023–26: ${fmt(q.holdEffect, 1)} pts. ${num(q.matched)} matched cases. Among bigger stocks heavy breakouts lagged (see the last chart).`;
+});
+document.getElementById("foot").innerHTML = `Generated ${RAW.generated} from <code>bun run research:volume-or-jump</code> · ${num(RAW.eligibleDays)} eligible stock-days · full write-up: docs/research/0005 in the tradeSence repo.`;
+
+// shared horizontal scale for gaps in pts
+function scaleFor(vals, lo0 = -1, hi0 = 1) {
+  const v = vals.filter((x) => x !== null);
+  return [Math.min(lo0, Math.floor(Math.min(...v))), Math.max(hi0, Math.ceil(Math.max(...v)))];
+}
+
+// Chart 1: gap at each span, one panel per question, both periods; shared y scale, log-spaced x.
+(function chart1() {
+  const host = document.getElementById("c1");
+  const all = Q.flatMap((q) => q.d.spans.flatMap((s) => [s.disc, s.hold]));
+  const [lo, hi] = scaleFor(all, -2, 1);
+  const W = 300, H = 170, L = 34, R = 12, T = 10, B = 22;
+  const lx = Math.log, x = (n) => L + ((lx(n) - lx(5)) / (lx(126) - lx(5))) * (W - L - R);
+  const y = (v) => T + ((hi - v) / (hi - lo)) * (H - T - B);
+  const labels = { 5: "1w", 10: "2w", 21: "1m", 63: "3m", 126: "6m" };
+  for (const q of Q) {
+    const box = document.createElement("div"); box.className = "mini";
+    box.innerHTML = `<h3>${q.name}<span class="tag">${q.d.verdict}</span></h3>`;
+    host.appendChild(box);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": `${q.name}: gap at 1 week to 6 months, both periods` }, box);
+    el("rect", { x: L, y: y(0.5), width: W - L - R, height: y(-0.5) - y(0.5), fill: "var(--cost)" }, svg);
+    for (let v = lo; v <= hi; v++) {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--border-strong)" : "var(--grid)", "stroke-width": 1 }, svg);
+      txt(svg, L - 6, y(v) + 3.5, v === 0 ? "0" : fmt(v, 0), { "text-anchor": "end", "font-size": 10 });
+    }
+    for (const s of q.d.spans) txt(svg, x(s.sessions), H - 6, labels[s.sessions], { "text-anchor": "middle", "font-size": 10 });
+    for (const [field, colour, hollow] of [["disc", DISC, true], ["hold", HOLD, false]]) {
+      const pts = q.d.spans.filter((s) => s[field] !== null).map((s) => [x(s.sessions), y(s[field])]);
+      el("path", { d: pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" "), fill: "none", stroke: colour, "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+      for (const p of pts) el("circle", { cx: p[0], cy: p[1], r: 4, fill: hollow ? "var(--card)" : colour, stroke: hollow ? colour : "var(--card)", "stroke-width": 2 }, svg);
+    }
+    const rule = el("line", { y1: T, y2: H - B, stroke: "var(--fg)", "stroke-opacity": 0.25, opacity: 0 }, svg);
+    const hit = el("rect", { x: L, y: 0, width: W - L - R, height: H - B, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => {
+      const r = svg.getBoundingClientRect(), mx = ((e.clientX - r.left) / r.width) * W;
+      const s = q.d.spans.reduce((a, b) => (Math.abs(x(b.sessions) - mx) < Math.abs(x(a.sessions) - mx) ? b : a));
+      rule.setAttribute("x1", x(s.sessions)); rule.setAttribute("x2", x(s.sessions)); rule.setAttribute("opacity", 1);
+      showTip(e, `<b>${s.sessions} sessions after</b><br>2016–22: ${fmt(s.disc)} pts<br>2023–26: ${fmt(s.hold)} pts`);
+    });
+    hit.addEventListener("mouseleave", () => { rule.setAttribute("opacity", 0); hideTip(); });
+  }
+  legendPeriods("lg1");
+})();
+
+// Dumbbell rows: hollow 2016–22, filled 2023–26, with the ±0.5 cost band. Labels beside on wide screens, above on phones.
+function dumbbell(host, rows, aria, lo, hi) {
+  const width = Math.max(280, host.clientWidth || 600), narrow = width < 520;
+  const W = narrow ? width : Math.min(900, width), labelW = narrow ? 8 : Math.min(260, W * 0.36), right = 16;
+  const rowH = narrow ? 46 : 30, top = 24, H = top + rows.length * rowH + 6;
+  const x = (v) => labelW + ((v - lo) / (hi - lo)) * (W - labelW - right);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": aria }, host);
+  el("rect", { x: x(-0.5), y: top - 6, width: x(0.5) - x(-0.5), height: rows.length * rowH + 4, fill: "var(--cost)" }, svg);
+  const step = hi - lo > 6 ? 2 : 1;
+  for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) {
+    el("line", { x1: x(t), x2: x(t), y1: top - 6, y2: H - 2, stroke: t === 0 ? "var(--border-strong)" : "var(--grid)" }, svg);
+    txt(svg, x(t), 13, t === 0 ? "0" : fmt(t, 0), { "text-anchor": "middle" });
+  }
+  rows.forEach((r, i) => {
+    const row = top + i * rowH + rowH / 2, cy = narrow ? row + 8 : row;
+    txt(svg, narrow ? labelW : labelW - 12, narrow ? row - 10 : row + 4, r.label, { "text-anchor": narrow ? "start" : "end", "font-size": 12, fill: "var(--fg)" });
+    if (r.disc !== null && r.hold !== null) el("line", { x1: x(r.disc), x2: x(r.hold), y1: cy, y2: cy, stroke: "var(--border-strong)", "stroke-width": 2 }, svg);
+    if (r.disc !== null) el("circle", { cx: x(r.disc), cy, r: 5.5, fill: "var(--card)", stroke: DISC, "stroke-width": 2 }, svg);
+    if (r.hold !== null) el("circle", { cx: x(r.hold), cy, r: 5.5, fill: HOLD, stroke: "var(--card)", "stroke-width": 2 }, svg);
+    const hit = el("rect", { x: 0, y: row - rowH / 2, width: W, height: rowH, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => showTip(e, `<b>${r.label}</b><br>2016–22: ${fmt(r.disc)} pts${r.n != null ? ` <span class="m">(${num(r.n)} cases)</span>` : ""}<br>2023–26: ${fmt(r.hold)} pts${r.holdN != null ? ` <span class="m">(${num(r.holdN)} cases)</span>` : ""}`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+}
+
+// Chart 2: gap per jump size, one panel per question.
+(function chart2() {
+  const host = document.getElementById("c2");
+  const vals = Q.flatMap((q) => q.d.bands.flatMap((b) => [b.effect, b.holdEffect]));
+  const [lo, hi] = scaleFor(vals);
+  // create every panel before drawing, so each is measured at its final grid width
+  const boxes = Q.map((q) => { const box = document.createElement("div"); box.className = "mini"; box.innerHTML = `<h3>${q.name}</h3>`; host.appendChild(box); return box; });
+  for (const [k, q] of Q.entries()) {
+    const box = boxes[k];
+    dumbbell(box, q.d.bands.map((b) => ({ label: `Jump ${b.band}`, disc: b.effect, hold: b.holdEffect, n: b.n, holdN: b.holdN })), `${q.name}: one-month gap per jump size`, lo, hi);
+  }
+  legendPeriods("lg2");
+})();
+
+// Chart 3: t of each regression term, both periods, with the ±3 bar.
+(function chart3() {
+  const host = document.getElementById("c3");
+  const terms = [["vol", "Volume (vs its normal)"], ["move", "Size of the day's jump"], ["prev", "Previous month's return"], ["size", "Company size (turnover)"]];
+  const width = Math.max(280, host.clientWidth || 800), narrow = width < 520;
+  const W = narrow ? width : 900, labelW = narrow ? 8 : 230, right = 20, rowH = narrow ? 58 : 44, top = 24, H = top + terms.length * rowH + 22;
+  const ts = terms.flatMap(([k]) => [RAW.fm.disc[k]?.t, RAW.fm.hold[k]?.t]).filter((v) => v != null);
+  const lo = Math.min(-6, Math.floor(Math.min(...ts))), hi = Math.max(4, Math.ceil(Math.max(...ts)));
+  const x = (v) => labelW + ((v - lo) / (hi - lo)) * (W - labelW - right);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, width: "100%", role: "img", "aria-label": "Strength of evidence (t) for each regression term, both periods, with the ±3 bar" }, host);
+  for (let t = lo; t <= hi; t++) {
+    const bar = Math.abs(t) === RAW.fmBar;
+    el("line", { x1: x(t), x2: x(t), y1: top - 6, y2: H - 20, stroke: t === 0 ? "var(--border-strong)" : bar ? "var(--down)" : "var(--grid)", "stroke-dasharray": bar ? "4 3" : "", "stroke-width": 1 }, svg);
+    if (t % 2 === 0 || bar) txt(svg, x(t), 13, t === 0 ? "0" : fmt(t, 0), { "text-anchor": "middle", fill: bar ? "var(--down)" : "var(--muted)" });
+  }
+  txt(svg, x(-RAW.fmBar), H - 6, "the bar (|t| ≥ 3)", { "text-anchor": "middle", "font-size": 10.5, fill: "var(--down)" });
+  txt(svg, x(RAW.fmBar), H - 6, "the bar", { "text-anchor": "middle", "font-size": 10.5, fill: "var(--down)" });
+  terms.forEach(([k, label], i) => {
+    const row = top + i * rowH + rowH / 2, base = narrow ? row + 6 : row;
+    txt(svg, narrow ? labelW : labelW - 12, narrow ? row - 14 : row + 4, label, { "text-anchor": narrow ? "start" : "end", "font-size": 12.5, fill: "var(--fg)", "font-weight": k === "vol" ? 600 : 400 });
+    [["disc", -7, DISC, true], ["hold", 3, HOLD, false]].forEach(([p, dy, colour, hollow]) => {
+      const t = RAW.fm[p][k]?.t; if (t == null) return;
+      const x0 = x(0), x1 = x(t);
+      el("rect", { x: Math.min(x0, x1), y: base + dy, width: Math.max(2, Math.abs(x1 - x0)), height: 9, rx: 3, fill: hollow ? "var(--card)" : colour, stroke: colour, "stroke-width": hollow ? 1.5 : 0 }, svg);
+    });
+    const d = RAW.fm.disc[k], h = RAW.fm.hold[k];
+    const hit = el("rect", { x: 0, y: row - rowH / 2, width: W, height: rowH, fill: "transparent" }, svg);
+    hit.addEventListener("mousemove", (e) => showTip(e, `<b>${label}</b><br>2016–22: t ${fmt(d?.t)} <span class="m">(average ${fmt(d?.mean, 3)})</span><br>2023–26: t ${fmt(h?.t)} <span class="m">(average ${fmt(h?.mean, 3)})</span>`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+  document.getElementById("lg3").innerHTML =
+    `<span><svg width="16" height="10" aria-hidden="true"><rect x="1" y="1" width="14" height="8" rx="2" fill="var(--card)" stroke="${DISC}" stroke-width="1.5"/></svg>2016–2022 (${num(RAW.fm.disc.days)} days)</span>` +
+    `<span><svg width="16" height="10" aria-hidden="true"><rect x="1" y="1" width="14" height="8" rx="2" fill="${HOLD}"/></svg>2023–2026 (${num(RAW.fm.hold.days)} days)</span>`;
+})();
+
+// Chart 4: whole market vs bigger stocks, both questions.
+(function chart4() {
+  const host = document.getElementById("c4"), s = RAW.secondary;
+  const rows = [
+    { label: "Huge volume · whole market", disc: RAW.q1.effect, hold: RAW.q1.holdEffect, n: RAW.q1.matched, holdN: RAW.q1.holdMatched },
+    { label: "Huge volume · bigger stocks †", disc: s.q1Tm.effect, hold: s.q1Tm.holdEffect, n: s.q1Tm.matched },
+    { label: "Huge volume · bigger, by sector", disc: s.q1Sector.effect, hold: s.q1Sector.holdEffect, n: s.q1Sector.matched },
+    { label: "Breakout · whole market", disc: RAW.q2.effect, hold: RAW.q2.holdEffect, n: RAW.q2.matched, holdN: RAW.q2.holdMatched },
+    { label: "Breakout · bigger stocks †", disc: s.q2Tm.effect, hold: s.q2Tm.holdEffect, n: s.q2Tm.matched },
+    { label: "Breakout · bigger, by sector", disc: s.q2Sector.effect, hold: s.q2Sector.holdEffect, n: s.q2Sector.matched },
+  ];
+  const [lo, hi] = scaleFor(rows.flatMap((r) => [r.disc, r.hold]), -2, 2);
+  dumbbell(host, rows, "One-month gap: whole market versus bigger stocks, with and without sector", lo, hi);
+  legendPeriods("lg4");
+})();
+
+// The numbers (accessible view of every chart).
+(function table() {
+  const t = (head, rows) => `<table><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  let html = `<h4>Matched comparison, one month</h4>` + t(["Question", "Verdict", "Matched 2016–22", "Left out", "Gap 2016–22", "Beats controls", "Matched 2023–", "Gap 2023–", "Beats 2023–"],
+    Q.map((q) => [q.name, q.d.verdict, num(q.d.matched), `${num(q.d.dropped.disc)} (+${num(q.d.dropped.hold)})`, fmt(q.d.effect) + " pts", fmt(q.d.beat, 1).replace("+", "") + "%", num(q.d.holdMatched), fmt(q.d.holdEffect) + " pts", fmt(q.d.holdBeat, 1).replace("+", "") + "%"]));
+  html += `<h4>Gap at each span (pts)</h4>` + t(["Question", "Period", "1w", "2w", "1m", "3m", "6m"],
+    Q.flatMap((q) => [["disc", "2016–22"], ["hold", "2023–"]].map(([f, p]) => [q.name, p, ...q.d.spans.map((s) => fmt(s[f]))])));
+  html += `<h4>Gap by jump size, one month (pts)</h4>` + t(["Question", "Jump", "Cases 2016–22", "Gap", "Cases 2023–", "Gap"],
+    Q.flatMap((q) => q.d.bands.map((b) => [q.name, b.band, num(b.n), fmt(b.effect), num(b.holdN), fmt(b.holdEffect)])));
+  const names = { vol: "ln(volume ÷ normal)", move: "Day's jump (per %)", prev: "Previous 21-session return (per %)", size: "ln(median turnover)" };
+  html += `<h4>Fama–MacBeth regression</h4>` + t(["Term", "Average 2016–22", "t", "Average 2023–", "t"],
+    Object.entries(names).map(([k, n]) => [n, fmt(RAW.fm.disc[k]?.mean, 3), fmt(RAW.fm.disc[k]?.t), fmt(RAW.fm.hold[k]?.mean, 3), fmt(RAW.fm.hold[k]?.t)]));
+  document.getElementById("t").innerHTML = html;
+})();
+</script>
