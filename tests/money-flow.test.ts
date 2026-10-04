@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
 import {
-  MIN_NORMAL, NORMAL_SESSIONS, cleanFlowPeriod, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
+  MIN_NORMAL, NORMAL_SESSIONS, cleanFlowPeriod, cleanSector, shortSessions, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
 } from "../src/indicators/money-flow";
 
 /** n weekday sessions from 2026-01-01; `over` replaces whole columns. */
@@ -122,5 +122,27 @@ describe("cleanFlowPeriod", () => {
   test("1, 5, 21 accepted; anything else is 1 week", () => {
     expect([cleanFlowPeriod("1"), cleanFlowPeriod("21"), cleanFlowPeriod("5")]).toEqual([1, 21, 5]);
     for (const v of [undefined, "", "63", "5;drop", " 1", "21.0"]) expect(cleanFlowPeriod(v)).toBe(5);
+  });
+});
+
+describe("review fixes", () => {
+  test("a stock that didn't trade in the window is left out of the sector's ratio", () => {
+    const rows: FlowRow[] = [
+      ...["A", "B", "C", "D", "E"].map((s) => row(s, "IT", 10e7, 2e7, 1)), // 1.0× over 5 sessions
+      row("F", "IT", 0, 50e7, null), // suspended: has a normal, traded nothing
+    ];
+    expect(sectorFlows(rows, 5).sectors[0]!.ratio).toBeCloseTo(1, 12);
+  });
+  test("cleanSector: only a sector we hold, exactly", () => {
+    const held = ["Financial Services", "Metals & Mining"];
+    expect(cleanSector("Metals & Mining", held)).toBe("Metals & Mining");
+    for (const v of [undefined, "", "metals & mining", "Metals & Mining ", "x' or 1=1"]) expect(cleanSector(v, held)).toBeNull();
+  });
+  test("shortSessions: market-wide trading under half the usual day is flagged", () => {
+    const totals = Array.from({ length: 70 }, (_, i) => ({ date: `d${String(i).padStart(2, "0")}`, turnover: 100 }));
+    totals[69] = { date: "d69", turnover: 15 }; // a Muhurat evening
+    totals[67] = { date: "d67", turnover: 60 }; // a quiet day, not short
+    expect(shortSessions(totals)).toEqual(["d69"]);
+    expect(shortSessions(totals.slice(0, 10))).toEqual([]); // too little history to judge
   });
 });

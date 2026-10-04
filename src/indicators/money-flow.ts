@@ -19,6 +19,27 @@ export function cleanFlowPeriod(v: string | undefined): FlowPeriod {
   return v === "1" ? 1 : v === "21" ? 21 : 5;
 }
 
+/** The page's `sector` param: exactly one of the sectors we hold, else none. */
+export function cleanSector(v: string | undefined, held: readonly string[]): string | null {
+  return v !== undefined && held.includes(v) ? v : null;
+}
+
+export const SHORT_SESSION_X = 0.5; // market-wide ₹ under half a usual day: a short special session
+const SHORT_LOOKBACK = 63, SHORT_MIN_HISTORY = 20;
+
+/**
+ * Sessions where the whole market traded under half its usual day (median of up to
+ * the 63 sessions before): Diwali Muhurat evenings and special Saturday sessions
+ * trade 9–20% of normal, so every sector looks quiet. `totals` oldest first.
+ */
+export function shortSessions(totals: { date: string; turnover: number }[]): string[] {
+  return totals.flatMap((t, i) => {
+    if (i < SHORT_MIN_HISTORY) return [];
+    const usual = median(totals.slice(Math.max(0, i - SHORT_LOOKBACK), i).map((x) => x.turnover));
+    return usual !== null && usual > 0 && t.turnover < SHORT_SESSION_X * usual ? [t.date] : [];
+  });
+}
+
 export type FlowWindows = {
   asOf: string;
   starts: Record<FlowPeriod, string>;
@@ -86,10 +107,12 @@ export function sectorFlows(rows: FlowRow[], period: FlowPeriod): { sectors: Sec
   const small: string[] = [];
   for (const [sector, rs] of bySector) {
     if (rs.length < MIN_SECTOR_STOCKS) { small.push(sector); continue; }
-    const withNormal = rs.filter((r) => r.normalDaily !== null);
+    // The spec's ratio: stocks with a normal that traded in the window (a suspended
+    // stock would otherwise pull its sector down by its whole normal).
+    const withNormal = rs.filter((r) => r.normalDaily !== null && r.turnover > 0);
     const expected = withNormal.reduce((s, r) => s + r.normalDaily! * period, 0);
     const moves = rs.map((r) => r.changePct).filter((v): v is number => v !== null);
-    const normalSum = withNormal.reduce((s, r) => s + r.normalDaily!, 0);
+    const normalSum = rs.reduce((s, r) => s + (r.normalDaily ?? 0), 0);
     sectors.push({
       sector, stocks: rs.length,
       ratio: expected > 0 ? withNormal.reduce((s, r) => s + r.turnover, 0) / expected : null,

@@ -2,7 +2,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { INDEX_NAME } from "../ingest/nifty50";
-import type { FlowPeriod, FlowRow } from "../indicators/money-flow";
+import { FLOW_PERIODS, NORMAL_SESSIONS, shortSessions, type FlowPeriod, type FlowRow } from "../indicators/money-flow";
 
 export async function moneyFlowRows(period: FlowPeriod): Promise<{ asOf: string | null; rows: FlowRow[] }> {
   const rows = await db.execute<{ symbol: string; sector: string; turnover: number; normal_daily: number | null; change_pct: number | null }>(sql`
@@ -26,4 +26,23 @@ export async function withReportCard(symbols: string[]): Promise<Set<string>> {
     select distinct symbol from index_members where index_name = ${INDEX_NAME}
     and symbol in (${sql.join(symbols.map((s) => sql`${s}`), sql`, `)})`);
   return new Set(r.map((x) => x.symbol));
+}
+
+/**
+ * Short special sessions (Muhurat, special Saturdays) inside the period's window,
+ * judged on the universe's market-wide ₹ per session, so the page can say why every
+ * sector looks quiet. Renamed stocks' old symbols are left out: negligible in a total.
+ */
+export async function shortSessionsIn(period: FlowPeriod): Promise<string[]> {
+  const days = (await db.execute<{ d: string }>(sql`
+    select trade_date::text d from ingest_log where source = 'bhavcopy' and status = 'ok'
+    order by trade_date desc limit ${FLOW_PERIODS.at(-1)! + NORMAL_SESSIONS}`)).map((r) => r.d);
+  if (days.length < period) return [];
+  const totals = await db.execute<{ d: string; t: number }>(sql`
+    select p.trade_date::text d, sum(p.turnover) t from daily_prices p
+    join index_constituents u on u.index_key = 'total-market' and u.symbol = p.symbol
+    where p.series in ('EQ', 'BE') and p.trade_date >= ${days.at(-1)!}
+    group by 1 order by 1`);
+  const start = days[period - 1]!;
+  return shortSessions(totals.map((x) => ({ date: x.d, turnover: Number(x.t) }))).filter((d) => d >= start);
 }

@@ -35,10 +35,24 @@ Tests for every rule above, including a renamed stock whose normal reaches back 
 symbol. Live check: Metals & Mining's week to 1 Oct 2026 recomputed by independent SQL,
 0.9301× in both.
 
+## Found by the independent review (fixed)
+
+- A stock that didn't trade in the period (a suspension) still counted in its sector's
+  "normal", pulling the sector down by its whole usual amount. Now left out of the ratio,
+  as the spec said.
+- Short special sessions (Diwali Muhurat, special Saturdays) trade 9–20% of a normal day,
+  so every sector would read about 0.15× on the next Muhurat. The page now detects any day
+  whose market-wide trading is under half the usual day and says so; on real data since 2023
+  it flags exactly the five such sessions and no others (Budget day 2025, a full Saturday
+  session, is not flagged).
+- On phones, direction showed by colour alone; the median move now sits beside the ×.
+- Wording: "money moving towards" became "trading shifting towards" (turnover counts both
+  sides), and the page itself now says heavy trading can be selling.
+
 ## Limits
 
 - Sectors are today's NSE list; that's right for "now", but not for history.
-- Heavy trading can be selling as much as buying; the page says so and never predicts.
+- Heavy trading can be selling as much as buying; the page says so under its heading and never predicts.
 
 ## Revisit when
 

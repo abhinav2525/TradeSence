@@ -33,7 +33,13 @@ export default function FlowBars({ sectors, selected, hrefFor }: {
                 )}
                 <span className="fade-in absolute inset-y-0 w-px bg-foreground/70" style={{ left: `${one}%` }} />
               </span>
-              <span className="text-right font-semibold tabular-nums text-foreground">{s.ratio === null ? "—" : `${s.ratio.toFixed(2)}×`}</span>
+              <span className="text-right font-semibold tabular-nums text-foreground">
+                {s.ratio === null ? "—" : `${s.ratio.toFixed(2)}×`}
+                {/* phones: the move beside the ×, so direction is never colour alone */}
+                <span className={cn("ml-2 font-normal sm:hidden", t === "up" ? "text-up" : t === "down" ? "text-down" : "text-muted-foreground")}>
+                  {s.medianMove === null ? "" : `${signed(s.medianMove, 1)}%`}
+                </span>
+              </span>
               <span className="hidden text-right tabular-nums text-foreground-2 sm:block">
                 {pct(s.share)} <span className="text-muted-foreground">({pct(s.usualShare)})</span>
               </span>

@@ -385,10 +385,10 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   "share-of-trading": {
     id: "share-of-trading", term: "Share of trading", topic: "Stocks",
     short: "A sector's part of all rupees traded across the Nifty Total Market in the period, next to its usual part over the 3 months before.",
-    read: "A rising share means money is moving towards that sector compared with the rest of the market, even on a quiet day overall.",
+    read: "A rising share means trading is shifting towards that sector compared with the rest of the market, even on a quiet day overall. It counts buyers and sellers together.",
     what: "Trading vs normal compares a sector with its own past; share of trading compares it with the other sectors right now. A sector can be at 1.2× normal and still lose share if everything else rose more.",
     calc: { plain: "Sector ₹ traded ÷ all sectors' ₹ traded, in the period. Usual share: the same from each stock's normal ₹ per session." },
-    example: "Financial Services traded 26.7% of all rupees in the week to 1 Oct 2026, against a usual 23.6%.",
+    example: "If the market trades ₹4 lakh crore in a week and Financial Services ₹1 lakh crore of it, its share is 25%; usually 22% would mean trading shifted towards it.",
     mistakes: ["Expecting shares to stay put: the biggest sectors swing by a few points from week to week."],
     related: ["money-flow", "trading-vs-normal", "nse-sector"],
   },

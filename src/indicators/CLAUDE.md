@@ -4,8 +4,8 @@
 # src/indicators
 
 The maths. `compute.ts` writes `daily_indicators` (averages, daily move, volume ratio,
-turnover) for every index member; `compute-activity.ts` and `compute-volume-leaders.ts` rebuild the
-whole-market tables for Unusual activity and Top volume. Everything else is pure functions over
+turnover) for every index member; `compute-activity.ts`, `compute-volume-leaders.ts` and `compute-money-flow.ts` rebuild the
+whole-market tables for Unusual activity, Top volume and Money flow. Everything else is pure functions over
 arrays, used by those, the queries in `src/query/` and the research scripts.
 
 ## Files
@@ -24,8 +24,10 @@ arrays, used by those, the queries in `src/query/` and the research scripts.
 | `signals.ts` | Signals page maths: `washoutStatus` (Active < 20, Watching 20–25), `segmentIds`, gap-safe `forwardReturnSafe`, `median`, `episodesOf` (with `pending` horizons), `summarizeHorizons`, `bucketMedians`, `buildSignals`. |
 | `activity.ts` | Unusual activity rules, shared with research 0003: `unusualDays(history)` flags liquid days (median turnover ≥ ₹1 crore) as kept / volume / jump / collapse against the prior 20 sessions; `unusualScore`, `windowMean`, `EXCLUDED_DAYS`, `MAX_MOVE_GAP_DAYS`, thresholds. |
 | `compute-activity.ts`, `cli-activity.ts` | `computeUnusualDays` rebuilds `unusual_days` for every company (not funds) in one transaction; `bun run activity`. |
-| `volume-leaders.ts` | `leaderStats`: one stock's turnover, shares and move over 1/5/21/63/126-session windows (`PERIODS`). |
+| `volume-leaders.ts` | `leaderStats`: one stock's turnover, shares and move over 1/5/21/63/126-session windows (`PERIODS`); `windowMove`, the shared rule for a window's price move (also Money flow). |
 | `compute-volume-leaders.ts`, `cli-volume-leaders.ts` | `computeVolumeLeaders` rebuilds `volume_leaders` for the Nifty Total Market list (reads `index_constituents`, counts `unusual_days`) in one transaction; `bun run volume-leaders`. |
+| `money-flow.ts` | Money flow maths (decision 0028): `flowWindows` (last 1/5/21 sessions + the 63 before), `flowStats` (₹, normal per session with 40 of 63 traded, move), `sectorFlows` (ratio over stocks with a normal that traded, share vs usual, median move; under 5 stocks → `small`), `sectorStocks`, `shortSessions`, `cleanFlowPeriod`, `cleanSector`. |
+| `compute-money-flow.ts`, `cli-money-flow.ts` | `computeMoneyFlow` rebuilds `money_flow` for the Nifty Total Market list in one transaction; `bun run money-flow`. Runs nightly after Top volume. |
 | `universe.ts`, `fund-symbols.txt` | Which symbols are funds (ISIN `INF…`, not `INE…`): `companies(funds)` (one symbol per company), `fundSymbols`, `refreshFundSymbols(date)` (adds a night's new funds to `fund_symbols`), `allFundSymbols` (the committed text file plus that table). The text file is written by `bun run research:fund-symbols`. |
 
 ## Rules here

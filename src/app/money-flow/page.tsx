@@ -11,8 +11,8 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
-import { cleanFlowPeriod, sectorFlows, sectorStocks, type FlowPeriod } from "@/indicators/money-flow";
-import { moneyFlowRows, withReportCard } from "@/query/money-flow";
+import { cleanFlowPeriod, cleanSector, sectorFlows, sectorStocks, type FlowPeriod } from "@/indicators/money-flow";
+import { moneyFlowRows, shortSessionsIn, withReportCard } from "@/query/money-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,8 @@ export default async function Page({
   const period = cleanFlowPeriod(sp.period);
   const { asOf, rows } = await moneyFlowRows(period);
   const { sectors, small } = sectorFlows(rows, period);
-  const sector = sp.sector && sectors.some((s) => s.sector === sp.sector) ? sp.sector : null;
+  const sector = cleanSector(sp.sector, sectors.map((s) => s.sector));
+  const short = asOf ? await shortSessionsIn(period) : [];
   const stocks = sector ? sectorStocks(rows, sector, period) : [];
   const withCard = await withReportCard(stocks.map((s) => s.symbol));
   const picked = sectors.find((s) => s.sector === sector);
@@ -90,8 +91,13 @@ export default async function Page({
                 <Term id="trading-vs-normal">Trading vs normal</Term> {PERIOD_PHRASE[period]} to {formatDate(asOf)}
               </h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
-                Each <Term id="nse-sector">sector</Term> against its own last 3 months; the line is 1× (a usual amount). Green: its stocks mostly rose. Red: mostly fell. Pick a sector to see the stocks driving it.
+                Each <Term id="nse-sector">sector</Term> against its own last 3 months; the line is 1× (a usual amount). Green: its stocks mostly rose. Red: mostly fell. Heavy trading can be selling as much as buying. Pick a sector to see the stocks driving it.
               </p>
+              {short.length > 0 && (
+                <p className="mt-2 rounded-md border bg-raised px-3 py-2 text-[12px] text-foreground-2">
+                  {short.map(formatDate).join(", ")} {short.length === 1 ? "was a short special session" : "were short special sessions"} (such as Diwali Muhurat), when the whole market trades a fraction of a normal day. Every sector looks quieter {period === 1 ? "today" : "this period"} because of {short.length === 1 ? "it" : "them"}.
+                </p>
+              )}
             </div>
             <div className={cn("hidden gap-x-4 border-b px-card-x pb-2 sm:grid sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_4rem_7.5rem_5rem]", colHead)}>
               <span>Sector</span>

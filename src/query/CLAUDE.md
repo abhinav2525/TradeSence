@@ -5,7 +5,7 @@
 
 Database reads behind each page: every function here runs SQL against `daily_indicators` /
 `index_members` (and `index_prices`, `corporate_actions`, `symbol_changes` for the Report Card;
-`unusual_days`, `volume_leaders`, `index_constituents` for the Activity and Volume pages)
+`unusual_days`, `volume_leaders`, `money_flow`, `index_constituents` for the Activity, Volume and Money flow pages)
 and returns plain objects the pages render. Pure helpers sit next to the query that needs them
 so they can be tested without a database.
 
@@ -20,6 +20,7 @@ so they can be tested without a database.
 | `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
 | `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all or NIFTY 50, sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
 | `volume.ts` | `/volume` (Top volume): `topVolume` reads `volume_leaders` joined to NSE's index lists (size group, sector, optional index filter; rank by value or shares); `sectorsPresent`; `PAGE_SIZE = 100` and pure `pageOfRows` (a page past the end shows the last, decision 0026). |
+| `money-flow.ts` | `/money-flow`: `moneyFlowRows(period)` reads `money_flow` (the page sums per sector with `sectorFlows` from `../indicators/money-flow`); `withReportCard` (drill-down links); `shortSessionsIn(period)` finds Muhurat/special-Saturday sessions in the window from market-wide ₹. |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
 
 ## Rules here
@@ -34,6 +35,6 @@ so they can be tested without a database.
 
 ## See also
 - `src/indicators/` for the maths these queries call; `src/lib/glossary.ts` for the `TermId`s `glossary-live.ts` switches on.
-- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `activity-query.test.ts`, `volume-query.test.ts`, `glossary-live.test.ts`.
-- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals), 0024 (Unusual activity), 0025 (Top volume), 0026 (page size).
+- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `activity-query.test.ts`, `volume-query.test.ts`, `glossary-live.test.ts`, `money-flow.test.ts`.
+- Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals), 0024 (Unusual activity), 0025 (Top volume), 0026 (page size), 0028 (Money flow).
 <!-- folder-claude-md:end -->
