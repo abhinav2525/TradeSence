@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
 import { db, schema } from "../db";
-import { sma, ema } from "./moving-average";
 import { segmentByGaps } from "./gaps";
 import { volumeRatios } from "./volume";
 import { findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 import { loadAdjustedHistory, loadRenames } from "./history";
+import { adjustedAverages } from "./averages";
 
 export { segmentByGaps } from "./gaps";
 
@@ -51,34 +51,26 @@ export async function computeIndicators(
     if (!h) continue;
     const { dates, close: closes, factors, shareFactors } = h;
     const volRatio = volumeRatios(dates, h.volume, shareFactors);
-    const adjusted = closes.map((c, i) => c / factors[i]!);
+    // The averages on adjusted closes, per gap segment (shared with whole-market breadth).
+    const av = adjustedAverages(h);
+    const adjusted = av.adjusted;
 
     for (const jump of findUnexplainedJumps(dates, closes, factors)) {
       opts.onUnexplainedJump?.({ symbol, ...jump });
     }
 
-    // Compute each contiguous stretch independently, so an average never spans
-    // a hole in the history.
-    const s50: (number | null)[] = new Array(closes.length).fill(null);
-    const s200: (number | null)[] = new Array(closes.length).fill(null);
-    const e200: (number | null)[] = new Array(closes.length).fill(null);
-    const move: (number | null)[] = new Array(closes.length).fill(null);
+    // Back into that day's own rupees, so each average compares directly with `close`.
+    const unadjust = (v: number | null, i: number) => (v === null ? null : v * factors[i]!);
+    const s50 = av.sma50.map(unadjust);
+    const s200 = av.sma200.map(unadjust);
+    const e200 = av.ema200.map(unadjust);
 
+    // The day's move, on the adjusted series: a split day moves by what the stock
+    // actually did, not by the split. A segment's first day has none.
+    const move: (number | null)[] = new Array(closes.length).fill(null);
     for (const seg of segmentByGaps(dates)) {
-      const segCloses = seg.map((i) => adjusted[i]!);
-      const a = sma(segCloses, 50);
-      const b = sma(segCloses, 200);
-      const c = ema(segCloses, 200);
-      // Back into that day's own rupees, so it compares directly with `close`.
-      const unadjust = (v: number | null, f: number) => (v === null ? null : v * f);
       seg.forEach((rowIndex, j) => {
-        // The day's move, on the adjusted series: a split day moves by what the
-        // stock actually did, not by the split. A segment's first day has none.
         if (j > 0) move[rowIndex] = (adjusted[rowIndex]! / adjusted[seg[j - 1]!]! - 1) * 100;
-        const f = factors[rowIndex]!;
-        s50[rowIndex] = unadjust(a[j]!, f);
-        s200[rowIndex] = unadjust(b[j]!, f);
-        e200[rowIndex] = unadjust(c[j]!, f);
       });
     }
 
