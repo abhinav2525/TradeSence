@@ -54,7 +54,7 @@ The beginner Report Card lights came first (done: 0014); these follow.
 ### Notifications — a
 - [ ] **Nightly digest** (old item 6): after the nightly run, send a summary of breadth
   changes, new crossings and signals.
-- [ ] Run `bun run audit:report-card` after the nightly ingest; deliver its `✗` lines with the warnings below.
+- [x] Run `bun run audit:report-card` after the nightly ingest (done 4 Oct; its `✗` lines are nightly `WARNING`s, decision 0013). Delivering them is the item below.
 - [ ] **Deliver the nightly `WARNING` lines** (unparsed corporate action, unexplained
   jump, NIFTY 50 changed, feed not updated). Today they only go to
   `~/Library/Logs/tradesence-nightly.log` and nobody sees them (docs/pipelines.md §6).

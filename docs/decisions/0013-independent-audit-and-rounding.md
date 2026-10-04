@@ -86,5 +86,9 @@ the best ones. Published formulas and TradingView spot checks cover that.
 
 - **A Report Card number is added** (expected range, market sensitivity, when the market
   breaks are next): add it to the audit in the same change.
-- **Nightly**: run the audit after `ingest:nightly` and send its `✗` lines with the other
-  warnings (TODO, Notifications).
+- ~~Nightly~~: done 4 Oct 2026. `ingest:nightly` runs the audit after recomputing the
+  averages, as its own process (it must stay independent of the app's code), and turns
+  each `✗` line into a `WARNING` (`src/audit/nightly.ts`; first 10 listed, the rest
+  counted). An audit that crashes or prints no summary is a warning too, so a broken check
+  can't pass for a clean one. First scheduled run: 1,592 numbers, 0 mismatches. Still to
+  do: send the warnings somewhere you'll see them (TODO, Notifications).

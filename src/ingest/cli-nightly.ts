@@ -8,6 +8,7 @@
 import { backfill } from "./backfill";
 import { ingestIndexDays } from "./index-prices";
 import { ingestDeliveryDays } from "./delivery";
+import { auditWarnings } from "../audit/nightly";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -90,6 +91,14 @@ const rows = await computeIndicators("NIFTY50", {
 console.log(`[nightly] indicators: ${rows} rows`);
 
 await sql.end();
+
+// Independent recalculation of every Report Card number (decision 0013), now
+// that tonight's averages exist. Its own process, by bun's absolute path:
+// launchd's PATH has no bun.
+const audit = Bun.spawnSync([process.execPath, "run", "src/audit/report-card.ts"], { stdout: "pipe", stderr: "pipe" });
+const auditOut = audit.stdout.toString();
+console.log(`[nightly] audit: ${auditOut.split("\n").find((l) => l.startsWith("session")) ?? "no summary"}`);
+for (const w of auditWarnings(audit.exitCode ?? -1, auditOut)) console.warn(`[nightly] WARNING ${w}`);
 
 // Last, so the copy includes tonight's data (decision 0021). A failed backup
 // doesn't touch the data; yesterday's copy is still there.
