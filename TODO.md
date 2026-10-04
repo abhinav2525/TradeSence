@@ -1,5 +1,8 @@
 # TODO
 
+> Features live here. Speed, architecture, system design and operations live in
+> [`TODO-engineering.md`](TODO-engineering.md), with measured baselines and triggers.
+
 **Vision:** fetch all of NSE's cash-market data and build cash-market intelligence on it.
 The NIFTY 50 breadth dashboard is the starting point, not the end state. Prefer designs
 that scale to the whole market (thousands of symbols, all series).

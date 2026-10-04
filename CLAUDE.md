@@ -109,7 +109,8 @@ transiently. The MCP refuses EXPLAIN ANALYZE; time queries with
 `ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
 today, so a missed night heals on the next run. It runs from a launchd agent
 (`ops/install-nightly.sh`, Mon–Fri 19:30, log in `~/Library/Logs/tradesence-nightly.log`).
-`TODO.md` holds the prioritised roadmap.
+`TODO.md` holds the prioritised feature roadmap; `TODO-engineering.md` the speed, architecture
+and operations roadmap (with measured baselines and triggers).
 
 ## Design decisions that are load-bearing
 
