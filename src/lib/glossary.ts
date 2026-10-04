@@ -15,6 +15,7 @@ const IDS = [
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
   "crossing", "whipsaw", "volume-ratio", "near-the-line",
   "unusual-activity", "big-keeping", "huge-volume", "delivery-pct", "delivery-jump", "delivery-collapse",
+  "top-volume", "value-traded", "size-group", "nse-sector",
   "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
 ] as const;
 
@@ -383,7 +384,48 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     example: "Usually 55% delivered, today 18%: down 37 points.",
     mistakes: ["Assuming the price will fall. It says who traded, not what happens next."],
     related: ["delivery-pct", "delivery-jump", "unusual-activity"],
+  },  "top-volume": {
+    id: "top-volume", term: "Top volume", topic: "Stocks",
+    short: "The most-traded stocks over a period, ranked by rupees traded or by shares, among the ~750 Nifty Total Market stocks. Where money moved, not where prices go next.",
+    read: "Use it to see where trading money concentrated, by size, sector or index. Compare the price move column to see whether heavy trading came with a rise or a fall.",
+    what: "Each night tradeSence adds up every stock's trading over the last 1, 5, 21, 63 and 126 sessions. The list is NSE's Nifty Total Market, the 750 largest companies by value.",
+    calc: { plain: "Rupees traded: the sum of NSE's daily turnover over the period. Shares: the sum of shares traded, adjusted for splits and bonuses so the whole period is in today's shares." },
+    example: "Over the month to 1 Oct 2026, HDFCBANK led with about ₹45,359 crore traded.",
+    mistakes: ["Reading heavy trading as a buy or sell signal. It shows activity, not direction; check the news and the price move."],
+    related: ["value-traded", "size-group", "nse-sector"],
+    seeIt: { label: "Top volume", href: "/volume" },
   },
+  "value-traded": {
+    id: "value-traded", term: "₹ value traded", topic: "Stocks",
+    short: "Rupees that changed hands: shares traded times price, from NSE's daily turnover, added up over the period. Fair across cheap and expensive stocks.",
+    read: "Bigger means more money moved through the stock. Ranking by shares instead favours cheap stocks, which trade many shares for little money.",
+    what: "NSE reports each stock's turnover every day. A ₹100 stock trading 10 lakh shares turns over ₹10 crore; a ₹5,000 stock trading 1 lakh shares turns over ₹50 crore.",
+    calc: { plain: "The sum of NSE's daily turnover (₹) for the stock over the chosen period." },
+    example: "10 lakh shares at ₹100 is ₹10 crore; 1 lakh shares at ₹5,000 is ₹50 crore, so the second ranks higher by value.",
+    mistakes: ["Comparing share counts across stocks with very different prices."],
+    related: ["top-volume", "volume-ratio"],
+  },
+  "size-group": {
+    id: "size-group", term: "Size group", topic: "Stocks",
+    short: "Large = Nifty 100, Mid = Nifty Midcap 150, Small = Nifty Smallcap 250, Micro = Nifty Microcap 250: NSE's own lists by company value, reviewed twice a year.",
+    read: "A quick way to compare like with like: heavy trading in a micro-cap means something different from heavy trading in a bank in the Nifty 100.",
+    what: "NSE ranks companies by how much they're worth on the market and builds these four indices from the ranking. Together they make up the Nifty Total Market.",
+    calc: { plain: "Whichever of the four NSE lists the stock is in today." },
+    example: "HDFCBANK is in the Nifty 100, so it's Large; a stock in the Microcap 250 is Micro.",
+    mistakes: ["Assuming a stock's group never changes: NSE moves stocks between lists twice a year."],
+    related: ["nse-sector", "top-volume"],
+  },
+  "nse-sector": {
+    id: "nse-sector", term: "Sector (NSE)", topic: "Stocks",
+    short: "NSE's industry for each company, from its index files, such as Financial Services, Capital Goods or Healthcare. There are 22.",
+    read: "Filter by sector to see which companies led trading within one part of the economy.",
+    what: "NSE labels every company in its indices with a broad industry. tradeSence uses that label as published.",
+    calc: { plain: "The Industry column of NSE's Nifty Total Market list, as of today." },
+    example: "HDFCBANK and ICICIBANK are both Financial Services.",
+    mistakes: ["Expecting a company's sector to match its own description of itself: NSE's labels are broad."],
+    related: ["size-group", "top-volume"],
+  },
+
 
   "trend-check": {
     id: "trend-check", term: "Trend (Report Card)", topic: "Risk",

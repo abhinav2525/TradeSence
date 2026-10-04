@@ -58,3 +58,10 @@ test("formatCrore", () => {
   expect(formatCrore(1.234e10)).toBe("₹1,234 cr");
   expect(formatCrore(5e6)).toBe("₹0.5 cr");
 });
+
+import { formatShares } from "../src/lib/format";
+test("formatShares: crore, lakh, then plain Indian grouping", () => {
+  expect(formatShares(1.234e7)).toBe("1.23 cr");
+  expect(formatShares(5.5e5)).toBe("5.50 lakh");
+  expect(formatShares(45_600)).toBe("45,600");
+});

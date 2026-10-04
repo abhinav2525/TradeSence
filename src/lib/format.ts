@@ -57,3 +57,10 @@ export function formatCrore(n: number): string {
   const cr = n / 1e7;
   return `₹${cr >= 100 ? Math.round(cr).toLocaleString("en-IN") : cr.toFixed(1)} cr`;
 }
+
+/** A share count the Indian way: "1.23 cr", "5.50 lakh", or "45,600". */
+export function formatShares(n: number): string {
+  if (n >= 1e7) return `${(n / 1e7).toFixed(2)} cr`;
+  if (n >= 1e5) return `${(n / 1e5).toFixed(2)} lakh`;
+  return Math.round(n).toLocaleString("en-IN");
+}

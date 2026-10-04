@@ -82,6 +82,15 @@ async function build(id: TermId): Promise<string | null> {
       return six.n === 0 ? null
         : `After the ${six.n} washout${six.n === 1 ? "" : "s"} with six months behind them, the NIFTY 50's median 6-month return was ${pctText(six.median)}, against ${pctText(six.baseline)} for an ordinary day.`;
     }
+    case "top-volume": {
+      const [row] = await db.execute<{ symbol: string; turnover: number; as_of: string }>(sql`
+        select v.symbol, v.turnover, v.as_of::text as_of from volume_leaders v
+        join index_constituents u on u.index_key = 'total-market' and u.symbol = v.symbol
+        where v.period = 21 order by v.turnover desc limit 1`);
+      return row ? `${row.symbol} led on rupees traded over the month to ${formatDate(row.as_of)} (₹${formatInt(Number(row.turnover) / 1e7)} crore).` : null;
+    }
+    case "value-traded": case "size-group": case "nse-sector":
+      return null;
     case "unusual-activity": case "big-keeping": case "huge-volume": case "delivery-jump": case "delivery-collapse": {
       const [row] = await db.execute<{ d: string | null; n: number; kept: number; volume: number; jump: number; collapse: number }>(sql`
         select max(trade_date)::text d, count(*)::int n, count(*) filter (where kept)::int kept,
