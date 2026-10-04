@@ -113,6 +113,6 @@ vs usual, price move. Facts only; "None in the last 3 months" when empty.
 
 ## Documentation
 
-Decision 0023 (what counts as unusual and why these thresholds; stored events vs live
+Decision 0024 (what counts as unusual and why these thresholds; stored events vs live
 calculation); `docs/pipelines.md` (new nightly step); README (page, function reference,
 schema); CLAUDE.md (page list, command); TODO.

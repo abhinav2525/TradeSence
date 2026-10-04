@@ -43,7 +43,7 @@
 - Create `src/query/activity.ts`; `tests/activity.test.ts`, `tests/activity-query.test.ts`.
 - Modify `src/lib/glossary.ts`, `src/lib/format.ts`, `src/components/SiteNav.tsx`, `src/components/hotkey-target.ts`, `tests/hotkeys.test.ts`, `tests/format.test.ts`.
 - Create `src/app/activity/page.tsx`, `src/components/ActivityTable.tsx`, `src/components/UnusualDaysCard.tsx`; modify `src/app/stock/[symbol]/page.tsx`.
-- Docs: `docs/decisions/0023-unusual-activity.md`, `docs/decisions/README.md`, `docs/pipelines.md`, `README.md`, `CLAUDE.md`, `TODO.md`.
+- Docs: `docs/decisions/0024-unusual-activity.md`, `docs/decisions/README.md`, `docs/pipelines.md`, `README.md`, `CLAUDE.md`, `TODO.md`.
 
 ---
 
@@ -455,7 +455,7 @@ select count(*)::numeric / count(distinct trade_date) as per_day,
 from unusual_days where trade_date >= '2025-10-01';
 ```
 
-Record the per-day count and each kind's per-day count (multiply the share by per_day) for decision 0023. Spot-check one row by hand: a stock with `kept` on a recent day — compare its delivered shares in `daily_delivery` against the mean of its previous 20.
+Record the per-day count and each kind's per-day count (multiply the share by per_day) for decision 0024. Spot-check one row by hand: a stock with `kept` on a recent day — compare its delivered shares in `daily_delivery` against the mean of its previous 20.
 
 - [ ] **Step 7: Commit** `git add src/db/schema.ts drizzle src/indicators/compute-activity.ts src/indicators/cli-activity.ts src/ingest/cli-nightly.ts package.json tests/activity.test.ts && git commit -m "unusual_days table, nightly rebuild, bun run activity"`
 
@@ -1011,14 +1011,14 @@ export default function UnusualDaysCard({ rows, className }: { rows: ActivityRow
 
 ### Task 7: Docs and production
 
-**Files:** Create `docs/decisions/0023-unusual-activity.md`; modify `docs/decisions/README.md`, `docs/pipelines.md`, `README.md`, `CLAUDE.md`, `TODO.md`.
+**Files:** Create `docs/decisions/0024-unusual-activity.md`; modify `docs/decisions/README.md`, `docs/pipelines.md`, `README.md`, `CLAUDE.md`, `TODO.md`.
 
-- [ ] **Step 1: Decision 0023** (plain language): Problem (owner wants to see where money suddenly went in/out; tracking, not prediction) · What counts as unusual (four kinds, thresholds 5× / ±30 points, chosen so ~5% of active stocks flag per day; the measured per-day counts from Task 3 Step 6) · Stored events vs computing on page load (and why) · Full nightly rebuild in one transaction · ETFs out, ₹1 crore filter, NIFTY 50 switch point-in-time · Report Cards only for NIFTY 50 (non-members unlinked) · Revisit when (Report Cards for every stock; alerts; thresholds after owner feedback).
+- [ ] **Step 1: Decision 0024** (plain language): Problem (owner wants to see where money suddenly went in/out; tracking, not prediction) · What counts as unusual (four kinds, thresholds 5× / ±30 points, chosen so ~5% of active stocks flag per day; the measured per-day counts from Task 3 Step 6) · Stored events vs computing on page load (and why) · Full nightly rebuild in one transaction · ETFs out, ₹1 crore filter, NIFTY 50 switch point-in-time · Report Cards only for NIFTY 50 (non-members unlinked) · Revisit when (Report Cards for every stock; alerts; thresholds after owner feedback).
 
-- [ ] **Step 2: Other docs.** `docs/decisions/README.md` row for 0023. `docs/pipelines.md`: pipeline 12 "Unusual activity" (what, source, writes `unusual_days`, nightly ✅ after averages, by hand `bun run activity`, code, why 0023) and the nightly order line. `README.md`: commands row (`bun run activity`), schema block (`unusual_days`), function reference (`src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts`, `src/query/activity.ts`). `CLAUDE.md`: in "What this is" add `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual stock-days, whole market or NIFTY 50); command `bun run activity`; one line under load-bearing decisions: "Delivery/volume 'normal' and the ETF universe live once in `src/indicators/activity.ts` / `universe.ts`, shared by research 0003 and the page." `TODO.md`: Where we left off.
+- [ ] **Step 2: Other docs.** `docs/decisions/README.md` row for 0024. `docs/pipelines.md`: pipeline 12 "Unusual activity" (what, source, writes `unusual_days`, nightly ✅ after averages, by hand `bun run activity`, code, why 0024) and the nightly order line. `README.md`: commands row (`bun run activity`), schema block (`unusual_days`), function reference (`src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts`, `src/query/activity.ts`). `CLAUDE.md`: in "What this is" add `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual stock-days, whole market or NIFTY 50); command `bun run activity`; one line under load-bearing decisions: "Delivery/volume 'normal' and the ETF universe live once in `src/indicators/activity.ts` / `universe.ts`, shared by research 0003 and the page." `TODO.md`: Where we left off.
 
 - [ ] **Step 3: Full suite** `bun test && bunx tsc --noEmit` — Expected: all PASS.
 
-- [ ] **Step 4: Commit** `git add docs README.md CLAUDE.md TODO.md && git commit -m "Docs: Unusual activity (decision 0023, pipelines, README, CLAUDE.md, TODO)"`
+- [ ] **Step 4: Commit** `git add docs README.md CLAUDE.md TODO.md && git commit -m "Docs: Unusual activity (decision 0024, pipelines, README, CLAUDE.md, TODO)"`
 
 - [ ] **Step 5: Production** (after merge to main): `bun run build`, then restart the detached `bun run start` on :3000 the way `port-3000-is-production` describes (log `~/Library/Logs/tradesence-web.log`), and load `http://localhost:3000/activity` to confirm 200.

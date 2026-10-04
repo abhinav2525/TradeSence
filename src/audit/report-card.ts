@@ -115,21 +115,24 @@ function crashes(l: Pt[], nifty: { d: string; c: number }[], upto: string) {
   // high in the 63 sessions up to the start → low in the 63 after
   const fall = (lv: (k: number) => number, seg: (k: number) => number, i: number | undefined, len: number) => {
     if (i === undefined || i < 63 || i + 63 > len - 1 || seg(i - 63) !== seg(i + 63)) return null;
-    let hi = -Infinity, lo = Infinity;
-    for (let k = i - 63; k <= i; k++) hi = Math.max(hi, lv(k));
-    for (let k = i; k <= i + 63; k++) lo = Math.min(lo, lv(k));
-    return Math.min(0, (lo / hi - 1) * 100);
+    const before = Array.from({ length: 64 }, (_, t) => lv(i - 63 + t));
+    const after = Array.from({ length: 64 }, (_, t) => lv(i + t));
+    const hi = Math.max(...before), lo = Math.min(...after);
+    // first session within 1e-12 of the high / low (two paths differ in the 14th decimal)
+    const hiAt = i - 63 + before.findIndex((v) => Math.abs(v / hi - 1) <= 1e-12);
+    const loAt = i + after.findIndex((v) => Math.abs(v / lo - 1) <= 1e-12);
+    return { pct: Math.min(0, (lo / hi - 1) * 100), hiAt, loAt };
   };
-  const eps: { start: string; s: number; n: number; back: boolean | null }[] = []; let ongoing: string | null = null;
+  const eps: { start: string; s: number; n: number; back: boolean | null; hiD: string; loD: string }[] = []; let ongoing: string | null = null;
   for (const i of starts) {
     const start = b[i]!.d;
     if (i + 63 > b.length - 1) { ongoing = start; continue; }
     const j = si.get(start);
-    const s = fall((k) => l[k]!.level, (k) => l[k]!.seg, j, l.length);
-    const n = fall((k) => nifty[k]!.c, () => 0, ni.get(start), nifty.length);
-    if (s === null || n === null) continue;
+    const sf = fall((k) => l[k]!.level, (k) => l[k]!.seg, j, l.length);
+    const nf = fall((k) => nifty[k]!.c, () => 0, ni.get(start), nifty.length);
+    if (sf === null || nf === null) continue;
     const back = j! + 126 <= l.length - 1 && l[j! + 126]!.seg === l[j!]!.seg ? (l[j! + 126]!.level / l[j!]!.level - 1) * 100 >= -1e-9 : null;
-    eps.push({ start, s, n, back });
+    eps.push({ start, s: sf.pct, n: nf.pct, back, hiD: l[sf.hiAt]!.d, loD: l[sf.loAt]!.d });
   }
   const med = (xs: number[]) => { const v = [...xs].sort((p, q) => p - q), h = v.length / 2; return v.length % 2 ? v[Math.floor(h)]! : (v[h - 1]! + v[h]!) / 2; };
   const ratios = eps.filter((e) => e.n < -1e-9).map((e) => e.s / e.n);
@@ -224,6 +227,7 @@ for (const m of members) {
     const x = r.crashes.episodes[i];
     cmp(m, `crash ${e.start} stock fall`, e.s, x?.stockFall); cmp(m, `crash ${e.start} NIFTY fall`, e.n, x?.niftyFall);
     if (e.back !== (x?.back ?? null)) mism.push(`${m} crash ${e.start} back: mine=${e.back} app=${x?.back}`);
+    if (e.hiD !== x?.peakDate || e.loD !== x?.lowDate) mism.push(`${m} crash ${e.start} dates: mine=${e.hiD}→${e.loD} app=${x?.peakDate}→${x?.lowDate}`);
   });
 }
 console.log(`session ${today} · ${members.length} members · ${checked} numbers compared · ${mism.length} mismatches`);

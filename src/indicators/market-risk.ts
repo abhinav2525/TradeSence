@@ -106,7 +106,16 @@ export const CRASH_BREADTH = 20; // % of NIFTY 50 members above their 200-day SM
 export const CRASH_FALL_SESSIONS = 63; // 3 months
 export const CRASH_BACK_SESSIONS = 126; // 6 months
 
-export type CrashEpisode = { start: string; stockFall: number; niftyFall: number; back: boolean | null };
+export type CrashEpisode = {
+  start: string;
+  stockFall: number;
+  niftyFall: number;
+  back: boolean | null;
+  // The stock's fall ran from the high on peakDate to the low on lowDate. Shown
+  // under the %, so the table can't be read as one day's move.
+  peakDate: string;
+  lowDate: string;
+};
 export type Crashes = {
   episodes: CrashEpisode[]; // oldest first
   ongoing: string | null; // the latest start with under 63 sessions since: mentioned, not counted
@@ -130,14 +139,23 @@ const median = (xs: number[]) => {
  * because breadth usually breaks near the bottom: from the trigger day itself
  * the NIFTY's fall is near zero, and dividing by it paints noise red.
  */
-function crashFall(line: LinePoint[], i: number | undefined): number | null {
+function crashFall(line: LinePoint[], i: number | undefined): { fall: number; peakDate: string; lowDate: string } | null {
   if (i === undefined) return null;
   const from = i - CRASH_FALL_SESSIONS, to = i + CRASH_FALL_SESSIONS;
   if (from < 0 || to > line.length - 1 || line[from]!.segment !== line[to]!.segment) return null;
-  let peak = -Infinity, low = Infinity;
-  for (let k = from; k <= i; k++) peak = Math.max(peak, line[k]!.level);
-  for (let k = i; k <= to; k++) low = Math.min(low, line[k]!.level);
-  return Math.min(0, (low / peak - 1) * 100);
+  let hi = -Infinity, lo = Infinity;
+  for (let k = from; k <= i; k++) hi = Math.max(hi, line[k]!.level);
+  for (let k = i; k <= to; k++) lo = Math.min(lo, line[k]!.level);
+  // The first day at the high or low. "At" allows one part in a trillion: the
+  // same close computed on two paths differs in the 14th decimal (decision 0013).
+  let peak = from, low = i;
+  while (line[peak]!.level < hi * (1 - 1e-12)) peak++;
+  while (line[low]!.level > lo * (1 + 1e-12)) low++;
+  return {
+    fall: Math.min(0, (lo / hi - 1) * 100),
+    peakDate: line[peak]!.date,
+    lowDate: line[low]!.date,
+  };
 }
 
 function backAfter(line: LinePoint[], i: number): boolean | null {
@@ -169,10 +187,12 @@ export function crashEpisodes(
     const start = breadth[b]!.date;
     if (b + CRASH_FALL_SESSIONS > breadth.length - 1) { ongoing = start; continue; }
     const si = sIdx.get(start);
-    const stockFall = crashFall(stock, si);
-    const niftyFall = crashFall(nifty, nIdx.get(start));
-    if (stockFall === null || niftyFall === null) continue;
-    episodes.push({ start, stockFall, niftyFall, back: backAfter(stock, si!) });
+    const s = crashFall(stock, si);
+    const n = crashFall(nifty, nIdx.get(start));
+    if (s === null || n === null) continue;
+    episodes.push({
+      start, stockFall: s.fall, niftyFall: n.fall, back: backAfter(stock, si!), peakDate: s.peakDate, lowDate: s.lowDate,
+    });
   }
   const ratios = episodes.filter((e) => e.niftyFall < -NOISE_PCT).map((e) => e.stockFall / e.niftyFall);
   const known = episodes.filter((e) => e.back !== null);

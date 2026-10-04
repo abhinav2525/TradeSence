@@ -98,6 +98,9 @@ describe("crashEpisodes (peak before → trough after, decision 0014)", () => {
     expect(c.episodes).toHaveLength(1);
     expect(c.episodes[0]!.stockFall).toBeCloseTo((90 / 110 - 1) * 100, 9);
     expect(c.episodes[0]!.niftyFall).toBeCloseTo((950 / 1100 - 1) * 100, 9);
+    // the dates the fall ran between, so the page can't be read as one day's move
+    expect(c.episodes[0]!.peakDate).toBe(d(40));
+    expect(c.episodes[0]!.lowDate).toBe(d(72));
     expect(c.ratio!).toBeCloseTo((90 / 110 - 1) / (950 / 1100 - 1), 9);
     expect(c.episodes[0]!.back).toBe(true); // 100 at session 196 ≥ 100 on the start day
   });
