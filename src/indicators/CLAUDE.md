@@ -14,6 +14,8 @@ arrays, used by those, the queries in `src/query/` and the research scripts.
 | `history.ts` | `loadAdjustedHistory(symbol, renames, { series? })`: raw OHLCV across the rename lineage, `traded`/`delivered` (null without a delivery row), plus `factors` (divide prices) and `shareFactors` (multiply volume and delivered shares; never demergers). `series` defaults to EQ; `["EQ","BE"]` sums both series per day (Top volume). `loadRenames`. Shared by `compute*.ts` and `src/research/`. |
 | `compute.ts` | `computeIndicators(indexName)`: per member, loads the history, computes SMA50/SMA200/EMA200, `change_pct` and `vol_ratio` per gap segment on the adjusted series, scales averages back to each day's rupees and upserts in chunks of 1,000. Reports leftover >30% overnight jumps via `onUnexplainedJump`. |
 | `cli.ts` | `bun run indicators` entry point: runs `computeIndicators()` and closes the pool. |
+| `averages.ts` | `adjustedAverages(h)`: SMA 50/200 and EMA 200 on adjusted closes per gap segment; the one copy used by `compute.ts` and whole-market breadth (decision 0030). |
+| `breadth-universes.ts`, `compute-breadth.ts`, `cli-breadth.ts` | Breadth beyond the NIFTY 50: `addStock` counter, `LIST_UNIVERSES`, `cleanUniverse`; `computeBreadth` upserts `breadth_daily` (whole liquid market every day, index lists on the latest day; never deletes); `bun run breadth`. |
 | `moving-average.ts` | `sma`, `ema` (seeded with the first SMA). Output is the same length as input, `null` until the window fills. |
 | `gaps.ts` | `MAX_GAP_DAYS = 21` and `segmentByGaps`: the one copy of the gap rule. |
 | `adjust.ts` | `adjustmentFactors` (product of later events' factors), `demergerFactor` (last close ÷ ex-date open, null if it can't be priced honestly), `findUnexplainedJumps`. |

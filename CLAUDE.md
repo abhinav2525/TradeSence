@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A NIFTY 50 market-breadth tracker. Every evening it downloads NSE's free end-of-day
+A NIFTY 50 market-breadth tracker (the Breadth page also covers the whole liquid market and
+NSE's other index lists, decision 0030). Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
 plus that percentage charted since 2020, on the index's real membership each day. Other
@@ -81,6 +82,7 @@ bun run activity                               # rebuild the Unusual activity ta
 bun run ingest:index-lists                     # today's members of 43 NSE indices (~15s)
 bun run volume-leaders                         # rebuild the Top volume table (~5s)
 bun run money-flow                             # rebuild the Money flow tables + 52-week history (~10s)
+bun run breadth                                # whole-market + index-list breadth, upsert only (~20s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study

@@ -13,6 +13,7 @@ so they can be tested without a database.
 | File | What it's for |
 |---|---|
 | `breadth.ts` | Breadth page. `MA_COLUMNS` (average → column), re-exports `MaKind`/`MA_LABELS` from `src/lib/ma.ts`, `breadthSeries` (% of members above an average per day), `resolveSession` (snap a date back to a real session), `adjacentSessions`, `breakdownOn` (one day's above/below lists). Other pages reuse `resolveSession` and `MaKind`. |
+| (also in `breadth.ts`) | `universeSeries(u, ma)`: whole-market / index-list breadth from `breadth_daily` (bound values, no `sql.raw`). |
 | `crossings.ts` | `/crossings`: `crossingStats` counts how often each member crossed its average, in one SQL window query. Also feeds the Screener's crosser badge. |
 | `advance-decline.ts` | `/advance-decline`: `advanceDeclineCounts` (SQL) plus pure `deriveAdvanceDecline` (RANA, McClellan, summation, A/D line, 10-day advancing share), computed per request, per gap segment. |
 | `screener.ts` | `/screener`: `screenerOn` loads every member's history to a date; pure `readSymbol` (cross, run before, 5-session gap), `volumeAtLeast`, `percentile`, `crosserBadge`, `NEAR_PCT = 1`. |

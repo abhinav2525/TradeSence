@@ -8,7 +8,7 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 ## Routes
 | Route (file) | What it shows |
 |---|---|
-| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables, and the washout notice while the alarm is Active on the latest session. Params `ma`, `date`. Uses `breadthSeries`, `breakdownOn`, `adjacentSessions`, `signalsData` |
+| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables, and the washout notice while the alarm is Active on the latest session. Params `ma`, `date`, `u` (`cleanUniverse`: nifty50 default, `market`, or an NSE index-list key). NIFTY 50 uses `breadthSeries`, `breakdownOn`, `adjacentSessions`, `signalsData`; other universes `universeSeries` (no member tables, "history building" under 20 sessions) |
 | `/advance-decline` | Advancers vs decliners, A/D line, McClellan and summation from `advanceDeclineSeries`. Params `date` (snaps back to the prior session), `ma` (only carried for nav) |
 | `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3) |
 | `/crossings` | Members ranked by whipsaw count (`crossingStats`). Param `ma` |

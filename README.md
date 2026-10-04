@@ -318,6 +318,7 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:index-lists` | Download today's members of 43 NSE indices (also nightly; ~15 s) |
 | `bun run volume-leaders` | Rebuild the Top volume table (also nightly; ~5 s) |
 | `bun run money-flow` | Rebuild the Money flow table (also nightly; ~8 s) |
+| `bun run breadth` | Whole-market and NSE index-list breadth into `breadth_daily`, upsert only (also nightly; ~20 s) |
 | `bun run ingest:nightly` | Cron entry point: ingest recent days + recompute |
 
 ---
@@ -471,6 +472,16 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `windowMove(h, first, last, lastDay)` | The shared rule for a window's price move: adjusted closes, ends on the latest session, no step over 5 calendar days (also used by Money flow). |
 | `computeVolumeLeaders` | Every universe stock through `loadAdjustedHistory`, plus Unusual activity counts; `volume_leaders` replaced in one transaction. |
 | `topVolume`, `sectorsPresent` | The page: rank by ₹ or shares, size / sector / index filters, Report Card links. |
+
+### `src/indicators/averages.ts`, `breadth-universes.ts`, `compute-breadth.ts` — breadth beyond the NIFTY 50
+
+| Function | Notes |
+|---|---|
+| `adjustedAverages(h)` | SMA 50, SMA 200, EMA 200 on adjusted closes per gap segment; shared by `computeIndicators` and whole-market breadth. |
+| `addStock(counts, stock, include, onlyDate?)`, `newCounts`, `MA_KINDS` | Per-day above/total per average; a null average is left out; `include` = liquidity or membership; `onlyDate` = latest session only. |
+| `LIST_UNIVERSES`, `cleanUniverse` | The 42 NSE index lists offered (NSE's nifty-50 file left out); the page's `u` param check. |
+| `computeBreadth` | Every company (liquid days) + every index-list member (latest day) through `loadAdjustedHistory`; `breadth_daily` upserted, never deleted. |
+| `universeSeries(u, ma)` | `src/query/breadth.ts`: one universe's daily breadth from `breadth_daily`. |
 
 ### `src/indicators/money-flow.ts`, `compute-money-flow.ts` and `src/query/money-flow.ts` — Money flow
 

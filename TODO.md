@@ -94,6 +94,10 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   both periods (an after-the-fact side row). Fix the rules first: size measured on each day
   (not today's list), and a stock's own days never used as its controls.
 
+- [x] **Breadth beyond the NIFTY 50** (decision 0030, 5 Oct): whole liquid market since 2016,
+  42 NSE index lists saved nightly from 1 Oct 2026, selector on the Breadth page.
+- [ ] Advance/Decline for the whole market too (same `breadth_daily` approach), if wanted.
+
 ### Who moved the money (data checked 5 Oct 2026) — recommended order
 - [ ] **1. Foreign investor (FII/FPI) flows since 2016.** Daily gross buys, sells and net ₹
   in Indian shares on the exchanges, from NSDL (official depository):

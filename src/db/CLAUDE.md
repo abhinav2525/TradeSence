@@ -9,7 +9,7 @@ are generated from it into `drizzle/` (`drizzle.config.ts`).
 ## Files
 | File | What it's for |
 |---|---|
-| `schema.ts` | All tables. Raw, from NSE: `daily_prices` (whole market, raw bhavcopy), `daily_delivery` (traded vs delivered shares, EQ), `corporate_actions`, `symbol_changes`, `index_prices`, `index_constituents` (today's members of 43 NSE indices, with sector), `ingest_log`. Hand-kept: `index_members` (point-in-time intervals). Derived, rebuilt in full: `daily_indicators`, `unusual_days`, `volume_leaders`, `money_flow` (key period, symbol), `sector_flow_weeks` (key sector, week_end), `short_sessions`. Also `fund_symbols` (ETFs seen, grown nightly). Column comments explain units and nullability. |
+| `schema.ts` | All tables. Raw, from NSE: `daily_prices` (whole market, raw bhavcopy), `daily_delivery` (traded vs delivered shares, EQ), `corporate_actions`, `symbol_changes`, `index_prices`, `index_constituents` (today's members of 43 NSE indices, with sector), `ingest_log`. Hand-kept: `index_members` (point-in-time intervals). Derived, rebuilt in full: `daily_indicators`, `unusual_days`, `volume_leaders`, `money_flow` (key period, symbol), `sector_flow_weeks` (key sector, week_end), `short_sessions`. Upserted, never deleted: `breadth_daily` (key universe, ma, trade_date; decision 0030). Also `fund_symbols` (ETFs seen, grown nightly). Column comments explain units and nullability. |
 | `index.ts` | Exports `sql` (postgres.js pool, `max: 8`), `db` (Drizzle over it) and `schema`. Importing it opens the connection. |
 | `url.ts` | `resolveDatabaseUrl`: falls back to the local `tradesence` database, and throws under `NODE_ENV=test` unless the name ends in `_test`. |
 
