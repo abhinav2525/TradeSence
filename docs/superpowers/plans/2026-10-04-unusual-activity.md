@@ -260,7 +260,9 @@ export function unusualDays(h: History): UnusualRow[] {
   const segs = segmentByGaps(h.dates);
   const seg = segmentIds(h.dates);
   const has = (i: number) => !EXCLUDED_DAYS.has(h.dates[i]!) && h.traded[i] != null && h.delivered[i] != null && h.traded[i]! > 0;
-  const dp = h.dates.map((_, i) => (has(i) ? (h.delivered[i]! / h.traded[i]!) * 100 : null));
+  // × 100 before ÷, so whole-number shares give exact percentages: (700/1000)*100 can land a
+  // hair under 70, and a stock at exactly +30 points must count.
+  const dp = h.dates.map((_, i) => (has(i) ? (h.delivered[i]! * 100) / h.traded[i]! : null));
   const delivered = h.dates.map((_, i) => (has(i) ? h.delivered[i]! * h.shareFactors[i]! : null));
   const volume = h.volume.map((v, i) => v * h.shareFactors[i]!);
   const usual = windowMean(dp, segs, 1);
