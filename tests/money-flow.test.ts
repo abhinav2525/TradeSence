@@ -1,7 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
 import {
-  MIN_NORMAL, NORMAL_SESSIONS, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
+  MIN_NORMAL, NORMAL_SESSIONS, cleanFlowPeriod, flowStats, flowWindows, sectorFlows, sectorStocks, type FlowRow,
 } from "../src/indicators/money-flow";
 
 /** n weekday sessions from 2026-01-01; `over` replaces whole columns. */
@@ -115,5 +115,12 @@ describe("sectorStocks", () => {
     expect(r[0]!.ratio).toBe(6);
     expect(r[2]!.extra).toBeNull();
     expect(sectorStocks(rows, "IT", 5, 1).length).toBe(1);
+  });
+});
+
+describe("cleanFlowPeriod", () => {
+  test("1, 5, 21 accepted; anything else is 1 week", () => {
+    expect([cleanFlowPeriod("1"), cleanFlowPeriod("21"), cleanFlowPeriod("5")]).toEqual([1, 21, 5]);
+    for (const v of [undefined, "", "63", "5;drop", " 1", "21.0"]) expect(cleanFlowPeriod(v)).toBe(5);
   });
 });

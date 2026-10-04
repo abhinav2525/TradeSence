@@ -7,6 +7,7 @@ const BASE: Record<Section, string> = {
   screener: "/screener",
   activity: "/activity",
   volume: "/volume",
+  "money-flow": "/money-flow",
   stock: "/stock",
   signals: "/signals",
   learn: "/learn",
@@ -34,7 +35,7 @@ export function hotkeyTarget(key: string, c: HotkeyContext): string | null {
   if (key === "ArrowLeft") return c.prev ? `${base}?ma=${c.ma}&date=${c.prev}${extra}` : null;
   if (key === "ArrowRight") return c.next ? `${base}?ma=${c.ma}&date=${c.next}${extra}` : null;
   if (key === "1" || key === "2" || key === "3") {
-    if (c.page === "stock" || c.page === "signals" || c.page === "activity" || c.page === "volume") return null;
+    if (c.page === "stock" || c.page === "signals" || c.page === "activity" || c.page === "volume" || c.page === "money-flow") return null;
     return `${base}?ma=${{ "1": "sma200", "2": "ema200", "3": "sma50" }[key]}`;
   }
   if (key === "b") return `/?ma=${c.ma}`;
@@ -43,6 +44,7 @@ export function hotkeyTarget(key: string, c: HotkeyContext): string | null {
   if (key === "s") return `/screener?ma=${c.ma}`;
   if (key === "u") return `/activity?ma=${c.ma}`;
   if (key === "v") return `/volume?ma=${c.ma}`;
+  if (key === "m") return `/money-flow?ma=${c.ma}`;
   if (key === "r") return "/stock";
   if (key === "g") return `/signals?ma=${c.ma}`;
   if (key === "l") return "/learn";

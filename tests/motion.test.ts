@@ -37,7 +37,7 @@ test("every chart takes its motion from useChartAnimation, none hard-codes it", 
 });
 
 test("every meter bar grows in, and every card rises in", () => {
-  const files = ["Readout", "BreadthHero", "AdHero", "MemberTable", "CrossingsTable", "VolumeTrack", "RiskCalculator"];
+  const files = ["Readout", "BreadthHero", "AdHero", "MemberTable", "CrossingsTable", "VolumeTrack", "RiskCalculator", "FlowBars"];
   for (const f of files) {
     const src = readFileSync(`src/components/${f}.tsx`, "utf8");
     const bars = (src.match(/style=\{\{ (width|height|left):/g) ?? []).length;

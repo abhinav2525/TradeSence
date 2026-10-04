@@ -14,6 +14,11 @@ export const NORMAL_SESSIONS = 63; // about 3 months before the window: never th
 export const MIN_NORMAL = 40; // traded sessions of those 63 for a stock to have a normal
 export const MIN_SECTOR_STOCKS = 5; // one stock is not a sector
 
+/** The page's `period` param: exactly "1", "5" or "21"; anything else is 1 week. */
+export function cleanFlowPeriod(v: string | undefined): FlowPeriod {
+  return v === "1" ? 1 : v === "21" ? 21 : 5;
+}
+
 export type FlowWindows = {
   asOf: string;
   starts: Record<FlowPeriod, string>;

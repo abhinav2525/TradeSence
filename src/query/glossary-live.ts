@@ -14,6 +14,8 @@ import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { BIG_JUMP_PCT } from "../indicators/activity";
+import { sectorFlows } from "../indicators/money-flow";
+import { moneyFlowRows } from "./money-flow";
 import { formatDate, formatInt, formatPrice, ordinal, signed } from "../lib/format";
 import type { TermId } from "../lib/glossary";
 
@@ -102,6 +104,17 @@ async function build(id: TermId): Promise<string | null> {
       const n = { "unusual-activity": row.n, "big-keeping": row.kept, "huge-volume": row.volume, "delivery-jump": row.jump, "delivery-collapse": row.collapse }[id];
       const what = id === "unusual-activity" ? "had an unusual day" : "qualified";
       return `${formatInt(n)} ${n === 1 ? "stock" : "stocks"} ${what} on ${formatDate(row.d)}.`;
+    }
+    case "money-flow": case "trading-vs-normal": case "share-of-trading": {
+      const rows = await moneyFlowRows(5);
+      if (!rows.asOf || rows.rows.length === 0) return null;
+      const { sectors } = sectorFlows(rows.rows, 5);
+      const top = sectors.find((x) => x.ratio !== null);
+      if (!top) return null;
+      if (id === "share-of-trading") {
+        return `${top.sector} traded ${(top.share * 100).toFixed(1)}% of all rupees in the week to ${formatDate(rows.asOf)}${top.usualShare === null ? "" : `, usually ${(top.usualShare * 100).toFixed(1)}%`}.`;
+      }
+      return `Busiest sector against its normal in the week to ${formatDate(rows.asOf)}: ${top.sector}, at ${top.ratio!.toFixed(1)}×.`;
     }
     case "big-price-jump": {
       const [row] = await db.execute<{ d: string | null; n: number }>(sql`

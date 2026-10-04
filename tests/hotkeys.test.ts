@@ -47,3 +47,8 @@ test("v opens Top volume, and 1-3 do nothing there", () => {
   expect(hotkeyTarget("v", { page: "screener", ma: "sma200" })).toBe("/volume?ma=sma200");
   expect(hotkeyTarget("1", { page: "volume", ma: "sma200" })).toBeNull();
 });
+
+test("m opens Money flow, and 1-3 do nothing there", () => {
+  expect(hotkeyTarget("m", { page: "volume", ma: "sma200" })).toBe("/money-flow?ma=sma200");
+  expect(hotkeyTarget("1", { page: "money-flow", ma: "sma200" })).toBeNull();
+});

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, Radar, Zap, BarChart3, type LucideIcon } from "lucide-react";
+import { Activity, ArrowLeftRight, BookOpen, ChartColumn, ChartSpline, IdCard, ListFilter, Radar, Zap, BarChart3, Waypoints, type LucideIcon } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import DensityToggle from "@/components/DensityToggle";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "activity" | "volume" | "stock" | "signals" | "learn";
+export type Section = "breadth" | "advance-decline" | "crossings" | "screener" | "activity" | "volume" | "money-flow" | "stock" | "signals" | "learn";
 type Props = { current: Section; ma: string; asOf?: string | null };
 
 type NavLink = { key: Section; href: string; label: string; short: string; hint: string; icon: LucideIcon };
@@ -29,6 +29,7 @@ const GROUPS: { label: string; links: NavLink[] }[] = [
       { key: "screener", href: "/screener", label: "Screener", short: "Screener", hint: "s", icon: ListFilter },
       { key: "activity", href: "/activity", label: "Unusual activity", short: "Activity", hint: "u", icon: Zap },
       { key: "volume", href: "/volume", label: "Top volume", short: "Volume", hint: "v", icon: BarChart3 },
+      { key: "money-flow", href: "/money-flow", label: "Money flow", short: "Flow", hint: "m", icon: Waypoints },
       { key: "stock", href: "/stock", label: "Report card", short: "Report card", hint: "r", icon: IdCard },
     ],
   },
@@ -51,7 +52,7 @@ const LINKS = GROUPS.flatMap((g) => g.links);
 const SHORTCUTS = [
   ["← →", "Step a session"],
   ["1 2 3", "Switch average"],
-  ["b a c s u v r g l", "Switch page"],
+  ["b a c s u v m r g l", "Switch page"],
   ["t d", "Theme / spacing"],
 ] as const;
 
