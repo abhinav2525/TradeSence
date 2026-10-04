@@ -1,6 +1,8 @@
-import { test, expect, describe } from "bun:test";
+import { test, expect, describe, beforeEach } from "bun:test";
+import { db, schema } from "../src/db";
+import { companies } from "../src/research/delivery-data";
 import type { History } from "../src/indicators/history";
-import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, part, deliveryVerdict, type Occasion } from "../src/research/delivery";
+import { windowMean, stockSeries, WINDOW, signalFlags, levelCutsByDate, occasionsOf, SIGNALS, matchedLuck, matchedBaseline, part, deliveryVerdict, type Occasion } from "../src/research/delivery";
 import { mulberry32 } from "../src/research/volume";
 
 /** n consecutive weekdays from 2021-01-04, all fields filled, liquid. */
@@ -214,13 +216,24 @@ describe("part and deliveryVerdict", () => {
     luck: { beat, direction: beat >= 50 ? "better" as const : "worse" as const, strength: Math.max(beat, 100 - beat) },
   });
 
-  test("part: baseline is the median of the episode days' medians", () => {
-    const pools = [[[1, 2, 3], [10, 20, 30]]];
-    const dayMedians = [[2, 20]];
-    const p = part([occ(0, 0, 1), occ(1, 0, 10)], pools, dayMedians, 0);
-    expect(p.baseline[0]).toBe(11);
-    expect(p.medians[0]).toBe(5.5);
+  // The baseline must be the luck check's own yardstick: a random stock from the
+  // same days. "Median of each day's median" is a different statistic: here it
+  // would say 51, while a random stock from these two days is typically ~2.
+  test("part: baseline is the typical random stock from the same days, not the median of day medians", () => {
+    const pools = [[[-10, -9, 100, 101, 102], [0, 1, 2, 3, 4]]];
+    const p = part([occ(0, 0, 50), occ(1, 0, 50)], pools, 0);
+    expect(p.baseline[0]).toBeGreaterThanOrEqual(0);
+    expect(p.baseline[0]).toBeLessThanOrEqual(4);
+    expect(p.medians[0]).toBe(50);
     expect(p.n).toBe(2);
+  });
+
+  test("matchedBaseline is reproducible and ignores occasions without a return", () => {
+    const pools = [[1, 2, 3], [4, 5, 6]];
+    const o = [occ(0, 0, 1), { ...occ(1, 0, 1), returns: [null] }];
+    expect(matchedBaseline(o, pools, 0)).toBe(matchedBaseline(o, pools, 0));
+    expect(matchedBaseline(o, pools, 0)).toBeLessThanOrEqual(3);
+    expect(matchedBaseline([{ ...occ(0, 0, 1), returns: [null] }], pools, 0)).toBeNull();
   });
 
   test("Build needs discovery and hold-out both", () => {
@@ -240,5 +253,27 @@ describe("part and deliveryVerdict", () => {
   test("a 'worse' signal is confirmed by a hold-out beat of 5 or less", () => {
     expect(deliveryVerdict("x", mk(40, -2, 0, 1), mk(40, -1, 0, 4), 0).verdict).toBe("Build");
     expect(deliveryVerdict("x", mk(40, -2, 0, 1), mk(40, -1, 0, 96), 0).verdict).toBe("Maybe");
+  });
+});
+describe("companies", () => {
+  beforeEach(async () => {
+    for (const t of [schema.dailyPrices, schema.symbolChanges]) await db.delete(t);
+  });
+  const bar = (tradeDate: string, symbol: string) => ({
+    tradeDate, symbol, series: "EQ", open: 1, high: 1, low: 1, close: 1, prevClose: 1, volume: 1, turnover: 1,
+  });
+
+  test("each company once, under its latest symbol; delisted companies stay in", async () => {
+    await db.insert(schema.dailyPrices).values([
+      bar("2020-01-01", "OLDCO"), bar("2020-02-03", "NEWCO"), bar("2019-01-01", "GONE"),
+    ]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDCO", newSymbol: "NEWCO", changedOn: "2020-02-01" });
+    expect((await companies()).sort()).toEqual(["GONE", "NEWCO"]);
+  });
+
+  test("a ticker reused after its rename is a company of its own", async () => {
+    await db.insert(schema.dailyPrices).values([bar("2020-01-01", "ABC"), bar("2020-03-02", "XYZ"), bar("2021-01-04", "ABC")]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "ABC", newSymbol: "XYZ", changedOn: "2020-02-01" });
+    expect((await companies()).sort()).toEqual(["ABC", "XYZ"]);
   });
 });

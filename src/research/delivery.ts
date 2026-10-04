@@ -179,20 +179,44 @@ export function matchedLuck(signal: Occasion[], pools: number[][], main: number,
   return { beat, direction: beat >= 50 ? "better" : "worse", strength: Math.max(beat, 100 - beat) };
 }
 
+/** Random picks per occasion for the baseline: 20 × thousands of occasions is plenty. */
+export const BASELINE_REPS = 20;
+
+/**
+ * The luck check's yardstick, as one number: the median return of random
+ * eligible stocks drawn from the occasions' own days (BASELINE_REPS picks per
+ * occasion, seeded). Not "the median of each day's median": when some days
+ * swing far more than others, that statistic drifts away from what a random
+ * same-day stock does, and it contradicted the luck check on the first run
+ * (research 0003, Method). The stock itself may be drawn (1 in ~1,000; negligible).
+ */
+export function matchedBaseline(occ: Occasion[], pools: number[][], h: number, reps = BASELINE_REPS, seed = 2): number | null {
+  const usable = occ.filter((o) => o.returns[h] != null && (pools[o.day]?.length ?? 0) > 0);
+  if (usable.length === 0) return null;
+  const rand = mulberry32(seed);
+  const picks: number[] = [];
+  for (let r = 0; r < reps; r++) {
+    for (const o of usable) {
+      const pool = pools[o.day]!;
+      picks.push(pool[Math.floor(rand() * pool.length)]!);
+    }
+  }
+  return median(picks);
+}
+
 export type Part = {
   n: number; // occasions with a main-span return
   months: number;
   medians: (number | null)[];
-  baseline: (number | null)[]; // median, over the occasions' days, of each day's median
+  baseline: (number | null)[]; // matchedBaseline per span: a random stock on the same days
   luck: Luck | null;
 };
 
-export function part(occ: Occasion[], pools: number[][][], dayMedians: (number | null)[][], main: number): Part {
+export function part(occ: Occasion[], pools: number[][][], main: number): Part {
   const horizons = pools.length;
   const medians = Array.from({ length: horizons }, (_, h) =>
     median(occ.map((o) => o.returns[h]).filter((v): v is number => v != null)));
-  const baseline = Array.from({ length: horizons }, (_, h) =>
-    median(occ.filter((o) => o.returns[h] != null).map((o) => dayMedians[h]![o.day]).filter((v): v is number => v != null)));
+  const baseline = Array.from({ length: horizons }, (_, h) => matchedBaseline(occ, pools[h]!, h));
   const counted = occ.filter((o) => o.returns[main] != null);
   return {
     n: counted.length, months: distinctMonths(counted.map((o) => o.date)),

@@ -23,6 +23,7 @@
     "ingest:nightly": "bun run src/ingest/cli-nightly.ts",
     "research:forward-returns": "bun run src/research/cli-forward-returns.ts",
     "research:volume": "bun run src/research/cli-volume.ts",
+    "research:delivery": "bun run src/research/cli-delivery.ts",
     "audit:report-card": "bun run src/audit/report-card.ts"
   },
   "dependencies": {
