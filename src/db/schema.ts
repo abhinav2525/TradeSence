@@ -72,7 +72,39 @@ export const dailyIndicators = pgTable(
     // rename-joined series. For the Report Card's liquidity check (decision 0011).
     turnover: doublePrecision("turnover"),
   },
-  (t) => [primaryKey({ columns: [t.tradeDate, t.symbol] })],
+  (t) => [
+    primaryKey({ columns: [t.tradeDate, t.symbol] }),
+    // The key serves "every stock on a day" (breadth); this serves "one stock
+    // over time" (Report Card), which otherwise reads the whole table (0021).
+    index("daily_indicators_symbol_date_idx").on(t.symbol, t.tradeDate),
+  ],
+);
+
+/**
+ * Shares traded and shares actually delivered (bought and kept, not squared
+ * off the same day), per stock per day, from NSE's MTO_DDMMYYYY.DAT.
+ *
+ * Its own table rather than columns on daily_prices (decision 0021): it is a
+ * separate file that can fail on its own, and filling new columns would
+ * rewrite every price row. Same key as daily_prices, so the two join on it.
+ * Delivery % is deliverable ÷ traded; it isn't stored, because NSE's copy is
+ * rounded. Quantities are raw shares on the day, like volume: not adjusted
+ * for splits, which leaves the ratio unchanged.
+ * Only EQ: NSE leaves BE (trade-for-trade, always 100% delivered) out.
+ */
+export const dailyDelivery = pgTable(
+  "daily_delivery",
+  {
+    tradeDate: date("trade_date").notNull(),
+    symbol: text("symbol").notNull(),
+    series: text("series").notNull(),
+    tradedQty: bigint("traded_qty", { mode: "number" }).notNull(),
+    deliverableQty: bigint("deliverable_qty", { mode: "number" }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tradeDate, t.symbol, t.series] }),
+    index("daily_delivery_symbol_date_idx").on(t.symbol, t.tradeDate),
+  ],
 );
 
 /**

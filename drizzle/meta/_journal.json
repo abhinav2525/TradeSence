@@ -50,6 +50,20 @@
       "when": 1790937664282,
       "tag": "0006_black_klaw",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791101020962,
+      "tag": "0007_shiny_miek",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791101111863,
+      "tag": "0008_cute_turbo",
+      "breakpoints": true
     }
   ]
 }

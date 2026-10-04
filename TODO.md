@@ -8,13 +8,13 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
-**Where we left off (4 Oct 2026).** UI density shipped (decision 0020): compact by default,
-comfortable on the `d` key, Claude Design re-synced, the :3000 production server rebuilt.
-The owner then asked about volume and delivery %, and chose to **collect delivery % next**
-(Data to add, below). **Open question for the owner:** start the delivery backfill at
-28 Sep 2016 (matches prices; recommended, since the whole-market study needs the years) or at
-late 2019 (enough for a NIFTY 50-only study). After that: the delivery study, or the
-breadth-thrust study (Signals, below). Check Monday's (5 Oct) nightly run (Ops).
+**Where we left off (4 Oct 2026, later).** Database check-up done (decision 0021): Postgres
+tuned, nightly backup (restore tested), index on `daily_indicators(symbol, trade_date)`.
+**Delivery % is collected**: `daily_delivery` since 28 Sep 2016, in the nightly run. Next:
+the delivery study (Research, below; guards listed under Data to add), or the
+breadth-thrust study (Signals). Owner to decide whether backups should go to iCloud Drive or
+an external disk (`TRADESENCE_BACKUP_DIR`). Check Monday's (5 Oct) nightly run (Ops): it
+now also loads delivery and writes a backup.
 
 ---
 
@@ -115,19 +115,19 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   trough) on the "how far below its high" chart.
 - [ ] Events: de-duplicate actions filed under both an old and a new symbol, and bound
   old symbols to their own dates, as `computeIndicators` does.
-- [ ] Optional extra checks: delivery % (needs the full bhavcopy, below) and valuation.
+- [ ] Optional extra checks: delivery % (collected, `daily_delivery`; study first) and valuation.
 
 ## Data to add — a, b, n
-- [ ] **Delivery %** (next build, owner's choice 4 Oct): shares bought *and kept* ÷ shares
-  traded, per stock per day. Checked 4 Oct against the live archive:
+- [x] **Delivery %** (collected 4 Oct, decision 0021): shares bought *and kept* ÷ shares
+  traded, per stock per day, in `daily_delivery` since 28 Sep 2016. Notes from the checks:
   - Source: NSE's security-wise delivery file
     `nsearchives.nseindia.com/archives/equities/mto/MTO_DDMMYYYY.DAT`, one format from at
     least 2012 to today (28 Sep 2016 and 1 Oct 2026 both exist). Rows `20,<sr>,SYMBOL,SERIES,
     traded qty,deliverable qty,deliv %`; the trade date is in the header line.
   - `sec_bhavdata_full_DDMMYYYY.csv` has the same numbers (`DELIV_QTY`, `DELIV_PER`; INFY
     51.96% on 1 Oct 2026 in both) but only from ~2019 (Oct 2018 is a 404, Oct 2019 exists).
-  - Plan: store it for every stock (store everything), backfill, add to the nightly run, then
-    study it before any UI. Study guards: rules fixed first, the 97.5% luck bar, random
+  - **Next: the study**, before any UI. Leave out the five days where the delivery file
+    covers different trades than bhavcopy (0021 lists them, with the query). Study guards: rules fixed first, the 97.5% luck bar, random
     *dates* not stock-days, a hold-out (e.g. decide on 2016–2022, confirm on 2023–2026),
     compare each stock with its own usual delivery, use day D's figure from D+1 only, and a
     liquidity filter so tiny stocks don't add noise. The real test is the whole market

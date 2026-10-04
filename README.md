@@ -163,6 +163,13 @@ erDiagram
         date changed_on PK "first day under new_symbol"
         text company
     }
+    daily_delivery {
+        date trade_date PK
+        text symbol PK
+        text series PK "EQ only (NSE omits BE)"
+        bigint traded_qty "equals daily_prices.volume"
+        bigint deliverable_qty "delivery % = this / traded_qty"
+    }
     ingest_log {
         date trade_date PK
         text source PK
@@ -172,6 +179,7 @@ erDiagram
         timestamptz fetched_at
     }
     daily_prices ||--o| daily_indicators : "averaged into"
+    daily_prices ||--o| daily_delivery : "same key"
     index_members ||--o{ daily_indicators : "filters"
     corporate_actions ||--o{ daily_indicators : "adjusts"
     symbol_changes ||--o{ daily_indicators : "joins history of"
@@ -265,6 +273,8 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
 | `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
 | `bun run ingest:indices <start> <end>` | Load daily closes of every NSE index (resumable) |
+| `bun run ingest:delivery <start> <end>` | Load delivered vs traded shares per stock (resumable) |
+| `bun run db:backup` | Compressed `pg_dump` to `~/Backups/tradesence`, newest 7 kept (also nightly) |
 | `bun run research:forward-returns` | Print the breadth forward-return study as Markdown |
 | `bun run research:volume` | Print the volume study (research 0002) as Markdown; `-- --check SYM,SYM` prints the latest CMF/MFI |
 | `bun run ingest:day <date> [--force]` | Ingest one session |
@@ -450,6 +460,14 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `parseExDate` | `(raw) => string \| null` | `14-Jan-2026` → `2026-01-14`; NSE's `-` → `null`. |
 | `fetchCorporateActions` | `(from, to, deps?) => Promise<ok \| error>` | Whole market for an ex-date range in one request. Non-JSON or non-list responses are errors, never "no actions". |
 | `ingestCorporateActions` | `(from, to, deps?) => Promise<{ stored, unparsed, skipped }>` | Upserts into `corporate_actions`; idempotent. |
+
+### `src/ingest/delivery.ts` — delivered vs traded shares
+
+| Function | Signature | Notes |
+|---|---|---|
+| `parseDelivery` | `(text, dateIso) => DeliveryRow[]` | Reads `MTO_DDMMYYYY.DAT` by position (the series column has no header name). Date and two checksums (row count, total delivered) come from NSE's `10,MTO,…` summary record; a mismatch, a lost header field, or a kept row that's unreadable or delivers more than it traded throws. Keeps EQ/BE, de-duplicated. |
+| `fetchDeliveryDay` | `(dateIso, deps?) => Promise<ok \| error>` | Only asked for confirmed trading days, so a 404 is an error ("not published yet"), never a holiday. |
+| `ingestDeliveryDays` | `(start, end, opts?) => Promise<{ ok, error }>` | Days `ingest_log` has as `ok` with no `daily_delivery` rows yet; each day in one transaction. Idempotent, resumable. Decision 0021. |
 
 ### `src/query/breadth.ts` — the two questions the page asks
 

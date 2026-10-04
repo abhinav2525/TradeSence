@@ -1,0 +1,1 @@
+CREATE INDEX "daily_indicators_symbol_date_idx" ON "daily_indicators" USING btree ("symbol","trade_date");

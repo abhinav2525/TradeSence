@@ -12,13 +12,15 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 3 | [Ticker renames](#3-ticker-renames) | NSE `symbolchange.csv` (free) | Nightly | ✅ Yes |
 | 4 | [Moving averages](#4-moving-averages) | Pipelines 1–3 + 5 | Nightly | ✅ Yes |
 | 9 | [Index closes](#9-index-closes) | NSE `ind_close_all` (free) | Nightly | ✅ Yes |
+| 10 | [Delivery](#10-delivery) | NSE `MTO` delivery file (free) | Nightly | ✅ Yes |
+| 11 | [Database backup](#11-database-backup) | Postgres | Nightly | ✅ Yes (to this Mac's disk) |
 | 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
 | 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
 
-**The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 9 → 2 → 3 → 5's check
-→ 4 → 6, every weekday at **19:30 IST**, from a launchd agent on the Mac
+**The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 9 → 10 → 2 → 3 → 5's check
+→ 4 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
 ([decision 0001](decisions/0001-nightly-schedule-launchd.md)). Every step is safe to
 re-run, and a failure in one step is logged without stopping the others.
 
@@ -42,6 +44,8 @@ flowchart LR
 | 3 Ticker renames | ✅ | — | Done |
 | 4 Moving averages | ✅ | — | Done |
 | 9 Index closes | ✅ | — | Done |
+| 10 Delivery | ✅ | — | Done |
+| 11 Backup | ✅ | Off-machine copy | Set `TRADESENCE_BACKUP_DIR` to iCloud Drive or an external disk ([0021](decisions/0021-database-health-and-delivery.md)) |
 | 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
 | 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
 | 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
@@ -147,16 +151,44 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Checked** | Month-end NIFTY 50 closes match TradingView exactly (7 of 7 checked) |
 | **Why** | [0006](decisions/0006-nifty50-index-closes.md) (source choice, and NSE's month-first dates) |
 
+## 10. Delivery
+
+| | |
+|---|---|
+| **What** | Shares traded and shares actually delivered (bought and kept, not squared off the same day), per stock per day. Delivery % = delivered ÷ traded |
+| **Source** | `nsearchives.nseindia.com/archives/equities/mto/MTO_DDMMYYYY.DAT`, the same archive as bhavcopy; one format since at least 2012 |
+| **Writes** | `daily_delivery` (EQ only: NSE leaves out BE, which is always 100% delivered), since 28 Sep 2016 |
+| **Nightly** | ✅ The same 7-day window, only days pipeline 1 confirmed as trading days |
+| **By hand** | `bun run ingest:delivery <start> <end>` (resumable; failed days are retried) |
+| **Used by** | Nothing yet: the delivery study comes first (TODO) |
+| **Code** | `src/ingest/delivery.ts` |
+| **Checked** | Traded quantity equals bhavcopy volume exactly (INFY 1 Oct 2026, 20MICRONS 28 Sep 2016) |
+| **Why** | [0021](decisions/0021-database-health-and-delivery.md) (own table, not columns on prices; quantities, not the rounded %) |
+
+## 11. Database backup
+
+| | |
+|---|---|
+| **What** | A compressed copy of the whole database (`pg_dump`), newest 7 kept |
+| **Where** | `~/Backups/tradesence` (override with `TRADESENCE_BACKUP_DIR`); same disk, so it covers mistakes, not a dead disk |
+| **Nightly** | ✅ Last step of the nightly job; a failure is a `WARNING` line and changes nothing |
+| **By hand** | `bun run db:backup`. Restore: `createdb tradesence_restore && pg_restore -d tradesence_restore <file>` |
+| **Code** | `ops/backup.sh` |
+| **Checked** | A restore into a scratch database matched every table's row count (4 Oct 2026) |
+| **Why** | [0021](decisions/0021-database-health-and-delivery.md) |
+
 ## 8. One-time setup and backfills
 
 Run once on a new machine (full list in the [README](../README.md#setup)):
 
 ```bash
+psql tradesence -f ops/postgres-tuning.sql && brew services restart postgresql@14
 bun run db:migrate
 bun run ingest:backfill 2016-09-28 <today>      # prices, ~28 min, resumable
 bun run ingest:corporate-actions 2016-01-01 <today+30d>
 bun run ingest:symbol-changes
 bun run ingest:indices 2020-01-01 <today>        # index closes, ~12 min
+bun run ingest:delivery 2016-09-28 <today>       # delivery figures, resumable
 bun run ingest:nifty50
 bun run indicators
 ./ops/install-nightly.sh                         # schedule the nightly job

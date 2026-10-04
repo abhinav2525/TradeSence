@@ -7,6 +7,7 @@
  */
 import { backfill } from "./backfill";
 import { ingestIndexDays } from "./index-prices";
+import { ingestDeliveryDays } from "./delivery";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -29,6 +30,11 @@ console.log(`[nightly] ingest:`, JSON.stringify(tally));
 const indices = await ingestIndexDays(iso(start), iso(end), { delayMs: 300 });
 console.log(`[nightly] index closes:`, JSON.stringify(indices));
 if (indices.error > 0) console.warn(`[nightly] WARNING ${indices.error} day(s) of index closes not loaded; retried tomorrow`);
+
+// Delivery figures, same rule: only confirmed trading days (decision 0021).
+const delivery = await ingestDeliveryDays(iso(start), iso(end), { delayMs: 300 });
+console.log(`[nightly] delivery:`, JSON.stringify(delivery));
+if (delivery.error > 0) console.warn(`[nightly] WARNING ${delivery.error} day(s) of delivery figures not loaded; retried tomorrow`);
 
 // Splits and bonuses, a month back (late filings) and a month ahead (announced
 // ex-dates). A failure here is loud but not fatal: the window overlaps, so the
@@ -84,3 +90,8 @@ const rows = await computeIndicators("NIFTY50", {
 console.log(`[nightly] indicators: ${rows} rows`);
 
 await sql.end();
+
+// Last, so the copy includes tonight's data (decision 0021). A failed backup
+// doesn't touch the data; yesterday's copy is still there.
+const backup = Bun.spawnSync(["sh", "ops/backup.sh"], { stdout: "inherit", stderr: "inherit" });
+if (backup.exitCode !== 0) console.warn(`[nightly] WARNING database backup failed (exit ${backup.exitCode})`);
