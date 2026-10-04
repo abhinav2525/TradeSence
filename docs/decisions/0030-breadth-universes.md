@@ -44,6 +44,20 @@ index and leave out ones that fell out — the past would look healthier than it
 - First run (18 s): on 1 Oct 2026, 46.9% of liquid companies were above their 200-day
   average; Nifty 500 37.9%, Midcap 150 33.1%, Bank Nifty 21.4%.
 
+## Found by the independent review (fixed)
+
+- **A missed night left a permanent gap, and a re-run rewrote a saved night.** Index lists
+  were counted only on the newest session; if the Mac slept at 19:30, the next run caught up
+  the prices but never saved that day's index readings, and running twice on one day
+  overwrote the earlier reading with later membership. Now each run fills the sessions since
+  a list's last saved day (within the nightly 7-day lookback, using today's members, so a
+  few days of hindsight at most), and a saved day is never rewritten. Tested.
+- The test didn't count a list's rows, so writing every day would have passed; now it does.
+- The page could say "5 Jan 2017 was not a trading session" when the date was simply before
+  a universe's history; it now shows the first day without that claim (tested).
+- While history is building, the screen-reader text no longer announces a percentile, and the
+  whole-market note states the ₹1 crore rule as the 20-session median it is.
+
 ## Limits
 
 - Index lists' history only grows from 1 Oct 2026. A percentile appears after 20 nights.

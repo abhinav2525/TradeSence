@@ -28,8 +28,8 @@ describe("computeBreadth", () => {
       { indexKey: "midcap-150", symbol: "UPCO", industry: "x", fetchedOn: days.at(-1)! },
       { indexKey: "midcap-150", symbol: "NOPRICE", industry: "x", fetchedOn: days.at(-1)! },
     ]);
-    // a row saved on an earlier night must survive (the feature never deletes)
-    await db.insert(schema.breadthDaily).values({ universe: "midcap-150", ma: "sma200", tradeDate: "2024-12-31", above: 7, total: 9 });
+    // a row saved on an earlier night, in another universe, must survive (the feature never deletes)
+    await db.insert(schema.breadthDaily).values({ universe: "bank", ma: "sma200", tradeDate: "2024-12-31", above: 7, total: 9 });
 
     await computeBreadth();
     const r = await computeBreadth();
@@ -41,6 +41,24 @@ describe("computeBreadth", () => {
 
     const list = await db.select().from(schema.breadthDaily).where(eq(schema.breadthDaily.universe, "midcap-150"));
     expect(list.filter((x) => x.tradeDate === days.at(-1)).map((x) => [x.ma, x.above, x.total]).sort()).toEqual([["ema200", 1, 1], ["sma200", 1, 1], ["sma50", 1, 1]]);
-    expect(list.find((x) => x.tradeDate === "2024-12-31")).toMatchObject({ above: 7, total: 9 });
+    expect(list).toHaveLength(3); // first run: today only, never drawn backwards
+    const bank = await db.select().from(schema.breadthDaily).where(eq(schema.breadthDaily.universe, "bank"));
+    expect(bank.find((x) => x.tradeDate === "2024-12-31")).toMatchObject({ above: 7, total: 9 });
+  });
+
+  test("a missed night is filled on the next run; a saved day is never rewritten", async () => {
+    const days = weekdays(260);
+    await db.insert(schema.dailyPrices).values(days.map((d, i) => price(d, "UPCO", 100 + i, 2e7)));
+    await db.insert(schema.indexConstituents).values({ indexKey: "midcap-150", symbol: "UPCO", industry: "x", fetchedOn: days.at(-1)! });
+    const log = (ds: string[]) => db.insert(schema.ingestLog).values(ds.map((d) => ({ tradeDate: d, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 1 })));
+    await log(days.slice(0, -2)); // the last two sessions not yet ingested
+    await computeBreadth();
+    // tamper with the saved reading: a later run must leave it alone
+    await db.update(schema.breadthDaily).set({ above: 99 }).where(and(eq(schema.breadthDaily.universe, "midcap-150"), eq(schema.breadthDaily.tradeDate, days.at(-3)!)));
+    await log(days.slice(-2)); // the Mac slept one night: two sessions arrive together
+    await computeBreadth();
+    const list = await db.select().from(schema.breadthDaily).where(and(eq(schema.breadthDaily.universe, "midcap-150"), eq(schema.breadthDaily.ma, "sma50")));
+    expect(list.map((x) => x.tradeDate).sort()).toEqual(days.slice(-3));
+    expect(list.find((x) => x.tradeDate === days.at(-3))!.above).toBe(99);
   });
 });

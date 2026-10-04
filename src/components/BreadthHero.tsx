@@ -73,7 +73,7 @@ export default function BreadthHero({
 
       <div className="flex min-w-0 flex-1 flex-col md:border-l md:pl-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-heading text-foreground"><Term id="percentile" today={percentile.toFixed(1)}>Where today sits</Term></h2>
+          <h2 className="text-heading text-foreground"><Term id="percentile" today={rarityNote ? undefined : percentile.toFixed(1)}>Where today sits</Term></h2>
           <span className="text-[12px] tabular-nums text-muted-foreground">{formatInt(sessions)} session{sessions === 1 ? "" : "s"}</span>
         </div>
         <p className="mt-1 text-[12px] leading-4 text-foreground-2">{rarity}</p>
@@ -81,7 +81,9 @@ export default function BreadthHero({
         <div
           className="relative mt-auto flex h-32 items-end gap-0.5 pt-8"
           role="img"
-          aria-label={`Distribution of daily breadth over ${sessions} sessions. Today, ${pct.toFixed(0)}%, is at the ${percentile.toFixed(0)}th percentile.`}
+          aria-label={rarityNote
+            ? `Distribution of daily breadth over ${sessions} session${sessions === 1 ? "" : "s"}. ${rarityNote}`
+            : `Distribution of daily breadth over ${sessions} sessions. Today, ${pct.toFixed(0)}%, is at the ${percentile.toFixed(0)}th percentile.`}
         >
           {bins.map((b, i) => (
             <div key={b.from} className="group relative flex h-full flex-1 items-end">

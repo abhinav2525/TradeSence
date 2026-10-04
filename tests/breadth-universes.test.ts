@@ -2,7 +2,7 @@ import { test, expect, describe } from "bun:test";
 import type { History } from "../src/indicators/history";
 import { adjustedAverages } from "../src/indicators/averages";
 import { sma, ema } from "../src/indicators/moving-average";
-import { addStock, newCounts, cleanUniverse } from "../src/indicators/breadth-universes";
+import { addStock, newCounts, cleanUniverse, pickSession } from "../src/indicators/breadth-universes";
 
 function hist(dates: string[], close: number[], factors?: number[]): History {
   const fill = <T,>(v: T) => dates.map(() => v);
@@ -53,12 +53,12 @@ describe("breadth counter", () => {
     addStock(c, stock([10, 10, 10], [9, 9, 9]), [false, true, true]);
     expect(c.has("2026-01-01")).toBe(false);
     const latest = newCounts();
-    addStock(latest, stock([10, 10, 10], [9, 9, 9]), [true, true, true], "2026-01-05");
+    addStock(latest, stock([10, 10, 10], [9, 9, 9]), [true, true, true], new Set(["2026-01-05"]));
     expect([...latest.keys()]).toEqual(["2026-01-05"]);
   });
   test("a stock that didn't trade on the latest day adds nothing to a list's count", () => {
     const latest = newCounts();
-    addStock(latest, { dates: dates.slice(0, 2), adjusted: [10, 10], sma50: [9, 9], sma200: [9, 9], ema200: [9, 9] }, [true, true], "2026-01-05");
+    addStock(latest, { dates: dates.slice(0, 2), adjusted: [10, 10], sma50: [9, 9], sma200: [9, 9], ema200: [9, 9] }, [true, true], new Set(["2026-01-05"]));
     expect(latest.size).toBe(0);
   });
 });
@@ -69,5 +69,18 @@ describe("cleanUniverse", () => {
     expect(cleanUniverse("midcap-150")).toBe("midcap-150");
     expect(cleanUniverse("total-market")).toBe("total-market");
     for (const v of [undefined, "", "nifty-50", "MARKET", "bank;drop", "x"]) expect(cleanUniverse(v)).toBe("nifty50");
+  });
+});
+
+describe("pickSession", () => {
+  const series = [{ date: "2017-07-18" }, { date: "2017-07-19" }, { date: "2017-07-21" }];
+  test("the requested day, else the last one before it (snapped)", () => {
+    expect(pickSession(series, "2017-07-19")).toEqual({ date: "2017-07-19", requested: "2017-07-19", snapped: false });
+    expect(pickSession(series, "2017-07-20")).toEqual({ date: "2017-07-19", requested: "2017-07-20", snapped: true });
+    expect(pickSession(series, undefined)).toEqual({ date: "2017-07-21", requested: null, snapped: false });
+  });
+  test("before the universe's first day: show the first day, never claim the requested day wasn't a session", () => {
+    expect(pickSession(series, "2017-01-05")).toEqual({ date: "2017-07-18", requested: null, snapped: false });
+    expect(pickSession([], "2017-01-05")).toEqual({ date: null, requested: null, snapped: false });
   });
 });

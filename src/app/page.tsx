@@ -15,7 +15,7 @@ import Term from "@/components/Term";
 import {
   breadthSeries, breakdownOn, adjacentSessions, universeSeries, MA_LABELS, type BreadthPoint, type MaKind,
 } from "@/query/breadth";
-import { LIST_UNIVERSES, cleanUniverse, type Universe } from "@/indicators/breadth-universes";
+import { LIST_UNIVERSES, cleanUniverse, pickSession, type Universe } from "@/indicators/breadth-universes";
 import { signalsData } from "@/query/signals";
 
 export const dynamic = "force-dynamic";
@@ -46,13 +46,6 @@ const universeName = (u: Universe) => (u === "nifty50" ? "NIFTY 50" : u === "mar
 const universeOf = (u: Universe) => (u === "nifty50" ? "NIFTY 50 constituents" : u === "market" ? "liquid NSE companies" : `${universeName(u)} members`);
 const MIN_HISTORY = 20; // sessions before a percentile means anything
 
-/** The session to show from a universe's own dates: the requested day, else the last one on or before it. */
-function pickSession(series: BreadthPoint[], wanted: string | undefined) {
-  if (series.length === 0) return { date: null as string | null, requested: wanted ?? null, snapped: false };
-  if (!wanted) return { date: series.at(-1)!.date, requested: null, snapped: false };
-  const onOrBefore = series.filter((p) => p.date <= wanted).at(-1) ?? series[0]!;
-  return { date: onOrBefore.date, requested: wanted, snapped: onOrBefore.date !== wanted };
-}
 
 export default async function Page({
   searchParams,
@@ -261,7 +254,7 @@ export default async function Page({
           ) : (
             <Card className="px-card-x py-card text-body-sm text-foreground-2 lg:col-span-12">
               {u === "market"
-                ? "Each day counts every NSE company trading ₹1 crore or more a day then (ETFs left out), so the history has no hindsight in it. Stock-by-stock lists are kept for the NIFTY 50."
+                ? "Each day counts every NSE company whose median trading over the 20 sessions before it was ₹1 crore or more (ETFs left out), so the history has no hindsight in it. Stock-by-stock lists are kept for the NIFTY 50."
                 : `Counted on ${universeName(u)}'s members as NSE lists them today. History for index lists is saved night by night from ${formatDate(series[0]!.date)} instead of drawn backwards with today's members, which would flatter the past. Stock-by-stock lists are kept for the NIFTY 50.`}
             </Card>
           )}

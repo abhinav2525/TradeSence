@@ -17,10 +17,11 @@ type StockAverages = { dates: string[]; adjusted: number[]; sma50: (number | nul
 /**
  * Adds one stock's days to the counts: on each included day with an average, it
  * counts in `total`, and in `above` when its adjusted close is strictly above. A
- * null average leaves the stock out (never "below"). With `onlyDate`, only that day.
+ * null average leaves the stock out (never "below"). With `onlyDates`, only those days
+ * (a stock that didn't trade on one of them adds nothing for it).
  */
-export function addStock(c: Counts, s: StockAverages, include: boolean[], onlyDate?: string): void {
-  const idx = onlyDate === undefined ? s.dates.map((_, i) => i) : [s.dates.lastIndexOf(onlyDate)].filter((i) => i >= 0);
+export function addStock(c: Counts, s: StockAverages, include: boolean[], onlyDates?: ReadonlySet<string>): void {
+  const idx = onlyDates === undefined ? s.dates.map((_, i) => i) : s.dates.flatMap((d, i) => (onlyDates.has(d) ? [i] : []));
   for (const i of idx) {
     if (!include[i]) continue;
     const d = s.dates[i]!;
@@ -44,4 +45,17 @@ export function cleanUniverse(v: string | undefined): Universe {
   if (v === "market") return "market";
   const hit = LIST_UNIVERSES.find((x) => x.key === v);
   return hit ? hit.key : "nifty50";
+}
+
+/**
+ * The session to show from a universe's own dates: the requested day, else the last
+ * one before it (snapped). A day before the universe's first is not "not a session":
+ * the first day is shown without claiming the requested one wasn't traded.
+ */
+export function pickSession<T extends { date: string }>(series: T[], wanted: string | undefined): { date: string | null; requested: string | null; snapped: boolean } {
+  if (series.length === 0) return { date: null, requested: null, snapped: false };
+  if (!wanted) return { date: series.at(-1)!.date, requested: null, snapped: false };
+  const onOrBefore = series.filter((p) => p.date <= wanted).at(-1);
+  if (!onOrBefore) return { date: series[0]!.date, requested: null, snapped: false };
+  return { date: onOrBefore.date, requested: wanted, snapped: onOrBefore.date !== wanted };
 }
