@@ -51,3 +51,10 @@ test("formatRupees: true minus, Indian grouping, no decimals", () => {
   expect(formatRupees(0)).toBe("₹0");
   expect(formatRupees(-0.3)).toBe("₹0"); // rounds to zero: no "−₹0"
 });
+
+import { formatCrore } from "../src/lib/format";
+test("formatCrore", () => {
+  expect(formatCrore(2e7)).toBe("₹2.0 cr");
+  expect(formatCrore(1.234e10)).toBe("₹1,234 cr");
+  expect(formatCrore(5e6)).toBe("₹0.5 cr");
+});

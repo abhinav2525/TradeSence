@@ -51,3 +51,9 @@ export function formatRupees(n: number): string {
   const s = Math.abs(r).toLocaleString("en-IN");
   return r < 0 ? `−₹${s}` : `₹${s}`;
 }
+
+/** ₹ in crore: one decimal under ₹100 cr, none above. 2e7 → "₹2.0 cr". */
+export function formatCrore(n: number): string {
+  const cr = n / 1e7;
+  return `₹${cr >= 100 ? Math.round(cr).toLocaleString("en-IN") : cr.toFixed(1)} cr`;
+}

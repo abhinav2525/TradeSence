@@ -5,6 +5,7 @@ const BASE: Record<Section, string> = {
   "advance-decline": "/advance-decline",
   crossings: "/crossings",
   screener: "/screener",
+  activity: "/activity",
   stock: "/stock",
   signals: "/signals",
   learn: "/learn",
@@ -32,13 +33,14 @@ export function hotkeyTarget(key: string, c: HotkeyContext): string | null {
   if (key === "ArrowLeft") return c.prev ? `${base}?ma=${c.ma}&date=${c.prev}${extra}` : null;
   if (key === "ArrowRight") return c.next ? `${base}?ma=${c.ma}&date=${c.next}${extra}` : null;
   if (key === "1" || key === "2" || key === "3") {
-    if (c.page === "stock" || c.page === "signals") return null;
+    if (c.page === "stock" || c.page === "signals" || c.page === "activity") return null;
     return `${base}?ma=${{ "1": "sma200", "2": "ema200", "3": "sma50" }[key]}`;
   }
   if (key === "b") return `/?ma=${c.ma}`;
   if (key === "a") return `/advance-decline?ma=${c.ma}`;
   if (key === "c") return `/crossings?ma=${c.ma}`;
   if (key === "s") return `/screener?ma=${c.ma}`;
+  if (key === "u") return `/activity?ma=${c.ma}`;
   if (key === "r") return "/stock";
   if (key === "g") return `/signals?ma=${c.ma}`;
   if (key === "l") return "/learn";

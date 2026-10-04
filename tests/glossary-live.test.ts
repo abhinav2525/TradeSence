@@ -4,7 +4,7 @@ import { liveExample } from "../src/query/glossary-live";
 import { GLOSSARY, type TermId } from "../src/lib/glossary";
 
 async function empty() {
-  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges]) await db.delete(t);
+  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges, schema.unusualDays, schema.dailyDelivery]) await db.delete(t);
 }
 
 describe("liveExample", () => {
@@ -98,5 +98,18 @@ describe("liveExample wording on real-looking data", () => {
       const s = await liveExample(id);
       expect(s === null || !/undefined|NaN|null/.test(s)).toBe(true);
     }
+  });
+});
+
+describe("liveExample, Unusual activity terms", () => {
+  beforeEach(empty);
+  test("counts the latest session's unusual stocks, per kind", async () => {
+    const row = (symbol: string, kept: boolean, volume: boolean) => ({
+      tradeDate: "2026-10-01", symbol, kept, volume, jump: false, collapse: false,
+      keptRatio: 6, volumeRatio: 6, deliveryPct: 40, usualDeliveryPct: 40, changePct: 1, turnover: 2e7,
+    });
+    await db.insert(schema.unusualDays).values([row("AAA", true, true), row("BBB", false, true)]);
+    expect(await liveExample("unusual-activity")).toBe("2 stocks had an unusual day on 1 Oct 2026.");
+    expect(await liveExample("big-keeping")).toBe("1 stock qualified on 1 Oct 2026.");
   });
 });

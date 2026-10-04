@@ -37,3 +37,8 @@ test("g opens Signals from anywhere, keeping the average", () => {
 test("on Signals, 1/2/3 do nothing: the page always uses the 200-day SMA", () => {
   for (const k of ["1", "2", "3"]) expect(hotkeyTarget(k, { page: "signals", ma: "sma200" })).toBeNull();
 });
+
+test("u opens Unusual activity, and 1-3 do nothing there (no average to switch)", () => {
+  expect(hotkeyTarget("u", { page: "screener", ma: "sma200" })).toBe("/activity?ma=sma200");
+  expect(hotkeyTarget("1", { page: "activity", ma: "sma200" })).toBeNull();
+});

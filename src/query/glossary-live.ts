@@ -82,6 +82,24 @@ async function build(id: TermId): Promise<string | null> {
       return six.n === 0 ? null
         : `After the ${six.n} washout${six.n === 1 ? "" : "s"} with six months behind them, the NIFTY 50's median 6-month return was ${pctText(six.median)}, against ${pctText(six.baseline)} for an ordinary day.`;
     }
+    case "unusual-activity": case "big-keeping": case "huge-volume": case "delivery-jump": case "delivery-collapse": {
+      const [row] = await db.execute<{ d: string | null; n: number; kept: number; volume: number; jump: number; collapse: number }>(sql`
+        select max(trade_date)::text d, count(*)::int n, count(*) filter (where kept)::int kept,
+               count(*) filter (where volume)::int volume, count(*) filter (where jump)::int jump,
+               count(*) filter (where collapse)::int collapse
+        from unusual_days where trade_date = (select max(trade_date) from unusual_days)`);
+      if (!row?.d || row.n === 0) return null;
+      const n = { "unusual-activity": row.n, "big-keeping": row.kept, "huge-volume": row.volume, "delivery-jump": row.jump, "delivery-collapse": row.collapse }[id];
+      const what = id === "unusual-activity" ? "had an unusual day" : "qualified";
+      return `${formatInt(n)} ${n === 1 ? "stock" : "stocks"} ${what} on ${formatDate(row.d)}.`;
+    }
+    case "delivery-pct": {
+      const [row] = await db.execute<{ d: string; traded: number; delivered: number }>(sql`
+        select trade_date::text d, traded_qty traded, deliverable_qty delivered from daily_delivery
+        where symbol = ${SHOWCASE} and series = 'EQ' order by trade_date desc limit 1`);
+      if (!row || Number(row.traded) === 0) return null;
+      return `${SHOWCASE}: ${((Number(row.delivered) * 100) / Number(row.traded)).toFixed(1)}% of shares traded on ${formatDate(row.d)} were delivered.`;
+    }
     case "crossing": case "volume-ratio": case "near-the-line": {
       const d = await resolveSession("sma200");
       if (!d) return null;
