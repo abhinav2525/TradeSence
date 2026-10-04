@@ -147,6 +147,22 @@ export const fundSymbols = pgTable("fund_symbols", {
 });
 
 /**
+ * Today's members of NSE indices (Top volume page): one row per index and stock,
+ * from NSE's ind_*list.csv files, replaced per index each night. A failed
+ * download keeps yesterday's rows. `industry` is NSE's sector for the stock.
+ */
+export const indexConstituents = pgTable(
+  "index_constituents",
+  {
+    indexKey: text("index_key").notNull(),
+    symbol: text("symbol").notNull(),
+    industry: text("industry").notNull(),
+    fetchedOn: date("fetched_on").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.indexKey, t.symbol] }), index("index_constituents_symbol_idx").on(t.symbol)],
+);
+
+/**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
  * market, exactly as NSE words them.
  *

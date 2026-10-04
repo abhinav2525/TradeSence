@@ -16,6 +16,7 @@
     "ingest:backfill": "bun run src/ingest/cli-backfill.ts",
     "ingest:indices": "bun run src/ingest/cli-indices.ts",
     "ingest:delivery": "bun run src/ingest/cli-delivery.ts",
+    "ingest:index-lists": "bun run src/ingest/cli-index-lists.ts",
     "ingest:nifty50": "bun run src/ingest/cli-nifty50.ts",
     "ingest:corporate-actions": "bun run src/ingest/cli-corporate-actions.ts",
     "ingest:symbol-changes": "bun run src/ingest/cli-symbol-changes.ts",

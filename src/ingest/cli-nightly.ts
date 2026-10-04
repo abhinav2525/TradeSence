@@ -11,6 +11,7 @@ import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
 import { refreshFundSymbols } from "../indicators/universe";
+import { ingestIndexLists } from "./index-constituents";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
@@ -91,6 +92,12 @@ const rows = await computeIndicators("NIFTY50", {
   },
 });
 console.log(`[nightly] indicators: ${rows} rows`);
+
+// Today's NSE index members (Top volume page). Failed lists keep yesterday's members.
+const lists = await ingestIndexLists();
+console.log(`[nightly] index lists: ${lists.ok} loaded`);
+if (lists.failed.length) console.warn(`[nightly] WARNING index lists not refreshed: ${lists.failed.join(", ")}`);
+for (const p of lists.sizeProblems) console.warn(`[nightly] WARNING size group: ${p}`);
 
 // New ETFs first, so a fund listed today can't show up as an unusual company.
 const [lastDay] = await sql<{ d: string | null }[]>`
