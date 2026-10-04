@@ -12,8 +12,7 @@ Why each finished item was built the way it was: `docs/decisions/`.
 tuned, nightly backup (restore tested), index on `daily_indicators(symbol, trade_date)`.
 **Delivery % is collected**: `daily_delivery` since 28 Sep 2016, in the nightly run. Next:
 the delivery study (Research, below; guards listed under Data to add), or the
-breadth-thrust study (Signals). Owner to decide whether backups should go to iCloud Drive or
-an external disk (`TRADESENCE_BACKUP_DIR`). Check Monday's (5 Oct) nightly run (Ops): it
+breadth-thrust study (Signals). Backups go to this Mac and iCloud Drive. Check Monday's (5 Oct) nightly run (Ops): it
 now also loads delivery and writes a backup.
 
 ---

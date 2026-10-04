@@ -13,7 +13,7 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 4 | [Moving averages](#4-moving-averages) | Pipelines 1–3 + 5 | Nightly | ✅ Yes |
 | 9 | [Index closes](#9-index-closes) | NSE `ind_close_all` (free) | Nightly | ✅ Yes |
 | 10 | [Delivery](#10-delivery) | NSE `MTO` delivery file (free) | Nightly | ✅ Yes |
-| 11 | [Database backup](#11-database-backup) | Postgres | Nightly | ✅ Yes (to this Mac's disk) |
+| 11 | [Database backup](#11-database-backup) | Postgres | Nightly | ✅ Yes (this Mac + iCloud Drive) |
 | 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
@@ -45,7 +45,7 @@ flowchart LR
 | 4 Moving averages | ✅ | — | Done |
 | 9 Index closes | ✅ | — | Done |
 | 10 Delivery | ✅ | — | Done |
-| 11 Backup | ✅ | Off-machine copy | Set `TRADESENCE_BACKUP_DIR` to iCloud Drive or an external disk ([0021](decisions/0021-database-health-and-delivery.md)) |
+| 11 Backup | ✅ | — | Done (this Mac + iCloud Drive) |
 | 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
 | 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
 | 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
@@ -170,7 +170,7 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | | |
 |---|---|
 | **What** | A compressed copy of the whole database (`pg_dump`), newest 7 kept |
-| **Where** | `~/Backups/tradesence` (override with `TRADESENCE_BACKUP_DIR`); same disk, so it covers mistakes, not a dead disk |
+| **Where** | `~/Backups/tradesence` (newest 7) and iCloud Drive `Backups/tradesence` (newest 3). Override with `TRADESENCE_BACKUP_DIR` / `TRADESENCE_BACKUP_MIRROR` |
 | **Nightly** | ✅ Last step of the nightly job; a failure is a `WARNING` line and changes nothing |
 | **By hand** | `bun run db:backup`. Restore: `createdb tradesence_restore && pg_restore -d tradesence_restore <file>` |
 | **Code** | `ops/backup.sh` |

@@ -46,9 +46,11 @@ was restarted; the live site on :3000 reconnected by itself (checked: 200s).
 job: one compressed `pg_dump` (145 MB in 13 s before delivery; 192 MB with it), newest 7 kept, written under a temporary
 name and renamed so a half-written dump is never kept as good. **Restore was tested**:
 restored into a scratch database, row counts matched table for table, scratch dropped.
-It goes to `~/Backups/tradesence` on the same disk, which covers mistakes (a bad
-migration, a dropped table) but not the disk dying. Set `TRADESENCE_BACKUP_DIR` to
-iCloud Drive or an external disk for that; the owner's call.
+Two copies, the owner's choice: `~/Backups/tradesence` on this Mac (newest 7), which
+covers mistakes such as a bad migration or a dropped table, and iCloud Drive
+`Backups/tradesence` (newest 3, to spare iCloud space: ~600 MB), which covers the disk
+dying. A failed iCloud copy is a warning, never a failed run; the local copy is already
+safe by then.
 
 **3. Scattered history: not fixed yet, on purpose.** 11 ms is fine today. The fix when
 it matters (whole-market averages: 3,900 histories in a row) is a one-time `CLUSTER`
@@ -150,4 +152,4 @@ where p.volume <> v.traded_qty group by 1 order by 1;
 
 - Whole-market averages are built: run `CLUSTER` (problem 3) and time it.
 - The app moves to a server: re-tune the settings for that machine's memory, and
-  point the backup off the machine.
+  replace the iCloud copy with off-server storage.

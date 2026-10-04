@@ -63,7 +63,7 @@ bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:symbol-changes                  # NSE ticker renames; one file
 bun run ingest:indices 2020-01-01 2026-10-02   # every NSE index, daily; ~12 min
 bun run ingest:delivery 2016-09-28 2026-10-04  # delivered vs traded shares; resumable
-bun run db:backup                              # pg_dump to ~/Backups/tradesence, 7 kept
+bun run db:backup                              # pg_dump: ~/Backups (7 kept) + iCloud (3)
 bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
