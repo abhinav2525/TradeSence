@@ -15,13 +15,15 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 10 | [Delivery](#10-delivery) | NSE `MTO` delivery file (free) | Nightly | ✅ Yes |
 | 11 | [Database backup](#11-database-backup) | Postgres | Nightly | ✅ Yes (this Mac + iCloud Drive) |
 | 12 | [Unusual activity](#12-unusual-activity) | Pipelines 1–3 + 10 | Nightly | ✅ Yes |
+| 13 | [Index member lists](#13-index-member-lists) | NSE `ind_*list.csv` (free) | Nightly | ✅ Yes |
+| 14 | [Top volume](#14-top-volume) | Pipelines 1, 3, 12, 13 | Nightly | ✅ Yes |
 | 5 | [NIFTY 50 membership](#5-nifty-50-membership) | Hand-kept CSV from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
 | 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
 
 **The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 9 → 10 → 2 → 3 → 5's check
-→ 4 → 12 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
+→ 4 → 13 → 12 → 14 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
 ([decision 0001](decisions/0001-nightly-schedule-launchd.md)). Every step is safe to
 re-run, and a failure in one step is logged without stopping the others.
 
@@ -48,6 +50,8 @@ flowchart LR
 | 10 Delivery | ✅ | — | Done |
 | 11 Backup | ✅ | — | Done (this Mac + iCloud Drive) |
 | 12 Unusual activity | ✅ | — | Done |
+| 13 Index lists | ✅ | — | Done |
+| 14 Top volume | ✅ | — | Done |
 | 5 Membership | Check only | **Partly.** Detecting a change is automatic; *writing* the new rows could be too, by reading NSE's press-release PDF | A parser for the PDF. Possible, but it is only ~2 changes a year, and a wrong row would corrupt the history, so a human check is kept on purpose ([0005](decisions/0005-point-in-time-membership.md)) |
 | 6 Safety checks | Runs, but silent | **Yes**: send the warnings somewhere you'll see them | TODO item 6 (nightly digest): email, Telegram or a phone notification |
 | 7 Dashboard | Serves automatically | **Yes**: start the server at login, like the nightly job | A second launchd agent, or a server with a process manager once it's deployed |
@@ -194,6 +198,30 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 | **Code** | `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts`; `src/query/activity.ts` |
 | **Why** | [0024](decisions/0024-unusual-activity.md) |
 
+## 13. Index member lists
+
+| | |
+|---|---|
+| **What** | Today's members of 43 NSE indices (15 broad, 17 sector, 11 theme), each with NSE's sector (`Industry`) |
+| **Source** | `nsearchives.nseindia.com/content/indices/ind_*list.csv` (`INDEX_LISTS` in `src/ingest/index-constituents.ts` holds each file name) |
+| **Writes** | `index_constituents`, replaced per index; a failed or empty download keeps yesterday's members and logs a `WARNING` |
+| **Checks** | Every Nifty Total Market stock in exactly one size list (Nifty 100 / Midcap 150 / Smallcap 250 / Microcap 250), else a `WARNING` |
+| **Nightly** | ✅ ~15 s |
+| **By hand** | `bun run ingest:index-lists` |
+| **Why** | [0025](decisions/0025-top-volume.md) |
+
+## 14. Top volume
+
+| | |
+|---|---|
+| **What** | Per Nifty Total Market stock and window (last 1/5/21/63/126 market sessions): ₹ traded, split-adjusted shares, price move, Unusual activity days |
+| **Writes** | `volume_leaders`, replaced in one transaction (~3,700 rows) |
+| **Nightly** | ✅ After Unusual activity, ~5 s |
+| **By hand** | `bun run volume-leaders` |
+| **Used by** | `/volume` |
+| **Code** | `src/indicators/volume-leaders.ts`, `compute-volume-leaders.ts`; `src/query/volume.ts` |
+| **Why** | [0025](decisions/0025-top-volume.md) |
+
 ## 8. One-time setup and backfills
 
 Run once on a new machine (full list in the [README](../README.md#setup)):
@@ -209,5 +237,7 @@ bun run ingest:delivery 2016-09-28 <today>       # delivery figures, resumable
 bun run ingest:nifty50
 bun run indicators
 bun run activity                                  # unusual activity table, ~20 s
+bun run ingest:index-lists                        # NSE index members, ~15 s
+bun run volume-leaders                            # top volume table, ~5 s
 ./ops/install-nightly.sh                         # schedule the nightly job
 ```

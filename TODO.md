@@ -125,13 +125,10 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - [ ] Optional extra checks: delivery % (collected, `daily_delivery`; study first) and valuation.
 
 ## Data to add — a, b, n
-- [ ] **Top volume shares** (owner's request, 4 Oct): a leaderboard of the most-traded stocks for
-  today, this week, this month, this quarter and the past 6 months, filterable by large / mid /
-  small cap and by sector. Volume and turnover are already stored for every stock since 2016
-  (rank by ₹ turnover and by volume vs normal, ETFs out via `allFundSymbols`). Needs two new
-  data sets first: **market-cap category** from AMFI's half-yearly list (top 100 large, 101–250
-  mid, rest small; free, published Jan and Jul) and **sector tags** (item below). Build after
-  the whole-market volume study (research 0004), so the page can carry its findings.
+- [x] **Top volume shares** (done 4 Oct, decision 0025): `/volume`, the ~750 Nifty Total Market
+  stocks by ₹ or shares over 1/5/21/63/126 sessions, filtered by NSE size list, sector and 43
+  index lists. AMFI turned out not to be needed (NSE's size indices). Sector index files NSE
+  doesn't publish (Capital Markets, Chemicals, Power, Tata Group…) can be added if they appear.
 - [x] **Delivery %** (collected 4 Oct, decision 0021): shares bought *and kept* ÷ shares
   traded, per stock per day, in `daily_delivery` since 28 Sep 2016. Notes from the checks:
   - Source: NSE's security-wise delivery file

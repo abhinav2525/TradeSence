@@ -15,7 +15,9 @@ the beginner's Report Card and risk calculator), `/crossings` (`src/query/crossi
 whipsaw across an average), `/signals` (`src/query/signals.ts` + `src/indicators/signals.ts`:
 the breadth washout alarm and what the index did after each episode, 200-day SMA only),
 `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual
-stock-days, whole market or NIFTY 50, from the nightly `unusual_days` table) and
+stock-days, whole market or NIFTY 50, from the nightly `unusual_days` table), `/volume`
+(`src/query/volume.ts`: most-traded Nifty Total Market stocks by ₹ or shares over rolling
+windows, filtered by NSE size list, sector and index; decision 0025) and
 `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
@@ -74,6 +76,8 @@ bun run ingest:day 2026-09-25 [--force]        # one session
 bun run ingest:backfill 2016-09-28 2026-09-25  # range; ~28 min, resumable
 bun run indicators                             # recompute every average (~5s)
 bun run activity                               # rebuild the Unusual activity table (~20s)
+bun run ingest:index-lists                     # today's members of 43 NSE indices (~15s)
+bun run volume-leaders                         # rebuild the Top volume table (~5s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run research:forward-returns               # breadth -> later NIFTY return study
 bun run research:volume                        # volume indicators -> later returns study

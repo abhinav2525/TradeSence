@@ -163,6 +163,22 @@ erDiagram
         date changed_on PK "first day under new_symbol"
         text company
     }
+    index_constituents {
+        text index_key PK "e.g. total-market, nifty-100, bank"
+        text symbol PK
+        text industry "NSE sector"
+        date fetched_on
+    }
+    volume_leaders {
+        text symbol PK
+        int period PK "1, 5, 21, 63, 126 sessions"
+        date as_of
+        float turnover
+        float shares "split-adjusted"
+        float change_pct
+        int sessions
+        int unusual_days
+    }
     unusual_days {
         date trade_date PK
         text symbol PK "today's symbol"
@@ -298,6 +314,8 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run ingest:backfill <start> <end>` | Ingest a date range, resumable |
 | `bun run indicators` | Recompute every moving average |
 | `bun run activity` | Rebuild the Unusual activity table (also nightly; ~20 s) |
+| `bun run ingest:index-lists` | Download today's members of 43 NSE indices (also nightly; ~15 s) |
+| `bun run volume-leaders` | Rebuild the Top volume table (also nightly; ~5 s) |
 | `bun run ingest:nightly` | Cron entry point: ingest recent days + recompute |
 
 ---
@@ -440,6 +458,16 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 |---|---|---|
 | `loadRenames` | `() => Promise<Rename[]>` | Every row of `symbol_changes`. |
 | `loadAdjustedHistory` | `(symbol, renames) => Promise<History \| null>` | Raw OHLCV across the rename lineage, plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only). Shared by `computeIndicators` and research 0002. |
+
+### `src/ingest/index-constituents.ts`, `src/indicators/volume-leaders.ts`, `compute-volume-leaders.ts` and `src/query/volume.ts` — Top volume
+
+| Function | Notes |
+|---|---|
+| `INDEX_LISTS`, `UNIVERSE_KEY`, `SIZE_KEYS` | The 43 verified NSE index files (key, name, file, group); the universe (Nifty Total Market) and the four size lists. |
+| `parseConstituents`, `fetchConstituents`, `ingestIndexLists`, `sizeProblems` | Read an `ind_*list.csv` (header checked, quoted names); a bad download is an error, never an empty index; replace per index, keep yesterday's on failure; every universe stock in exactly one size list. |
+| `leaderStats(h, windowStarts, lastDay)`, `PERIODS` | One stock's ₹ traded, split-adjusted shares, price move and session count per window. |
+| `computeVolumeLeaders` | Every universe stock through `loadAdjustedHistory`, plus Unusual activity counts; `volume_leaders` replaced in one transaction. |
+| `topVolume`, `sectorsPresent` | The page: rank by ₹ or shares, size / sector / index filters, Report Card links. |
 
 ### `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts` and `src/query/activity.ts` — Unusual activity
 
