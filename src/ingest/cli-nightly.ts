@@ -10,6 +10,7 @@ import { ingestIndexDays } from "./index-prices";
 import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
 import { computeUnusualDays } from "../indicators/compute-activity";
+import { computeVolumeLeaders } from "../indicators/compute-volume-leaders";
 import { refreshFundSymbols } from "../indicators/universe";
 import { ingestIndexLists } from "./index-constituents";
 import { computeIndicators } from "../indicators/compute";
@@ -114,6 +115,13 @@ try {
   console.log(`[nightly] unusual activity: ${act.rows} stock-days from ${act.companies} companies`);
 } catch (e) {
   console.warn(`[nightly] WARNING unusual activity not rebuilt: ${e instanceof Error ? e.message : e}`);
+}
+
+try {
+  const vl = await computeVolumeLeaders();
+  console.log(`[nightly] top volume: ${vl.rows} rows as of ${vl.asOf}`);
+} catch (e) {
+  console.warn(`[nightly] WARNING top volume not rebuilt: ${e instanceof Error ? e.message : e}`);
 }
 
 await sql.end();

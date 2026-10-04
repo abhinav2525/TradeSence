@@ -163,6 +163,26 @@ export const indexConstituents = pgTable(
 );
 
 /**
+ * Top volume page: each Nifty Total Market stock's totals over the last 1, 5, 21,
+ * 63 and 126 market sessions ending `as_of`. Rebuilt in full nightly in one
+ * transaction. `shares` are split/bonus-adjusted to today's share terms.
+ */
+export const volumeLeaders = pgTable(
+  "volume_leaders",
+  {
+    asOf: date("as_of").notNull(),
+    symbol: text("symbol").notNull(),
+    period: integer("period").notNull(),
+    turnover: doublePrecision("turnover").notNull(),
+    shares: doublePrecision("shares").notNull(),
+    changePct: doublePrecision("change_pct"),
+    sessions: integer("sessions").notNull(),
+    unusualDays: integer("unusual_days").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.period] })],
+);
+
+/**
  * NSE corporate actions — splits, bonuses, dividends, meetings — for the whole
  * market, exactly as NSE words them.
  *
