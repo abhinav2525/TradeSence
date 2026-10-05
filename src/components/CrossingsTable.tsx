@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { reportCardHref } from "@/lib/report-card-link";
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -8,11 +9,17 @@ import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { CrossingStat } from "@/query/crossings";
 
-type Props = { rows: CrossingStat[]; maLabel: string };
+type Props = {
+  rows: CrossingStat[];
+  maLabel: string;
+  /** Symbols with a Report Card; when given, others show unlinked (decision 0034). Default: link every symbol. */
+  cards?: readonly string[];
+};
 
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
-export default function CrossingsTable({ rows, maLabel }: Props) {
+export default function CrossingsTable({ rows, maLabel, cards }: Props) {
+  const cardSet = cards ? new Set(cards) : undefined;
   if (rows.length === 0) {
     return <p className="px-card-x py-10 text-body-sm text-muted-foreground">No data yet.</p>;
   }
@@ -36,7 +43,7 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
           const above = r.currentState === "above";
           return (
             <TableRow key={r.symbol} className="hover:bg-raised">
-              <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+              <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground">{(() => { const href = reportCardHref(r.symbol, cardSet); return href ? <Link href={href} prefetch={false} className="hover:underline">{r.symbol}</Link> : r.symbol; })()}</TableCell>
               <TableCell className="px-3 py-cell">
                 <div className="flex items-center justify-end gap-2.5">
                   <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-chart-muted md:flex" aria-hidden="true">

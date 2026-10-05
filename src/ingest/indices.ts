@@ -66,3 +66,13 @@ export function cleanIndex(v: string | undefined): IndexEntry {
 export function sizeOn(sizes: readonly SizeStep[], dateIso: string): number {
   return sizes.filter((s) => s.from <= dateIso).at(-1)?.n ?? 0;
 }
+
+/** The `u` part of a link: nothing for the NIFTY 50 (the default), so existing URLs are unchanged. */
+export function uParam(entry: IndexEntry): string {
+  return entry.key === NIFTY50.key ? "" : `&u=${entry.key}`;
+}
+
+/** "Nifty Bank's 14 members" on a date (the NIFTY 50: "the 50 members"). */
+export function membersPhrase(entry: IndexEntry, dateIso: string): string {
+  return `${entry.label}'s ${sizeOn(entry.sizes, dateIso)} members`;
+}

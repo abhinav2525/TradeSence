@@ -8,12 +8,15 @@ import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/query/breadth";
 import Term from "@/components/Term";
+import { reportCardHref } from "@/lib/report-card-link";
 
 type Props = {
   title: string;
   rows: MemberRow[];
   tone: "up" | "down";
   maLabel: string;
+  /** Symbols with a Report Card; when given, others show unlinked (decision 0034). Default: link every symbol. */
+  cards?: readonly string[];
   className?: string;
 };
 
@@ -22,7 +25,8 @@ const NEAR = 2;
 
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
-export default function MemberTable({ title, rows, tone, maLabel, className }: Props) {
+export default function MemberTable({ title, rows, tone, maLabel, cards, className }: Props) {
+  const cardSet = cards ? new Set(cards) : undefined;
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.pctFromMa)), 1);
 
   return (
@@ -63,7 +67,7 @@ export default function MemberTable({ title, rows, tone, maLabel, className }: P
               return (
                 <TableRow key={r.symbol} className="hover:bg-raised">
                   <TableCell className="py-cell pl-card-x pr-3">
-                    <span className="text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></span>
+                    <span className="text-body-sm font-semibold text-foreground">{(() => { const href = reportCardHref(r.symbol, cardSet); return href ? <Link href={href} prefetch={false} className="hover:underline">{r.symbol}</Link> : r.symbol; })()}</span>
                     {near && (
                       <Badge variant="outline" className="ml-2 align-middle" title={`Within ${NEAR}% of the average`}>
                         near line

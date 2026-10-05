@@ -7,6 +7,8 @@ import AdLineChart from "@/components/AdLineChart";
 import McClellanBars from "@/components/McClellanBars";
 import AdRecentTable from "@/components/AdRecentTable";
 import Hotkeys from "@/components/Hotkeys";
+import IndexTabs from "@/components/IndexTabs";
+import { NIFTY50, cleanIndex, membersPhrase, uParam } from "@/ingest/indices";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, signed } from "@/lib/format";
 import { advanceDeclineSeries, type AdPoint } from "@/query/advance-decline";
@@ -40,13 +42,17 @@ function sameSideRun(series: AdPoint[], i: number): number {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; date?: string }>;
+  searchParams: Promise<{ ma?: string; date?: string; u?: string }>;
 }) {
-  const { ma: rawMa, date: rawDate } = await searchParams;
+  const { ma: rawMa, date: rawDate, u: rawU } = await searchParams;
   const ma: MaKind = isMaKind(rawMa) ? rawMa : "sma200";
   const wanted = cleanDate(rawDate);
+  // Which index (decision 0034): checked against the registry, NIFTY 50 by default.
+  const ix = cleanIndex(rawU);
+  const isNifty = ix === NIFTY50;
+  const keep = uParam(ix);
 
-  const series = await advanceDeclineSeries();
+  const series = await advanceDeclineSeries(ix.members);
 
   // A date that isn't a session snaps back to the one before it, like Breadth.
   let idx = series.length - 1;
@@ -104,7 +110,7 @@ export default async function Page({
           value: p.adv10 === null ? "—" : p.adv10.toFixed(1),
           unit: p.adv10 === null ? undefined : "%",
           fill: p.adv10 === null ? undefined : p.adv10 / 100,
-          sub: "A thrust needs under 40%, then over 61.5% within 10 sessions",
+          sub: isNifty ? "A thrust needs under 40%, then over 61.5% within 10 sessions" : "Risers among the banks that moved, smoothed over 10 sessions",
         },
         {
           label: "Advancing sessions",
@@ -119,15 +125,20 @@ export default async function Page({
 
   return (
     <AppShell current="advance-decline" ma={ma} asOf={series.at(-1)?.date}>
-      <Hotkeys ma={ma} prev={prev} next={next} page="advance-decline" />
+      <Hotkeys ma={ma} prev={prev} next={next} page="advance-decline" extra={keep} />
 
       <PageHeader
-        eyebrow="NIFTY 50 · Market"
+        eyebrow={`${ix.label} · Market`}
         title="Advance/Decline"
-        description="How many constituents rose against how many fell, every session. The line adds it up; the McClellan oscillator measures its momentum."
+        description={isNifty
+          ? "How many constituents rose against how many fell, every session. The line adds it up; the McClellan oscillator measures its momentum."
+          : `How many of ${ix.label}'s members rose against how many fell, every session, counting each bank only while it was in the index. The line adds it up; the McClellan oscillator measures its momentum.`}
         actions={
+          <>
+          <IndexTabs base="/advance-decline" current={ix} ma={ma} date={wanted} />
           <DateNav
             base="/advance-decline"
+            extra={keep}
             ma={ma}
             date={p?.date ?? null}
             requested={wanted ?? null}
@@ -137,6 +148,7 @@ export default async function Page({
             min={series[0]?.date ?? null}
             max={series.at(-1)?.date ?? null}
           />
+          </>
         }
       />
 
@@ -158,6 +170,7 @@ export default async function Page({
             unchanged={p.unchanged}
             net={p.net}
             recent={last20.map((s) => ({ date: s.date, advancing: s.advancing, declining: s.declining, net: s.net }))}
+            of={isNifty ? undefined : membersPhrase(ix, p.date)}
           />
           <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4" tiles={tiles} />
 
@@ -178,7 +191,9 @@ export default async function Page({
             />
             <CardFooter>
               19-day EMA minus 39-day EMA of (advancing − declining) ÷ (advancing + declining) × 1,000.
-              Ratio adjustment keeps a 50-stock reading on a stable scale.
+              {isNifty
+                ? " Ratio adjustment keeps a 50-stock reading on a stable scale."
+                : ` With only ${membersPhrase(ix, p.date).replace(`${ix.label}'s `, "")} it swings far more than the NIFTY 50's: read which side of zero it is on, not how far.`}
             </CardFooter>
           </Card>
 

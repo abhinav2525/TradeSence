@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { eq } from "drizzle-orm";
-import { INDICES, NIFTY50, indexByKey, cleanIndex, sizeOn } from "../src/ingest/indices";
+import { INDICES, NIFTY50, indexByKey, cleanIndex, sizeOn, uParam, membersPhrase } from "../src/ingest/indices";
 import { INDEX_LISTS } from "../src/ingest/index-constituents";
 import { fetchIndexDay } from "../src/ingest/index-prices";
 import { loadMembership, validateMembershipHistory } from "../src/ingest/nifty50-history";
@@ -66,6 +66,19 @@ describe("cleanIndex (the pages' u parameter)", () => {
     for (const v of [undefined, "", "BANK", "bank ", "private-bank", "market", "NIFTYBANK", "bank'--", "__proto__", "constructor"]) {
       expect(cleanIndex(v)).toBe(NIFTY50);
     }
+  });
+});
+
+describe("uParam (links that keep the chosen index)", () => {
+  test("the NIFTY 50 adds nothing, so every existing link stays the same", () => {
+    expect(uParam(NIFTY50)).toBe("");
+  });
+  test("another index adds its key", () => {
+    expect(uParam(indexByKey("bank")!)).toBe("&u=bank");
+  });
+  test("membersPhrase names the index's size on that date", () => {
+    expect(membersPhrase(indexByKey("bank")!, "2025-12-30")).toBe("Nifty Bank's 12 members");
+    expect(membersPhrase(indexByKey("bank")!, "2026-10-05")).toBe("Nifty Bank's 14 members");
   });
 });
 

@@ -152,7 +152,7 @@ export async function breakdownOn(
   indexName = "NIFTY50",
 ): Promise<Breakdown> {
   const col = column(ma);
-  const session = await resolveSession(ma, dateIso);
+  const session = await resolveSession(ma, dateIso, indexName);
 
   if (!session) {
     return { date: null, requested: dateIso ?? null, snapped: false, above: [], below: [] };

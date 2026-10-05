@@ -5,10 +5,13 @@ import Readout from "@/components/Readout";
 import CrossingsTable from "@/components/CrossingsTable";
 import CrossingsBars from "@/components/CrossingsBars";
 import Hotkeys from "@/components/Hotkeys";
+import IndexTabs from "@/components/IndexTabs";
+import { NIFTY50, cleanIndex, uParam } from "@/ingest/indices";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatInt } from "@/lib/format";
 import { crossingStats } from "@/query/crossings";
+import { supportedStocks } from "@/query/stock-report";
 import { MA_LABELS, resolveSession, type MaKind } from "@/query/breadth";
 
 export const dynamic = "force-dynamic";
@@ -20,13 +23,22 @@ function isMaKind(v: string | undefined): v is MaKind {
 export default async function CrossingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string }>;
+  searchParams: Promise<{ ma?: string; u?: string }>;
 }) {
-  const { ma: raw } = await searchParams;
+  const { ma: raw, u: rawU } = await searchParams;
   const ma: MaKind = isMaKind(raw) ? raw : "sma200";
   const label = MA_LABELS[ma];
+  // Which index (decision 0034): checked against the registry, NIFTY 50 by default.
+  const ix = cleanIndex(rawU);
+  const isNifty = ix === NIFTY50;
+  const keep = uParam(ix);
+  const who = isNifty ? "constituents" : "members";
 
-  const [rows, asOf] = await Promise.all([crossingStats(ma), resolveSession(ma)]);
+  const [rows, asOf, withCards] = await Promise.all([
+    crossingStats(ma, ix.members), resolveSession(ma, undefined, ix.members), isNifty ? null : supportedStocks(),
+  ]);
+  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  const cards = withCards?.map((s) => s.symbol);
 
   const total = rows.reduce((n, r) => n + r.crossings, 0);
   const busiest = rows[0];
@@ -37,13 +49,20 @@ export default async function CrossingsPage({
 
   return (
     <AppShell current="crossings" ma={ma} asOf={asOf}>
-      <Hotkeys ma={ma} page="crossings" />
+      <Hotkeys ma={ma} page="crossings" extra={keep} />
 
       <PageHeader
-        eyebrow="NIFTY 50 · Whipsaw"
+        eyebrow={`${ix.label} · Whipsaw`}
         title="Crossings"
-        description="How often each stock has crossed its average since 2020. Whipsaw means flipping back and forth: a stock with many crossings has changed sides often; one with few has stayed on one side for long stretches."
-        actions={<MaTabs base="/crossings" ma={ma} />}
+        description={isNifty
+          ? "How often each stock has crossed its average since 2020. Whipsaw means flipping back and forth: a stock with many crossings has changed sides often; one with few has stayed on one side for long stretches."
+          : `How often each bank that has been in ${ix.label} since 2020 crossed its average while it was a member. Whipsaw means flipping back and forth: many crossings means it changed sides often; few means long stretches on one side.`}
+        actions={
+          <>
+            <IndexTabs base="/crossings" current={ix} ma={ma} />
+            <MaTabs base="/crossings" ma={ma} extra={keep} />
+          </>
+        }
       />
 
       {busiest && (
@@ -68,7 +87,7 @@ export default async function CrossingsPage({
               term: "whipsaw",
               value: String(median),
               fill: busiest.crossings ? median / busiest.crossings : 0,
-              sub: `Across ${rows.length} constituents`,
+              sub: `Across ${rows.length} ${who}${isNifty ? "" : " past and present"}`,
             },
             {
               label: "Calmest",
@@ -85,7 +104,7 @@ export default async function CrossingsPage({
               today: null,
               term: "whipsaw",
               value: formatInt(total),
-              sub: `Every constituent, vs the ${label}`,
+              sub: `Every ${isNifty ? "constituent" : "member"}, vs the ${label}`,
             },
           ]}
         />
@@ -95,7 +114,7 @@ export default async function CrossingsPage({
         <Card className="self-start xl:col-span-5">
           <CardHeader>
             <div>
-              <CardTitle>The twelve busiest</CardTitle>
+              <CardTitle>{rows.length > 12 ? "The twelve busiest" : `All ${rows.length}, busiest first`}</CardTitle>
               <CardDescription>Crossings of the {label}, since 2020</CardDescription>
             </div>
           </CardHeader>
@@ -113,12 +132,12 @@ export default async function CrossingsPage({
         <Card className="flex flex-col overflow-hidden xl:col-span-7">
           <CardHeader className="border-b pb-3.5 pt-3.5">
             <div>
-              <CardTitle>All constituents</CardTitle>
+              <CardTitle>{isNifty ? "All constituents" : `Every ${ix.label} member since 2020`}</CardTitle>
               <CardDescription>Sorted by crossings, busiest first</CardDescription>
             </div>
             <Badge variant="neutral">{rows.length} stocks</Badge>
           </CardHeader>
-          <CrossingsTable rows={rows} maLabel={label} />
+          <CrossingsTable rows={rows} maLabel={label} cards={cards} />
           <CardFooter className="mt-auto">
             A crossing counts only between consecutive sessions that both have an average, so
             neither the start of the averaging window nor a gap in the data can fake one.

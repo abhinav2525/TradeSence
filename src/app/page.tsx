@@ -15,7 +15,9 @@ import Term from "@/components/Term";
 import {
   breadthSeries, breakdownOn, adjacentSessions, universeSeries, MA_LABELS, type BreadthPoint, type MaKind,
 } from "@/query/breadth";
-import { LIST_UNIVERSES, cleanUniverse, pickSession, type Universe } from "@/indicators/breadth-universes";
+import { LIST_UNIVERSES, cleanUniverse, pickSession, pointInTime, type Universe } from "@/indicators/breadth-universes";
+import { sizeOn } from "@/ingest/indices";
+import { supportedStocks } from "@/query/stock-report";
 import { signalsData } from "@/query/signals";
 
 export const dynamic = "force-dynamic";
@@ -55,16 +57,23 @@ export default async function Page({
   const { ma: rawMa, date: rawDate, u: rawU } = await searchParams;
   const u = cleanUniverse(rawU);
   const isNifty = u === "nifty50";
+  // NIFTY 50 and Nifty Bank: true day-by-day membership (decision 0034). Other lists:
+  // today's members, from breadth_daily (decision 0030).
+  const pit = pointInTime(u);
+  const small = pit !== null && !isNifty; // few members: "x of N", no percentile or "rare" wording
   const keep = isNifty ? "" : `&u=${u}`;
   const ma: MaKind = isMaKind(rawMa) ? rawMa : "sma200";
   const label = MA_LABELS[ma];
   const wanted = cleanDate(rawDate);
 
-  const [series, niftyView, signals] = await Promise.all([
-    isNifty ? breadthSeries(ma) : universeSeries(u, ma),
-    isNifty ? breakdownOn(ma, wanted) : null,
+  const [series, niftyView, signals, withCards] = await Promise.all([
+    pit ? breadthSeries(ma, pit.members) : universeSeries(u, ma),
+    pit ? breakdownOn(ma, wanted, pit.members) : null,
     signalsData(),
+    small ? supportedStocks() : null,
   ]);
+  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  const cards = withCards?.map((s) => s.symbol);
   const view = niftyView ?? { ...pickSession(series, wanted), above: [], below: [] };
   const idx = view.date ? series.findIndex((p) => p.date === view.date) : series.length - 1;
   const point = idx >= 0 ? series[idx] : undefined;
@@ -74,7 +83,7 @@ export default async function Page({
   const notice = isNifty && six && noticeVisible(signals.washout?.status, view.date, signals.washout?.date) ? noticeText(six) : null;
   const at = view.date ? series.findIndex((p) => p.date === view.date) : -1;
   const nav = !view.date ? { prev: null, next: null }
-    : isNifty ? await adjacentSessions(ma, view.date)
+    : pit ? await adjacentSessions(ma, view.date, pit.members)
     : { prev: series[at - 1]?.date ?? null, next: series[at + 1]?.date ?? null };
   const since = series[0] ? series[0].date.slice(0, 4) : "";
   const building = series.length < MIN_HISTORY;
@@ -102,9 +111,22 @@ export default async function Page({
   const yearLo = year.length ? Math.min(...year) : 0;
   const yearHi = year.length ? Math.max(...year) : 0;
 
+  const size = pit && point ? sizeOn(pit.sizes, point.date) : 0;
+  const counted = point && small
+    ? (point.total === size ? `${pit!.label}'s ${size} members` : `the ${point.total} of ${pit!.label}'s ${size} members that have a ${label}`)
+    : null;
+
   const tiles: Tile[] = point
     ? [
-        building ? {
+        small ? {
+          label: "Members counted",
+          term: "nifty-bank",
+          value: String(point.total),
+          unit: `of ${size}`,
+          sub: point.total < size
+            ? `${size - point.total} without enough history for the ${label} yet`
+            : `One bank moves the share by about ${Math.round(100 / point.total)} points`,
+        } : building ? {
           label: "Percentile",
           term: "percentile",
           value: "—",
@@ -168,6 +190,7 @@ export default async function Page({
         title="Breadth"
         description={
           isNifty ? "How many of the fifty constituents close above their moving average, and how rare that is against every session since 2020."
+          : small ? `How many of ${pit!.label}'s members close above their moving average, on the index's real membership each day since 2020. With so few members, read the count, not the decimals.`
           : u === "market" ? `How many liquid NSE companies close above their moving average, and how rare that is against every session since ${since || "2016"}.`
           : `How many ${universeName(u)} members close above their moving average, using today's members. Saved every night from October 2026.`
         }
@@ -197,7 +220,7 @@ export default async function Page({
           <option value="market">Whole market (all liquid stocks)</option>
           {(["broad", "sector", "theme"] as const).map((g) => (
             <optgroup key={g} label={GROUP_LABEL[g]}>
-              {LIST_UNIVERSES.filter((x) => x.group === g).map((x) => <option key={x.key} value={x.key}>{x.name}</option>)}
+              {LIST_UNIVERSES.filter((x) => x.group === g).map((x) => <option key={x.key} value={x.key}>{x.name}{pointInTime(x.key) ? " (since 2020)" : ""}</option>)}
             </optgroup>
           ))}
         </select>
@@ -209,7 +232,7 @@ export default async function Page({
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
           <p className="mt-2 text-body-sm text-foreground-2">
-            {isNifty ? (
+            {pit ? (
               <>
                 Run <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run ingest:backfill</code>{" "}
                 then <code className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[12px]">bun run indicators</code>.
@@ -233,8 +256,11 @@ export default async function Page({
             bins={histogram(series)}
             current={binOf(point.pctAbove)}
             sessions={series.length}
-            of={universeOf(u)}
-            rarityNote={building ? `History is building: ${series.length} session${series.length === 1 ? "" : "s"} saved so far.` : undefined}
+            of={counted ?? universeOf(u)}
+            noPercentile={small}
+            rarityNote={small
+              ? `Each bar counts the sessions since 2020 with that share above. ${point.above} of ${point.total} counted were above on ${formatDate(point.date)}.`
+              : building ? `History is building: ${series.length} session${series.length === 1 ? "" : "s"} saved so far.` : undefined}
           />
           <Readout className="lg:col-span-12 lg:grid-cols-4 xl:col-span-5 xl:grid-cols-2 xl:compact:col-span-12 xl:compact:grid-cols-4" tiles={tiles} />
 
@@ -243,13 +269,14 @@ export default async function Page({
             <CardFooter>
               Under the halfway line, most of the index closed below its own {label}. The
               shaded bands mark the extremes: under 20% and over 80%.
+              {small && ` With ${size} members, one bank is about ${Math.round(100 / size)} points, so the line moves in steps.`}
             </CardFooter>
           </Card>
 
-          {isNifty ? (
+          {pit ? (
             <>
-              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Above" rows={view.above} tone="up" maLabel={label} />
-              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Below" rows={view.below} tone="down" maLabel={label} />
+              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Above" rows={view.above} tone="up" maLabel={label} cards={cards} />
+              <MemberTable className="lg:col-span-12 xl:col-span-6" title="Below" rows={view.below} tone="down" maLabel={label} cards={cards} />
             </>
           ) : (
             <Card className="px-card-x py-card text-body-sm text-foreground-2 lg:col-span-12">

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { reportCardHref } from "@/lib/report-card-link";
 import { useState } from "react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -17,13 +18,16 @@ const pctText = (v: number | null) => (v === null ? "—" : `${signed(v, 2)}%`);
 
 type Props = {
   rows: ScreenerRow[];
+  /** Symbols with a Report Card; when given, others show unlinked (decision 0034). Default: link every symbol. */
+  cards?: readonly string[];
   view: "above" | "below" | "near";
   maLabel: string;
   empty: string;
 };
 
 /** The main list. Client-side only so the symbol filter responds as you type. */
-export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
+export default function ScreenerTable({ rows, view, maLabel, empty, cards }: Props) {
+  const cardSet = cards ? new Set(cards) : undefined;
   const [q, setQ] = useState("");
   const shown = q ? rows.filter((r) => r.symbol.includes(q.trim().toUpperCase())) : rows;
   const side = view === "below" ? "Above" : "Below";
@@ -63,7 +67,7 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
           <TableBody>
             {shown.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground">{(() => { const href = reportCardHref(r.symbol, cardSet); return href ? <Link href={href} prefetch={false} className="hover:underline">{r.symbol}</Link> : r.symbol; })()}</TableCell>
                 <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">{formatPrice(r.close)}</TableCell>
                 <TableCell
                   className={cn(

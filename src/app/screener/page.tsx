@@ -20,6 +20,10 @@ import { NEAR_PCT, isNear, percentile, screenerOn, volumeAtLeast, type ScreenerR
 import { GLOSSARY } from "@/lib/glossary";
 import Term from "@/components/Term";
 import SlidingPill from "@/components/SlidingPill";
+import IndexTabs from "@/components/IndexTabs";
+import { NIFTY50, cleanIndex, membersPhrase, uParam } from "@/ingest/indices";
+import { supportedStocks } from "@/query/stock-report";
+import { reportCardHref } from "@/lib/report-card-link";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +62,7 @@ const seg = (on: boolean) =>
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; date?: string; view?: string; vol?: string }>;
+  searchParams: Promise<{ ma?: string; date?: string; view?: string; vol?: string; u?: string }>;
 }) {
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
@@ -66,11 +70,18 @@ export default async function Page({
   const vol: Vol = isVol(sp.vol) ? sp.vol : "2";
   const wanted = cleanDate(sp.date);
   const label = MA_LABELS[ma];
+  // Which index (decision 0034): checked against the registry, NIFTY 50 by default.
+  const ix = cleanIndex(sp.u);
+  const isNifty = ix === NIFTY50;
+  const keep = uParam(ix);
+  const who = isNifty ? "constituent" : `${ix.label} member`;
 
-  const date = await resolveSession(ma, wanted);
-  const nav = date ? await adjacentSessions(ma, date) : { prev: null, next: null };
-  const { rows } = date ? await screenerOn(ma, date) : { rows: [] as ScreenerRow[] };
-  const latest = await resolveSession(ma);
+  const date = await resolveSession(ma, wanted, ix.members);
+  const nav = date ? await adjacentSessions(ma, date, ix.members) : { prev: null, next: null };
+  const { rows } = date ? await screenerOn(ma, date, ix.members) : { rows: [] as ScreenerRow[] };
+  const latest = await resolveSession(ma, undefined, ix.members);
+  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  const cards = isNifty ? undefined : (await supportedStocks()).map((s) => s.symbol);
 
   const byVol = (a: ScreenerRow, b: ScreenerRow) => (b.volRatio ?? 0) - (a.volRatio ?? 0);
   const above = rows.filter((r) => r.cross === "above").sort(byVol);
@@ -125,7 +136,7 @@ export default async function Page({
   ];
 
   const href = (p: { view?: View; vol?: Vol }) =>
-    `/screener?ma=${ma}${date && wanted ? `&date=${date}` : ""}&view=${p.view ?? view}&vol=${p.vol ?? vol}`;
+    `/screener?ma=${ma}${date && wanted ? `&date=${date}` : ""}&view=${p.view ?? view}&vol=${p.vol ?? vol}${keep}`;
   const viewLabel = view === "above" ? `Crossed above the ${label}` : view === "below" ? `Crossed below the ${label}` : `Within ${NEAR_PCT}% of the ${label}`;
   const viewDesc =
     view === "near"
@@ -133,23 +144,26 @@ export default async function Page({
       : `${min === 0 ? "On any volume" : `On at least ${vol}× their usual volume`}, ${formatDate(date)}`;
   const empty =
     view === "near"
-      ? `No constituent closed within ${NEAR_PCT}% of its ${label} on ${formatDate(date)}.`
-      : `No constituent crossed ${view} its ${label} on ${formatDate(date)}${hidden.length ? " on that much volume" : ""}.`;
+      ? `No ${who} closed within ${NEAR_PCT}% of its ${label} on ${formatDate(date)}.`
+      : `No ${who} crossed ${view} its ${label} on ${formatDate(date)}${hidden.length ? " on that much volume" : ""}.`;
 
   return (
     <AppShell current="screener" ma={ma} asOf={latest}>
-      <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="screener" />
+      <Hotkeys ma={ma} prev={nav.prev} next={nav.next} page="screener" extra={`&view=${view}&vol=${vol}${keep}`} />
 
       <PageHeader
-        eyebrow="NIFTY 50 · Stocks"
+        eyebrow={`${ix.label} · Stocks`}
         title="Screener"
-        description="Stocks that crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock&apos;s own last 20 sessions."
+        description={isNifty
+          ? "Stocks that crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock's own last 20 sessions."
+          : `Which of ${date ? membersPhrase(ix, date) : `${ix.label}'s members`} crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock's own last 20 sessions.`}
         actions={
           <>
-            <MaTabs base="/screener" ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}`} />
+            <IndexTabs base="/screener" current={ix} ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}`} />
+            <MaTabs base="/screener" ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}${keep}`} />
             <DateNav
               base="/screener"
-              extra={`&view=${view}&vol=${vol}`}
+              extra={`&view=${view}&vol=${vol}${keep}`}
               ma={ma}
               date={date}
               requested={wanted ?? null}
@@ -208,7 +222,7 @@ export default async function Page({
               </Badge>
             </div>
 
-            <ScreenerTable rows={listed} view={view} maLabel={label} empty={empty} />
+            <ScreenerTable rows={listed} view={view} maLabel={label} empty={empty} cards={cards} />
 
             {hidden.length > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-2 border-t px-card-x py-3 text-[12px] text-foreground-2">
@@ -235,8 +249,8 @@ export default async function Page({
             <p className="mt-0.5 text-[12px] text-muted-foreground">Within {NEAR_PCT}% of the {label}, closest first</p>
           </div>
           <div className="grid gap-cards xl:grid-cols-2">
-            <NearCard title="Just below the average" desc="Within 2% under it" rows={nearBelow} tone="down" />
-            <NearCard title="Just above the average" desc="Within 2% over it" rows={nearAbove} tone="up" />
+            <NearCard title="Just below the average" desc="Within 2% under it" rows={nearBelow} tone="down" cards={cards} />
+            <NearCard title="Just above the average" desc="Within 2% over it" rows={nearAbove} tone="up" cards={cards} />
           </div>
         </div>
       )}
@@ -244,7 +258,8 @@ export default async function Page({
   );
 }
 
-function NearCard({ title, desc, rows, tone }: { title: string; desc: string; rows: ScreenerRow[]; tone: "up" | "down" }) {
+function NearCard({ title, desc, rows, tone, cards }: { title: string; desc: string; rows: ScreenerRow[]; tone: "up" | "down"; cards?: string[] }) {
+  const cardSet = cards ? new Set(cards) : undefined;
   return (
     <Card className="self-start overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b px-card-x py-3.5">
@@ -271,7 +286,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
-                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground">{(() => { const href = reportCardHref(r.symbol, cardSet); return href ? <Link href={href} prefetch={false} className="hover:underline">{r.symbol}</Link> : r.symbol; })()}</TableCell>
                 <TableCell className={cn("px-3 py-cell text-right text-body-sm font-medium", tone === "down" ? "text-down" : "text-up")}>
                   {signed(r.pctFromMa!, 2)}%
                 </TableCell>

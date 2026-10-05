@@ -11,6 +11,7 @@ import { stockReport } from "./stock-report";
 import { signalsData } from "./signals";
 import { pctText } from "../components/signals-copy";
 import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
+import { NIFTY_BANK } from "../ingest/indices";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { BIG_JUMP_PCT } from "../indicators/activity";
@@ -31,6 +32,14 @@ async function build(id: TermId): Promise<string | null> {
       const today = new Date().toISOString().slice(0, 10);
       const last = rows.flatMap((r) => [r.addedOn, r.removedOn ?? ""]).filter((d) => d && d <= today).sort().at(-1);
       return last ? `${membersOn(rows, today).length} members today; the latest change was on ${formatDate(last)}.` : null;
+    }
+    case "nifty-bank": {
+      const today = new Date().toISOString().slice(0, 10);
+      const n = membersOn(readMembershipHistory(NIFTY_BANK), today).length;
+      const [row] = await db.execute<{ d: string; close: number }>(sql`
+        select trade_date::text d, close from index_prices where index_name = ${NIFTY_BANK.prices}
+        order by trade_date desc limit 1`);
+      return row ? `Nifty Bank has ${n} members today; it closed at ${formatPrice(Number(row.close))} on ${formatDate(row.d)}.` : null;
     }
     case "session": {
       const d = await resolveSession("sma200");

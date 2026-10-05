@@ -13,6 +13,8 @@ type Props = {
   unchanged: number;
   net: number;
   recent: NetBar[]; // oldest first, ending on `date`
+  /** Whose count, e.g. "Nifty Bank's 14 members": the sentence then reads "x of N rose" (default: NIFTY 50 constituents). */
+  of?: string;
   className?: string;
 };
 
@@ -31,7 +33,7 @@ function streak(bars: NetBar[]): number {
  * The headline: net advances in big type, the rose / flat / fell split, and
  * the last 20 sessions as diverging bars, so one day is read against its run.
  */
-export default function AdHero({ date, advancing, declining, unchanged, net, recent, className }: Props) {
+export default function AdHero({ date, advancing, declining, unchanged, net, recent, of, className }: Props) {
   const total = advancing + declining + unchanged || 1;
   const max = Math.max(...recent.map((b) => Math.abs(b.net)), 1);
   const up = recent.filter((b) => b.net > 0).length;
@@ -45,7 +47,7 @@ export default function AdHero({ date, advancing, declining, unchanged, net, rec
         <p className="text-eyebrow uppercase text-muted-foreground"><Term id="net-advances" today={`${signed(net)} (${advancing} rose, ${declining} fell)`}>Net advances</Term></p>
         <p className="mt-4 text-display tabular-nums text-foreground"><CountUp text={signed(net)} /></p>
         <p className="mt-3 text-body-sm leading-5 text-foreground-2">
-          {advancing} {plural(advancing, "constituent", "constituents")} rose, {declining} fell
+          {of ? `${advancing} of ${of} rose` : `${advancing} ${plural(advancing, "constituent", "constituents")} rose`}, {declining} fell
           {unchanged > 0 ? ` and ${unchanged} closed unchanged` : ""} on{" "}
           <time dateTime={date} className="font-medium text-foreground">
             {formatDate(date)}

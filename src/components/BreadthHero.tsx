@@ -20,6 +20,8 @@ type Props = {
   of?: string;
   /** Replaces the rarity sentence, e.g. while a universe's history is still building. */
   rarityNote?: string;
+  /** No percentile at all (an index with few members, decision 0034): the histogram is titled plainly. */
+  noPercentile?: boolean;
   className?: string;
 };
 
@@ -29,7 +31,7 @@ type Props = {
  * shows the same position and also how unusual that position is.
  */
 export default function BreadthHero({
-  pct, above, total, maLabel, date, percentile, bins, current, sessions, of = "NIFTY 50 constituents", rarityNote, className,
+  pct, above, total, maLabel, date, percentile, bins, current, sessions, of = "NIFTY 50 constituents", rarityNote, noPercentile, className,
 }: Props) {
   const below = total - above;
   const max = Math.max(...bins.map((b) => b.count), 1);
@@ -73,7 +75,11 @@ export default function BreadthHero({
 
       <div className="flex min-w-0 flex-1 flex-col md:border-l md:pl-6">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-heading text-foreground"><Term id="percentile" today={rarityNote ? undefined : percentile.toFixed(1)}>Where today sits</Term></h2>
+          <h2 className="text-heading text-foreground">
+            {noPercentile
+              ? <Term id="breadth">How often each reading came up</Term>
+              : <Term id="percentile" today={rarityNote ? undefined : percentile.toFixed(1)}>Where today sits</Term>}
+          </h2>
           <span className="text-[12px] tabular-nums text-muted-foreground">{formatInt(sessions)} session{sessions === 1 ? "" : "s"}</span>
         </div>
         <p className="mt-1 text-[12px] leading-4 text-foreground-2">{rarity}</p>

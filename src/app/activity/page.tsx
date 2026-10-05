@@ -24,7 +24,7 @@ function isMaKind(v: string | undefined): v is MaKind {
   return v === "sma200" || v === "ema200" || v === "sma50";
 }
 function isSet(v: string | undefined): v is ActivitySet {
-  return v === "all" || v === "nifty50";
+  return v === "all" || v === "nifty50" || v === "bank";
 }
 function isKind(v: string): v is Kind {
   return v === "kept" || v === "volume" || v === "jump" || v === "collapse";
@@ -76,8 +76,9 @@ export default async function Page({
     const next = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k];
     return href({ kinds: next.length ? KINDS.filter((x) => next.includes(x)) : [...KINDS] });
   };
-  const scope = set === "nifty50" ? "NIFTY 50 members" : "active stocks";
-  const scopeOf = (n: number) => (n !== 1 ? scope : set === "nifty50" ? "NIFTY 50 member" : "active stock");
+  // "bank": Nifty Bank's members on that date (decision 0034), like the NIFTY 50 switch.
+  const scope = set === "nifty50" ? "NIFTY 50 members" : set === "bank" ? "Nifty Bank members" : "active stocks";
+  const scopeOf = (n: number) => (n !== 1 ? scope : set === "nifty50" ? "NIFTY 50 member" : set === "bank" ? "Nifty Bank member" : "active stock");
 
   return (
     <AppShell current="activity" ma={ma} asOf={latest}>
@@ -126,7 +127,7 @@ export default async function Page({
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-card-x py-3">
             <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Stocks">
               <SlidingPill active={set} />
-              {([["all", "All active stocks"], ["nifty50", "NIFTY 50"]] as const).map(([k, text]) => (
+              {([["all", "All active stocks"], ["nifty50", "NIFTY 50"], ["bank", "Nifty Bank"]] as const).map(([k, text]) => (
                 <Link key={k} href={href({ set: k })} role="tab" aria-selected={set === k} className={seg(set === k)}>{text}</Link>
               ))}
             </div>
@@ -168,6 +169,7 @@ export default async function Page({
           <CardFooter>
             Each stock against its own last 20 sessions; stocks trading under ₹1 crore a day and ETFs are left out.
             Report Cards cover stocks that have been in the NIFTY 50 since 2020; those link to theirs.
+            {set === "bank" && " Nifty Bank counts each bank only on the days it was in the index."}
           </CardFooter>
         </Card>
       )}

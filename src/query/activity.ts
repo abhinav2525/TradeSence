@@ -5,11 +5,14 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { KINDS, isBigJump, unusualScore, type Kind, type UnusualRow } from "../indicators/activity";
-import { INDEX_NAME } from "../ingest/nifty50";
+import { NIFTY50, NIFTY_BANK } from "../ingest/indices";
 
-export type ActivitySet = "all" | "nifty50";
-// member: in the NIFTY 50 on that date (the switch). hasCard: ever a member, so its
-// Report Card exists and the row can link to it.
+/** `all`, or a registered index's key (its members on that date; decision 0034). */
+export type ActivitySet = "all" | typeof NIFTY50.key | typeof NIFTY_BANK.key;
+const SET_INDEX = { nifty50: NIFTY50.members, bank: NIFTY_BANK.members } as const;
+// member: in the set's index on that date (the switch; the NIFTY 50 for "all" and the
+// Report Card). hasCard: ever in the NIFTY 50, so its Report Card exists and the row
+// can link to it (Report Cards for Nifty Bank members come in step B).
 export type ActivityRow = UnusualRow & { symbol: string; member: boolean; hasCard: boolean; score: number };
 
 type Raw = {
@@ -28,13 +31,14 @@ function toRow(r: Raw): ActivityRow {
   return { ...base, score: unusualScore(base) };
 }
 
-const select = sql`
+const selectFor = (memberOf: string) => sql`
   select u.trade_date::text, u.symbol, u.kept, u.volume, u.jump, u.collapse, u.kept_ratio, u.volume_ratio,
          u.delivery_pct, u.usual_delivery_pct, u.change_pct, u.turnover,
-         exists (select 1 from index_members m where m.index_name = ${INDEX_NAME} and m.symbol = u.symbol
+         exists (select 1 from index_members m where m.index_name = ${memberOf} and m.symbol = u.symbol
                  and u.trade_date >= m.added_on and (m.removed_on is null or u.trade_date < m.removed_on)) as member,
-         exists (select 1 from index_members m where m.index_name = ${INDEX_NAME} and m.symbol = u.symbol) as has_card
+         exists (select 1 from index_members m where m.index_name = ${NIFTY50.members} and m.symbol = u.symbol) as has_card
   from unusual_days u`;
+const select = selectFor(NIFTY50.members);
 
 export async function activitySession(dateIso?: string): Promise<string | null> {
   const r = await db.execute<{ d: string | null }>(sql`
@@ -55,7 +59,8 @@ export async function activityFirst(): Promise<string | null> {
 }
 
 export async function activityOn(dateIso: string, set: ActivitySet): Promise<ActivityRow[]> {
-  const rows = (await db.execute<Raw>(sql`${select} where u.trade_date = ${dateIso}`)).map(toRow);
+  const memberOf = set === "all" ? NIFTY50.members : SET_INDEX[set];
+  const rows = (await db.execute<Raw>(sql`${selectFor(memberOf)} where u.trade_date = ${dateIso}`)).map(toRow);
   return rows
     .filter((r) => set === "all" || r.member)
     .sort((a, b) => b.score - a.score || a.symbol.localeCompare(b.symbol));
