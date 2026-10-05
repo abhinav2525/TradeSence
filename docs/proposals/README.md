@@ -1,8 +1,9 @@
 # docs/proposals
 
-Proposals written by the **quant-advisor** agent (`.claude/agents/quant-advisor.md`): ideas
-for indicators, studies and screen content, and reviews of specs, in plain language for the
-owner. This is the only place that agent may write.
+Proposals and reviews written by the two advisor agents in `.claude/agents/`: **quant-advisor**
+(indicators, studies, screen content) and **lead-engineer** (architecture, data model,
+pipelines, engineering roadmap), in plain language for the owner. This is the only place
+those agents may write.
 
 A proposal is not a decision. The owner picks; the technical lead then writes the spec and plan
 (`docs/superpowers/`) and the normal build-review-merge path follows. A study proposal here

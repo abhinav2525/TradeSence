@@ -39,10 +39,12 @@ flatter signals that bunch up, so don't use it for a whole-market per-stock stud
 A whole-market study leaves ETFs out (`readFundSymbols`, `src/research/funds.ts`): NSE lists
 them in series EQ beside companies, and their prices follow gold or rates, not the company.
 
-**Ask the quant advisor before presenting a spec** (`.claude/agents/quant-advisor.md`,
-[0031](docs/decisions/0031-quant-advisor-agent.md)): it reviews every feature or study spec
-before the owner approves it, and answers "what should we measure or study next?" on demand.
-It writes only under `docs/proposals/`; data scope is what we already hold.
+**Two advisors review every spec before the owner sees it**
+([0031](docs/decisions/0031-quant-advisor-agent.md)): `quant-advisor` (what's worth measuring
+or studying; data scope = what we hold) and `lead-engineer` (architecture, data model,
+pipeline, simpler alternative), both in `.claude/agents/`. Record both verdicts in the spec.
+On demand they answer "what should we study next?" and "what's next on engineering / how
+should we build this?". Both write only under `docs/proposals/`, never code or data.
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.

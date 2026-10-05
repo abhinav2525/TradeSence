@@ -1,4 +1,4 @@
-# 0031 — A quant hedge-fund advisor as a separate agent
+# 0031 — Two advisor agents: a quant hedge-fund expert and a lead engineer
 
 **Date:** 2026-10-05 · **Status:** done
 
@@ -31,6 +31,17 @@ Mechanics: `.claude/agents/quant-advisor.md` (strongest model; tools limited to 
 repo, read-only database queries through the `claude_ro` MCP user, and writing under
 `docs/proposals/` only). The technical lead asks it to review each spec before presenting
 the spec to the owner, and records "quant review: proceed / changes / don't" in the spec.
+
+## Added the same day: `lead-engineer`
+
+The owner asked "where is my lead software engineer agent?" The engineering side had the same
+gap: architecture and system-design judgement lived only in the builder's head. A second
+advisor, `.claude/agents/lead-engineer.md` (15+ years in data systems; the project's eight
+engineering principles baked in; read-only database access including the health and index
+tools; writes only under `docs/proposals/`), now reviews every spec for data model, keys vs
+reads, pipeline placement, failure isolation, a simpler alternative and the tests that must
+exist, and works the engineering roadmap (`TODO-engineering.md`) on demand. The main session
+remains the technical lead who builds and merges; the two advisors are separate voices.
 
 ## Why
 
