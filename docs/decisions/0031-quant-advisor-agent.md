@@ -1,4 +1,4 @@
-# 0031 — Two advisor agents: a quant hedge-fund expert and a lead engineer
+# 0031 — Project agents: quant advisor, lead engineer, technical lead
 
 **Date:** 2026-10-05 · **Status:** done
 
@@ -42,6 +42,17 @@ tools; writes only under `docs/proposals/`), now reviews every spec for data mod
 reads, pipeline placement, failure isolation, a simpler alternative and the tests that must
 exist, and works the engineering roadmap (`TODO-engineering.md`) on demand. The main session
 remains the technical lead who builds and merges; the two advisors are separate voices.
+
+## Added the same day: `technical-lead` (a builder, not an advisor)
+
+The owner asked for the technical lead to be an agent too. An agent cannot talk to the owner
+mid-task, so this one is scoped to what needs no conversation: given an **approved** spec, it
+writes the plan, builds test-first on a branch following the fixed workflow, runs the result on
+real data with an independent spot-check, writes the decision file and docs, and hands back a
+branch "ready for independent review". It never merges, pushes, deletes data, restarts the
+owner's site, or approves its own spec; with no approved spec it writes one and stops. The
+main session keeps the conversation, spec approval, the independent review and the merge, so
+the builder, the reviewer and the merger stay separate.
 
 ## Why
 

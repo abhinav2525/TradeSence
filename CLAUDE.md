@@ -45,6 +45,9 @@ or studying; data scope = what we hold) and `lead-engineer` (architecture, data 
 pipeline, simpler alternative), both in `.claude/agents/`. Record both verdicts in the spec.
 On demand they answer "what should we study next?" and "what's next on engineering / how
 should we build this?". Both write only under `docs/proposals/`, never code or data.
+A `technical-lead` agent builds an **approved** spec end-to-end on a branch (plan, TDD, real-data
+check, docs) and hands back for independent review; it never merges, pushes, deletes data or
+touches :3000. Spec approval, the review, the merge and talking to the owner stay in the main session.
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
