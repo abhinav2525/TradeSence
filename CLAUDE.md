@@ -48,6 +48,10 @@ should we build this?". Both write only under `docs/proposals/`, never code or d
 A `technical-lead` agent builds an **approved** spec end-to-end on a branch (plan, TDD, real-data
 check, docs) and hands back for independent review; it never merges, pushes, deletes data or
 touches :3000. Spec approval, the review, the merge and talking to the owner stay in the main session.
+Four read-only checkers: `nightly-doctor` (did last night run; morning report), `data-integrity-reviewer`
+(look-ahead, survivorship, adjustment, gaps; run on a branch before the code review and on every
+study), `plain-language-editor` (owner-facing copy before it ships), `test-auditor` (hollow tests,
+missing failing cases; run on a branch before review).
 
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.

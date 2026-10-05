@@ -1,4 +1,4 @@
-# 0031 — Project agents: quant advisor, lead engineer, technical lead
+# 0031 — Project agents: advisors, a builder, and four checkers
 
 **Date:** 2026-10-05 · **Status:** done
 
@@ -53,6 +53,19 @@ branch "ready for independent review". It never merges, pushes, deletes data, re
 owner's site, or approves its own spec; with no approved spec it writes one and stops. The
 main session keeps the conversation, spec approval, the independent review and the merge, so
 the builder, the reviewer and the merger stay separate.
+
+## Added the same day: four checkers (owner's pick from a suggested list)
+
+| Agent | Checks | Access |
+|---|---|---|
+| `nightly-doctor` | Did last night's job run, is today's data on the pages, audit 0 mismatches, backup fresh, database healthy, site answering; says what failed, why, whether it heals itself, and the one command to run | Read-only shell (log, scheduler, read-only psql), DB health tool; never runs or kills anything |
+| `data-integrity-reviewer` | The traps that make a correct-looking number wrong: look-ahead, survivorship, adjustment, gaps and renames, EQ/BE and ETFs, study design, day-of-data mismatches, exact float comparisons; spot-checks by independent SQL | Repo + read-only DB; no writes |
+| `plain-language-editor` | Everything the owner reads: jargon, predictive or causal overclaims, limits stated where the number is, stale hard-coded figures, consistent names; returns before→after rewrites | Repo only |
+| `test-auditor` | Hollow tests, missing failing cases, boundary floats, untested rules in CLIs and pages, isolation leaks (the `glossary-live` cleanup list), shared-maths coverage | Repo + `bun test` from the root only |
+
+Not built (suggested, deferred): `ui-reviewer` (a global `ui-consistency-enforcer` exists),
+`feed-watcher`. Ops items that assume this Mac (phone notifications, self-restart after
+reboot) are on hold: the owner is considering a separate always-on server.
 
 ## Why
 

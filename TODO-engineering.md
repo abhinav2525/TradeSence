@@ -10,7 +10,7 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
 | Thing | Now | Fine until |
 |---|---|---|
 | Database size | 1.6 GB (prices 884 MB, delivery 590 MB; +~250 MB/year) | ~50 GB on this disk |
-| Nightly run (all steps) | ~2 min; dominated by NSE downloads | 30 min (would run into the evening) |
+| Nightly run (all steps) | **not measured**: the log records no timings (add the `step()` helper) | 30 min (would run into the evening) |
 | Full price backfill | ~28 min, limited by NSE's servers | n/a (one-off) |
 | Research study (2.3M stock-days) | 75 s | 10 min |
 | Page reads (Money flow, breadth) | < 1 ms, by primary key | 50 ms |
@@ -19,8 +19,9 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
 
 ## 1. Speed
 
-- [ ] **One pass over the stock histories per night.** Money flow, breadth and Top volume each
-  load all ~2,400 histories separately (3 × ~15 s). Load once, hand the history to each
+- [ ] **One pass over the stock histories per night.** Unusual activity, breadth, Top volume and
+  Money flow each load the histories separately (4 passes, ~7,500 loads a night; lead engineer,
+  5 Oct: not yet worth tying them together). Load once, hand the history to each
   step. Saves ~30 s a night and a third of the memory. *Trigger:* any new step that loads
   histories again.
 - [ ] **Use every CPU core for the per-stock steps.** Bun runs them on one core; the Mac has
@@ -40,8 +41,8 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
   `sector_flow_weeks`, `breadth_daily` each have their own compute + CLI + nightly step +
   ANALYZE entry. Pull the shared shape (sessions, universe, histories, write, stats) into one
   small framework so a new derived table is ~50 lines, not ~150.
-- [ ] **Keys match reads everywhere.** Done for the Money flow and breadth tables (0029,
-  0030). Audit the older ones (`daily_indicators`, `unusual_days`) the same way.
+- [x] **Keys match reads everywhere.** Money flow and breadth tables (0029, 0030); the lead
+  engineer confirmed `daily_indicators` and `unusual_days` already have the right indexes (5 Oct).
 - [ ] **Universe and membership in one place.** Point-in-time NIFTY 50 (`index_members`),
   today's index lists (`index_constituents`), liquid companies (`liquidFlags`),
   ETFs (`fund_symbols`) are four different mechanisms. Document the map; consider one
@@ -51,6 +52,13 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
 
 ## 3. System design and operations
 
+> **On hold (owner, 5 Oct 2026):** the owner is considering a **separate always-on server** for
+> the nightly job and the site. Items that assume this Mac (phone notifications from here, the
+> site restarting itself after a reboot, a local deploy command) wait for that decision; the
+> lead engineer's proposal (`docs/proposals/2026-10-05-engineering-next.md`) stays valid either
+> way, and the `step()` timing/isolation helper in the nightly job is worth doing regardless.
+> Still true: three early nightly steps are unprotected (a crash there skips the backup).
+
 - [ ] **Nightly warnings reach a human.** Today they only go to a log file. Telegram or
   email (owner's pick pending). Highest-value ops item.
 - [ ] **Site restarts itself after a reboot** (a launchd agent for `bun run start`, like the
@@ -59,8 +67,8 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
   without the manual kill/start dance.
 - [ ] **Health check:** a tiny `/health` page (last session loaded, last nightly exit code,
   last backup time) and a once-a-day check that it answers.
-- [ ] **Backup restore drill**, once: restore a dump into `tradesence_restore` and run the
-  audit against it. A backup nobody has restored is a hope.
+- [ ] **Backup restore drill**, half done: a restore on 4 Oct matched every table's row count;
+  still to do: run the Report Card audit against the restored copy.
 - [ ] **Database rules as hooks, not promises:** block `DELETE`/`TRUNCATE`/`DROP` against
   the production database from Claude's shell, and edits to `ops/backup.sh` / `.env`.
 - [ ] **Postgres upkeep:** nightly ANALYZE is done (0029). Review autovacuum settings for
