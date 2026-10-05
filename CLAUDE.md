@@ -137,7 +137,8 @@ transiently. The MCP refuses EXPLAIN ANALYZE; time queries with
 
 `ingest:nightly` re-runs a trailing window (`NIGHTLY_LOOKBACK_DAYS`, default 7), not just
 today, so a missed night heals on the next run. It runs from a launchd agent
-(`ops/install-nightly.sh`, Mon–Fri 19:30, log in `~/Library/Logs/tradesence-nightly.log`).
+(`ops/install-nightly.sh`, Mon–Fri 19:30 with a 20:15 retry slot, log in
+`~/Library/Logs/tradesence-nightly.log`; each failed day logs its reason, [0033](docs/decisions/0033-nightly-retry-and-error-reasons.md)).
 `TODO.md` is the main list: only what the owner has picked, in priority order. The advisors keep
 their own: `TODO-research.md` (quant advisor) and `TODO-engineering.md` (lead engineer, with
 measured baselines and triggers). A picked item moves to `TODO.md`; the advisor's list keeps a

@@ -25,7 +25,7 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
 
 **The nightly job** (`bun run ingest:nightly`) runs pipelines 1 → 9 → 10 → 2 → 3 → 5's check
-→ 4 → 13 → 12 → 14 → 6 → 11, every weekday at **19:30 IST**, from a launchd agent on the Mac
+→ 4 → 13 → 12 → 14 → 6 → 11, every weekday at **19:30 (and a 20:15 retry, decision 0033) IST**, from a launchd agent on the Mac
 ([decision 0001](decisions/0001-nightly-schedule-launchd.md)). Every step is safe to
 re-run, and a failure in one step is logged without stopping the others.
 

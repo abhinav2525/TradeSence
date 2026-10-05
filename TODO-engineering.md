@@ -61,8 +61,7 @@ Owner's ask (5 Oct 2026): "fast, best architecture, system design, language effi
 > lead engineer's proposal (`docs/proposals/2026-10-05-engineering-next.md`) stays valid either
 > way, and the `step()` timing/isolation helper in the nightly job is worth doing regardless.
 > Still true: three early nightly steps are unprotected (a crash there skips the backup).
-> Also (5 Oct, 19:30 run): the log said `"error":3` but not *why*; the per-day failure reason must be
-> logged (it was NSE still publishing; a manual re-run at 20:58 fetched the day). Part of the `step()` item.
+> Done 5 Oct (0033): each failed day logs its reason; a 20:15 retry slot re-fetches late files.
 
 - [ ] **Nightly warnings reach a human.** Today they only go to a log file. Telegram or
   email (owner's pick pending). Highest-value ops item.

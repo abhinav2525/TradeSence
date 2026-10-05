@@ -6,6 +6,7 @@
  * idempotent, so running it twice costs nothing.
  */
 import { backfill } from "./backfill";
+import { ingestWarning } from "./nightly-lines";
 import { ingestIndexDays } from "./index-prices";
 import { ingestDeliveryDays } from "./delivery";
 import { auditWarnings } from "../audit/nightly";
@@ -31,7 +32,10 @@ start.setUTCDate(start.getUTCDate() - LOOKBACK_DAYS);
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
-const tally = await backfill(iso(start), iso(end), { delayMs: 700 });
+const tally = await backfill(iso(start), iso(end), {
+  delayMs: 700,
+  onProgress: (p) => { const w = ingestWarning(p); if (w) console.warn(w); },
+});
 console.log(`[nightly] ingest:`, JSON.stringify(tally));
 
 // Index closes for the same days (only days the price step confirmed as trading).

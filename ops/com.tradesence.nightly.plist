@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Nightly ingest, Mon-Fri at 19:30 local time (IST), once NSE has published.
-  launchd, not cron: a run missed while the Mac sleeps fires on wake, and the
-  7-day lookback in ingest:nightly heals any night missed while it was off.
+  Nightly ingest, Mon-Fri at 19:30 local time (IST), once NSE has published,
+  with a second run at 20:15: on 5 Oct 2026 NSE was still publishing at 19:30
+  and the day ended as `error`; the job is idempotent, so the retry re-fetches
+  only what failed (decision 0033). launchd, not cron: a run missed while the
+  Mac sleeps fires on wake, and the 7-day lookback heals any night it was off.
   Install with ops/install-nightly.sh; the paths below are rewritten there.
 -->
 <plist version="1.0">
@@ -29,6 +31,11 @@
     <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
     <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
     <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>19</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>20</integer><key>Minute</key><integer>15</integer></dict>
   </array>
 
   <key>StandardOutPath</key>
