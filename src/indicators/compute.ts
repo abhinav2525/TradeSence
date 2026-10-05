@@ -1,10 +1,11 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { segmentByGaps } from "./gaps";
 import { volumeRatios } from "./volume";
 import { findUnexplainedJumps, type UnexplainedJump } from "./adjust";
 import { loadAdjustedHistory, loadRenames } from "./history";
 import { adjustedAverages } from "./averages";
+import { INDICES } from "../ingest/indices";
 
 export { segmentByGaps } from "./gaps";
 
@@ -31,16 +32,21 @@ const CHUNK = 1000;
  * all written under today's symbol. See docs/decisions/0003.
  *
  * Loading and adjustment live in history.ts, shared with the research scripts.
+ *
+ * Indices: by default every registered index (`ingest/indices.ts`: the NIFTY 50
+ * and Nifty Bank), members past and present, each stock once however many
+ * indices list it. A stock's numbers depend only on its own prices, so adding an
+ * index never changes another index's rows (decision 0034).
  */
 export async function computeIndicators(
-  indexName = "NIFTY50",
+  indexNames: string | readonly string[] = INDICES.map((x) => x.members),
   opts: { onUnexplainedJump?: (j: UnexplainedJump & { symbol: string }) => void } = {},
 ): Promise<number> {
+  const names = typeof indexNames === "string" ? [indexNames] : [...indexNames];
   const symbols = (
-    await db.execute<{ symbol: string }>(
-      sql`select distinct symbol from index_members where index_name = ${indexName}`,
-    )
-  ).map((r) => r.symbol);
+    await db.selectDistinct({ symbol: schema.indexMembers.symbol }).from(schema.indexMembers)
+      .where(inArray(schema.indexMembers.indexName, names))
+  ).map((r) => r.symbol).sort();
 
   const renames = await loadRenames();
 

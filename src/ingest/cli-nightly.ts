@@ -20,8 +20,7 @@ import { ingestIndexLists } from "./index-constituents";
 import { computeIndicators } from "../indicators/compute";
 import { ingestCorporateActions } from "./corporate-actions";
 import { ingestSymbolChanges } from "./symbol-changes";
-import { fetchNifty50Symbols } from "./nifty50";
-import { membershipDrift, readMembershipHistory } from "./nifty50-history";
+import { membershipWarnings } from "./membership-checks";
 import { sql } from "../db";
 
 const LOOKBACK_DAYS = Number(process.env.NIGHTLY_LOOKBACK_DAYS ?? 7);
@@ -69,21 +68,6 @@ if (renames.status === "error") {
   console.warn(`[nightly] WARNING symbol changes not updated: ${renames.message}`);
 }
 
-// NSE changes the index twice a year. The membership file is maintained by
-// hand, so say loudly when NSE's live list no longer matches it.
-try {
-  const drift = membershipDrift(readMembershipHistory(), await fetchNifty50Symbols(), iso(end));
-  if (drift.added.length || drift.removed.length) {
-    console.warn(
-      `[nightly] WARNING NIFTY 50 changed: NSE added ${drift.added.join(", ") || "none"}, ` +
-        `removed ${drift.removed.join(", ") || "none"}. Update src/ingest/nifty50-history.csv ` +
-        `(see docs/decisions/0005) and run bun run ingest:nifty50.`,
-    );
-  }
-} catch (e) {
-  console.warn(`[nightly] WARNING could not check NIFTY 50 membership: ${e instanceof Error ? e.message : e}`);
-}
-
 const unparsed = await sql`
   select symbol, ex_date::text, subject from corporate_actions
   where kind = 'unparsed' and ex_date >= ${iso(caFrom)}`;
@@ -91,15 +75,22 @@ for (const u of unparsed) {
   console.warn(`[nightly] WARNING unreadable corporate action ${u.symbol} ${u.ex_date}: ${u.subject}`);
 }
 
-// A >30% overnight move with no action behind it means a split we do not know about.
-const rows = await computeIndicators("NIFTY50", {
-  onUnexplainedJump: (j) => {
-    if (j.date >= iso(caFrom)) {
-      console.warn(`[nightly] WARNING ${j.symbol} moved ${j.from} -> ${j.to} on ${j.date} with no corporate action`);
-    }
-  },
-});
-console.log(`[nightly] indicators: ${rows} rows`);
+// Averages and daily moves for every member of every registered index (NIFTY 50,
+// Nifty Bank; decision 0034), each stock once. A >30% overnight move with no
+// action behind it means a split we do not know about. A failure here must not
+// skip the later steps or the backup.
+try {
+  const rows = await computeIndicators(undefined, {
+    onUnexplainedJump: (j) => {
+      if (j.date >= iso(caFrom)) {
+        console.warn(`[nightly] WARNING ${j.symbol} moved ${j.from} -> ${j.to} on ${j.date} with no corporate action`);
+      }
+    },
+  });
+  console.log(`[nightly] indicators: ${rows} rows`);
+} catch (e) {
+  console.warn(`[nightly] WARNING indicators not recomputed: ${e instanceof Error ? e.message : e}`);
+}
 
 // Today's NSE index members (Top volume page). Failed lists keep yesterday's members.
 try {
@@ -109,6 +100,15 @@ try {
   for (const p of lists.sizeProblems) console.warn(`[nightly] WARNING size group: ${p}`);
 } catch (e) {
   console.warn(`[nightly] WARNING index lists not refreshed: ${e instanceof Error ? e.message : e}`);
+}
+
+// NSE changes its indices twice a year; the membership files are kept by hand.
+// Say loudly when NSE's list (just downloaded above) no longer matches a file, or
+// when a file was edited but not loaded (decision 0034). Never reloads anything.
+try {
+  for (const w of await membershipWarnings(new Date().toISOString().slice(0, 10))) console.warn(`[nightly] WARNING ${w}`);
+} catch (e) {
+  console.warn(`[nightly] WARNING could not check index membership: ${e instanceof Error ? e.message : e}`);
 }
 
 // New ETFs first, so a fund listed today can't show up as an unusual company.

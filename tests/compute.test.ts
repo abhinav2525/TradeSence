@@ -406,3 +406,38 @@ describe("computeIndicators: turnover", () => {
     expect(got).toEqual([1e9, 1e9 + 1, 1e9 + 2, 1e9 + 3]);
   });
 });
+
+// Decision 0034: one pass over every registered index's members, shared stocks once.
+describe("computeIndicators over every registered index", () => {
+  beforeEach(async () => {
+    await db.delete(schema.dailyIndicators);
+    await db.delete(schema.dailyPrices);
+    await db.delete(schema.indexMembers);
+  });
+
+  test("a stock in both the NIFTY 50 and Nifty Bank is computed once; a Bank-only stock is computed too", async () => {
+    await db.insert(schema.dailyPrices).values([...synthetic("SHARED", 260), ...synthetic("BANKONLY", 260)]);
+    await db.insert(schema.indexMembers).values([
+      { indexName: "NIFTY50", symbol: "SHARED", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTYBANK", symbol: "SHARED", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTYBANK", symbol: "BANKONLY", addedOn: "2020-01-01", removedOn: "2020-06-01" },
+    ]);
+    const written = await computeIndicators();
+    expect(written).toBe(520);
+    const out = await db.select().from(schema.dailyIndicators);
+    expect(out.filter((r) => r.symbol === "SHARED")).toHaveLength(260);
+    expect(out.filter((r) => r.symbol === "BANKONLY")).toHaveLength(260);
+  }, 30000);
+
+  test("a stock's numbers are the same whichever index lists it", async () => {
+    await db.insert(schema.dailyPrices).values(synthetic("SHARED", 260));
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "SHARED", addedOn: "2020-01-01", removedOn: null });
+    await computeIndicators("NIFTY50");
+    const alone = await db.select().from(schema.dailyIndicators);
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTYBANK", symbol: "SHARED", addedOn: "2020-01-01", removedOn: null });
+    await computeIndicators();
+    const both = await db.select().from(schema.dailyIndicators);
+    const key = (r: { tradeDate: string }) => r.tradeDate;
+    expect([...both].sort((a, b) => key(a).localeCompare(key(b)))).toEqual([...alone].sort((a, b) => key(a).localeCompare(key(b))));
+  }, 30000);
+});
