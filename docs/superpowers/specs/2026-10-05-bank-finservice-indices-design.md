@@ -1,6 +1,6 @@
 # Bank Nifty and Nifty Financial Services, with true history — design
 
-**Date:** 2026-10-05 · **Status:** reviewed by quant-advisor (proceed with 3 changes) and lead-engineer (proceed with changes), both folded in below; awaiting owner approval · **Path:** architectural (new membership data, wider nightly compute, an index selector on six pages)
+**Date:** 2026-10-05 · **Status:** reviewed by quant-advisor (proceed with 3 changes) and lead-engineer (proceed with changes), both folded in below; **approved by the owner 2026-10-05** (step A then B; reload-from-file is a standing rule with guards; NIFTY 50 stays the Report Card's market line; keyboard shortcuts do NOT keep the chosen index: they open the default NIFTY 50 view) · **Path:** architectural (new membership data, wider nightly compute, an index selector on six pages)
 
 ## Intent (agreed)
 
@@ -48,8 +48,9 @@ not from `breadth_daily`'s today's-list rows; the Breadth selector routes "bank"
 
 ## The pages
 
-One `index` parameter (`nifty50` default, `bank`, `finservice`), checked by a strict
-`cleanIndex` like `isMaKind`, carried by every link, hotkey and date step on the page, and
+One parameter, `u` (`nifty50` default, `bank`, `financial-services`), checked by one shared
+strict function, carried by every link and date step on the page (not by the cross-page
+keyboard shortcuts: owner's choice, they open the NIFTY 50 view), and
 rendered as a segmented control beside the average tabs (same component on every page).
 
 | Page | What changes | Data path |
