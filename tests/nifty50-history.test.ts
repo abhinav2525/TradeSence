@@ -63,7 +63,7 @@ describe("validateMembershipHistory", () => {
   test("reports any day the count is not 50", () => {
     const rows = fifty("S");
     rows[0] = r("S0", "2020-01-01", "2021-06-30"); // removed, nobody added
-    expect(validateMembershipHistory(rows, 50)).toEqual(["2021-06-30: 49 members"]);
+    expect(validateMembershipHistory(rows, 50)).toEqual(["2021-06-30: 49 members, expected 50"]);
   });
 
   test("reports a stock listed twice at the same time", () => {

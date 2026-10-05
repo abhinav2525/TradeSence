@@ -1,21 +1,20 @@
 /**
- * Point-in-time NIFTY 50 membership since 2020, from a small hand-checked file.
+ * Point-in-time index membership since 2020, from small hand-checked files.
  *
- * The file (`nifty50-history.csv`, next to this module) is the source of truth:
- * one row per period a stock was in the index, each traced to an NSE Indices
- * press release. NSE publishes no machine-readable history, and the changes are
- * few (12 events since 2020), so a reviewed file beats a scraper. See
- * docs/decisions/0005-point-in-time-membership.md.
+ * Each registered index (`indices.ts`: the NIFTY 50, Nifty Bank) has a file next
+ * to this module that is the source of truth: one row per period a stock was in
+ * the index, each traced to an NSE Indices press release. NSE publishes no
+ * machine-readable history, and the changes are few, so a reviewed file beats a
+ * scraper. See docs/decisions/0005-point-in-time-membership.md and 0034.
  */
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
-import { INDEX_NAME } from "./nifty50";
+import { NIFTY50, sizeOn, type IndexEntry, type SizeStep } from "./indices";
 
 /** Breadth before this date is not shown: membership is only known from here. */
 export const HISTORY_START = "2020-01-01";
 
-const HISTORY_FILE = new URL("./nifty50-history.csv", import.meta.url);
 const HEADER = "symbol,added_on,removed_on,listed_as,source";
 
 export type MembershipRow = {
@@ -26,10 +25,10 @@ export type MembershipRow = {
   source: string;
 };
 
-function isoDate(raw: string, line: string): string {
+function isoDate(raw: string, line: string, label: string): string {
   const d = new Date(`${raw}T00:00:00Z`);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== raw) {
-    throw new Error(`Bad date "${raw}" in NIFTY 50 history: ${line}`);
+    throw new Error(`Bad date "${raw}" in ${label} history: ${line}`);
   }
   return raw;
 }
@@ -38,25 +37,26 @@ function isoDate(raw: string, line: string): string {
  * Parses the history file. Throws on anything doubtful rather than skipping
  * it: a silently dropped row would make the index 49 stocks for years.
  */
-export function parseMembershipHistory(text: string): MembershipRow[] {
+export function parseMembershipHistory(text: string, label: string = NIFTY50.label): MembershipRow[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "" && !l.startsWith("#"));
   if (lines[0]?.trim() !== HEADER) {
-    throw new Error(`NIFTY 50 history must start with the header "${HEADER}", got: ${lines[0]}`);
+    throw new Error(`${label} history must start with the header "${HEADER}", got: ${lines[0]}`);
   }
   return lines.slice(1).map((line) => {
     const [symbol = "", added = "", removed = "", listedAs = "", ...source] = line.split(",").map((f) => f.trim());
-    if (!symbol) throw new Error(`Missing symbol in NIFTY 50 history: ${line}`);
-    const addedOn = isoDate(added, line);
-    const removedOn = removed ? isoDate(removed, line) : null;
+    if (!symbol) throw new Error(`Missing symbol in ${label} history: ${line}`);
+    const addedOn = isoDate(added, line, label);
+    const removedOn = removed ? isoDate(removed, line, label) : null;
     if (removedOn && removedOn <= addedOn) {
-      throw new Error(`removed_on must be after added_on in NIFTY 50 history: ${line}`);
+      throw new Error(`removed_on must be after added_on in ${label} history: ${line}`);
     }
     return { symbol, addedOn, removedOn, listedAs: listedAs || null, source: source.join(",") };
   });
 }
 
-export function readMembershipHistory(): MembershipRow[] {
-  return parseMembershipHistory(readFileSync(HISTORY_FILE, "utf8"));
+/** An index's committed file (the NIFTY 50's by default). */
+export function readMembershipHistory(entry: IndexEntry = NIFTY50): MembershipRow[] {
+  return parseMembershipHistory(readFileSync(entry.file, "utf8"), entry.label);
 }
 
 /** Members on a date: added on or before it, and not yet removed. */
@@ -86,9 +86,12 @@ export function membershipDrift(
 /**
  * Everything wrong with a history, as readable lines. Membership only changes
  * on a row's added or removed date, so checking the count on each of those
- * days checks every day.
+ * days, and on each day the expected size changes, checks every day. `size` is
+ * a fixed count or a dated schedule (`IndexEntry.sizes`); a fixed count applies
+ * from HISTORY_START.
  */
-export function validateMembershipHistory(rows: MembershipRow[], size: number): string[] {
+export function validateMembershipHistory(rows: MembershipRow[], size: number | readonly SizeStep[]): string[] {
+  const sizes = typeof size === "number" ? [{ from: HISTORY_START, n: size }] : size;
   const problems: string[] = [];
 
   const bySymbol = new Map<string, MembershipRow[]>();
@@ -103,31 +106,56 @@ export function validateMembershipHistory(rows: MembershipRow[], size: number): 
     }
   }
 
-  const days = [...new Set(rows.flatMap((r) => [r.addedOn, r.removedOn ?? []].flat()))].sort();
+  const start = sizes[0]?.from ?? HISTORY_START;
+  const days = [...new Set([
+    ...rows.flatMap((r) => [r.addedOn, r.removedOn ?? []].flat()),
+    ...sizes.map((s) => s.from),
+  ])].filter((d) => d >= start).sort();
   for (const day of days) {
     const n = membersOn(rows, day).length;
-    if (n !== size) problems.push(`${day}: ${n} members`);
+    const want = sizeOn(sizes, day);
+    if (n !== want) problems.push(`${day}: ${n} members, expected ${want}`);
   }
   return problems;
 }
 
 /**
- * Replaces NIFTY 50 membership with the history file, in one transaction so
- * the dashboard never sees a half-empty index. Refuses a history that isn't
- * exactly 50 members on every day.
+ * Replaces one index's membership with its file, in one transaction so the
+ * dashboard never sees a half-empty index. The entry binds the file, the stored
+ * name and the expected sizes, so a file can only ever load under its own name;
+ * other indices' rows are never touched. Refuses (storing nothing) a history
+ * that breaks the size schedule on any day, and a reload that would store fewer
+ * rows than are there now unless `force` (history only grows; a shorter file is
+ * far more likely a slip than a correction). Manual only: never run nightly.
  */
-export async function loadNifty50History(text?: string): Promise<number> {
-  const rows = text === undefined ? readMembershipHistory() : parseMembershipHistory(text);
-  const problems = validateMembershipHistory(rows, 50);
+export async function loadMembership(
+  entry: IndexEntry,
+  opts: { text?: string; force?: boolean } = {},
+): Promise<number> {
+  const rows = opts.text === undefined ? readMembershipHistory(entry) : parseMembershipHistory(opts.text, entry.label);
+  const problems = validateMembershipHistory(rows, entry.sizes);
   if (problems.length > 0) {
-    throw new Error(`NIFTY 50 history is not 50 members throughout: ${problems.slice(0, 5).join("; ")}`);
+    throw new Error(`${entry.label} history breaks its member counts: ${problems.slice(0, 5).join("; ")}`);
   }
 
   await db.transaction(async (tx) => {
-    await tx.delete(schema.indexMembers).where(eq(schema.indexMembers.indexName, INDEX_NAME));
+    const stored = (await tx.select({ s: schema.indexMembers.symbol }).from(schema.indexMembers)
+      .where(eq(schema.indexMembers.indexName, entry.members))).length;
+    if (rows.length < stored && !opts.force) {
+      throw new Error(
+        `${entry.label}: the file has ${rows.length} periods but ${stored} are stored; ` +
+          `refusing to store fewer without --force`,
+      );
+    }
+    await tx.delete(schema.indexMembers).where(eq(schema.indexMembers.indexName, entry.members));
     await tx.insert(schema.indexMembers).values(
-      rows.map((r) => ({ indexName: INDEX_NAME, symbol: r.symbol, addedOn: r.addedOn, removedOn: r.removedOn })),
+      rows.map((r) => ({ indexName: entry.members, symbol: r.symbol, addedOn: r.addedOn, removedOn: r.removedOn })),
     );
   });
   return rows.length;
+}
+
+/** The NIFTY 50's file (kept for existing callers and tests). */
+export async function loadNifty50History(text?: string): Promise<number> {
+  return loadMembership(NIFTY50, { text });
 }
