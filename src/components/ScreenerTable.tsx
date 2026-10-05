@@ -55,9 +55,9 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
               <TableHead className={cn(head, "text-right")}>{view === "near" ? "Gap now" : view === "above" ? "Above by" : "Below by"}</TableHead>
               <TableHead className={cn(head, "text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
               <TableHead className={cn(head, "hidden text-right md:table-cell")}>
-                {view === "near" ? "5 sessions ago" : `${side} for`}
+                {view === "near" ? "Gap 5 sessions ago" : `Was ${side.toLowerCase()} for`}
               </TableHead>
-              <TableHead className={cn(head, "hidden pr-card-x md:table-cell")} title={GLOSSARY.whipsaw.short}>Past crossings</TableHead>
+              <TableHead className={cn(head, "hidden pr-card-x md:table-cell")} title={GLOSSARY.whipsaw.short}>Crossings since 2020</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

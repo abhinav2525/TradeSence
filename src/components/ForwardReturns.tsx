@@ -54,12 +54,12 @@ export default function ForwardReturns({ ma, cond, horizons, episodes, buckets, 
             <table className="w-full text-body-sm tabular-nums">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className={cn(head, "pl-4 text-left")}>Horizon</th>
-                  <th className={head}>Median</th>
-                  <th className={head}>Higher</th>
+                  <th className={cn(head, "pl-4 text-left")}>Months after</th>
+                  <th className={head}>Median change</th>
+                  <th className={head}>Ended higher</th>
                   <th className={head}>Best</th>
                   <th className={head}>Worst</th>
-                  <th className={cn(head, "pr-4")}>Any day</th>
+                  <th className={cn(head, "pr-4")}>Ordinary day</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

@@ -79,7 +79,7 @@ export function checksOf(r: StockReport): Check[] {
     k.episodes.length < THRESHOLDS.crashMinEpisodes || k.medianStock === null || k.medianNifty === null
       ? `${k.episodes.length === 0 ? "No completed market crash in its history yet" : `Only ${k.episodes.length} completed market ${k.episodes.length === 1 ? "crash" : "crashes"} in its history`}: not enough to judge.${ongoingNote}`
       : `In ${k.episodes.length} crashes since ${k.episodes[0]!.start.slice(0, 4)} it fell a median ${abs0(k.medianStock)}% from its high before each one (NIFTY ${abs0(k.medianNifty)}%)${
-          k.backOf ? ` and was back 6 months later in ${k.backCount} of ${k.backOf}` : ""
+          k.backOf ? ` and was above its start-of-crash price 6 months later in ${k.backCount} of ${k.backOf}` : ""
         }.${ongoingNote}`;
 
   return [

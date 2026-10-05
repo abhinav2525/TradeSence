@@ -115,7 +115,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   breadth: {
     id: "breadth", term: "Breadth (% above the average)", topic: "Breadth",
     short: "The share of NIFTY 50 stocks closing above their own moving average. It shows how many companies are in uptrends, not just where the index is.",
-    read: "Under 20%: very weak, most stocks falling. Over 80%: very strong. 50% is the halfway line.",
+    read: "Under 20%: most stocks closed below their average. Over 80%: most closed above it. 50% is the halfway line.",
     what: "The index can rise on a few heavyweights while most stocks fall. Breadth counts every member equally, so it shows whether a move is broad or narrow.",
     calc: { plain: "Count the members whose close is above their average, divide by the members that have an average, and multiply by 100.", exact: "breadth = members with close > average ÷ members with an average × 100" },
     example: "If 8 of 50 stocks are above their 200-day SMA, breadth is 16%.",
@@ -129,7 +129,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   percentile: {
     id: "percentile", term: "Percentile", topic: "Breadth",
     short: "Where today's reading ranks among every session since 2020: the 3rd percentile means only 3% of sessions were this low or lower.",
-    read: "Below 10: a rare low. Above 90: a rare high. Around 50: ordinary.",
+    read: "Below 10: among the lowest 10% of days since 2020. Above 90: among the highest 10%. Around 50: a middling day.",
     what: "A number like \"30% of stocks above their average\" means little on its own. The percentile says how unusual it is against the app's whole history.",
     calc: { plain: "Count the sessions with a reading at or below today's, divide by all sessions, and multiply by 100." },
     example: "If 167 of 1,670 sessions closed at or below today's breadth, today is at the 10th percentile.",
@@ -559,7 +559,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "right-now", term: "Right now (expected range)", topic: "Risk",
     short: "How jumpy the stock has been lately compared with its usual year, and the range a normal week moves in. Recent days count more than older ones.",
     read: "Green: as calm as usual or calmer. Amber: up to 1.5× jumpier. Red: more than 1.5× jumpier than its usual year.",
-    what: "Calm and wild spells come in runs: after a few big days, more big days are likely. This light compares the stock's recent swings with its last year and turns them into a range for a normal week. The card also says how often, over the last 2 years, a real week stayed inside the range the method gave at the start of that week, so you can see whether it fits this stock.",
+    what: "Calm and wild spells come in runs: after a few big days, the next days have tended to be big too. This light compares the stock's recent swings with its last year and turns them into a range for a normal week. The card also says how often, over the last 2 years, a real week stayed inside the range the method gave at the start of that week, so you can see whether it fits this stock.",
     calc: {
       plain: "Each day's move is squared and blended into a running average in which yesterday's estimate keeps 94% of the weight (J.P. Morgan's RiskMetrics, 1996). Its square root is today's typical daily move; times √5 gives a week.",
       exact: "σ²(today) = 0.94 × σ²(yesterday) + 0.06 × move²\nweek = σ × √5\nlight = σ ÷ std. dev. of the last 250 moves",

@@ -35,8 +35,8 @@ export default function BreadthHero({
   const max = Math.max(...bins.map((b) => b.count), 1);
   const rarity = rarityNote ?? (
     percentile <= 50
-      ? `Only ${percentile.toFixed(1)}% of sessions closed this weak or weaker.`
-      : `Only ${(100 - percentile).toFixed(1)}% of sessions closed this strong or stronger.`);
+      ? `The share above the average was this low or lower on only ${percentile.toFixed(1)}% of days.`
+      : `The share above the average was this high or higher on only ${(100 - percentile).toFixed(1)}% of days.`);
 
   return (
     <Card className={cn("flex flex-col gap-6 px-card-x py-card sm:comfortable:p-6 md:flex-row", className)}>
@@ -106,7 +106,7 @@ export default function BreadthHero({
                   i < 4 ? "left-0" : i > 15 ? "right-0" : "left-1/2 -translate-x-1/2",
                 )}
               >
-                {b.from}–{b.to}%: {formatInt(b.count)} sessions
+                On {formatInt(b.count)} sessions, {b.from}–{b.to}% were above the average
               </span>
             </div>
           ))}

@@ -8,7 +8,7 @@ import {
   WASHOUT_LINE, type Condition, type Episode, type HorizonSummary, type Status, type Washout,
 } from "../indicators/signals";
 
-export const STATUS_LABEL: Record<Status, string> = { active: "Active", watching: "Watching", quiet: "Quiet" };
+export const STATUS_LABEL: Record<Status, string> = { active: "Under 20% now", watching: "Close to 20%", quiet: "Well above 20%" };
 
 /** "+14.1%", "−6.1%", "—". */
 export function pctText(v: number | null): string {
@@ -36,8 +36,8 @@ export function washoutSentence(w: Washout): string {
 }
 
 export function firedLine(w: Washout, first: string): string {
-  if (w.fired === 0) return `Hasn't fired since ${formatDate(first)}`;
-  const head = `Fired ${times(w.fired)} since ${first.slice(0, 4)}`;
+  if (w.fired === 0) return `No washout since ${formatDate(first)}`;
+  const head = `${w.fired} ${w.fired === 1 ? "washout" : "washouts"} since ${first.slice(0, 4)}`;
   return w.status === "active"
     ? `${head} · this one began ${formatDate(w.since)}`
     : `${head} · last began ${formatDate(w.lastStart)}`;
@@ -63,7 +63,7 @@ export function readingSentence(cond: Condition, hs: HorizonSummary[], episodes:
   let lead = "";
   if (six.n > 0) {
     lead = six.higher === six.n
-      ? "Every washout with six months behind it was higher six months on"
+      ? `All ${six.n} washouts with six months behind them had the index higher six months after they began`
       : `${six.higher} of ${six.n} washouts were higher six months on`;
     lead += beat ? ", and the median beat an ordinary day at every horizon. " : ". ";
   } else if (beat) {

@@ -116,10 +116,10 @@ export default async function Page({
           value: percentile.toFixed(1),
           badge:
             percentile <= 10
-              ? { text: "Rare low", tone: "down" }
+              ? { text: "Lowest 10% of days", tone: "down" }
               : percentile >= 90
-                ? { text: "Rare high", tone: "up" }
-                : { text: "Ordinary", tone: "neutral" },
+                ? { text: "Highest 10% of days", tone: "up" }
+                : { text: "Middle of the range", tone: "neutral" },
           fill: percentile / 100,
           fillTone: percentile <= 20 ? "down" : percentile >= 80 ? "up" : "neutral",
           sub:
@@ -136,16 +136,16 @@ export default async function Page({
           sub:
             delta === null
               ? "Not enough history yet"
-              : `${delta > 0 ? "Improving" : delta < 0 ? "Deteriorating" : "Flat"} since ${formatDate(prior!.date)}`,
+              : `From ${prior!.pctAbove.toFixed(0)}% on ${formatDate(prior!.date)}, 5 sessions earlier`,
         },
         {
-          label: `Average since ${since}`,
+          label: `Typical day since ${since}`,
           today: null,
           term: "breadth",
           value: average.toFixed(0),
           unit: "%",
           fill: average / 100,
-          sub: `Today is ${signed(point.pctAbove - average)} pts from it`,
+          sub: `Today is ${Math.abs(Math.round(point.pctAbove - average))} percentage points ${point.pctAbove >= average ? "above" : "below"} the average day`,
         },
         {
           label: "One-year range",
@@ -241,7 +241,7 @@ export default async function Page({
           <Card className="lg:col-span-12">
             <BreadthArea data={chart} selectedDate={view.date} />
             <CardFooter>
-              Under the halfway line, most of the index sits below its own long-term average. The
+              Under the halfway line, most of the index closed below its own {label}. The
               shaded bands mark the extremes: under 20% and over 80%.
             </CardFooter>
           </Card>

@@ -42,7 +42,7 @@ export default async function CrossingsPage({
       <PageHeader
         eyebrow="NIFTY 50 · Whipsaw"
         title="Crossings"
-        description="How often each stock crosses its average. Whipsaw, not strength: a name that crosses every few weeks produces signals worth distrusting; one that crosses twice a decade means something when it does."
+        description="How often each stock has crossed its average since 2020. Whipsaw means flipping back and forth: a stock with many crossings has changed sides often; one with few has stayed on one side for long stretches."
         actions={<MaTabs base="/crossings" ma={ma} />}
       />
 
@@ -59,7 +59,7 @@ export default async function CrossingsPage({
               fill: 1,
               fillTone: "down",
               sub: busiest.avgDaysPerRun
-                ? `Crosses once every ${busiest.avgDaysPerRun.toFixed(0)}d`
+                ? `Changes side about every ${busiest.avgDaysPerRun.toFixed(0)} sessions`
                 : "Crossings since 2020",
             },
             {

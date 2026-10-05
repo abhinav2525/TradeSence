@@ -28,7 +28,7 @@ export default function CrashTable({ crashes, className }: { crashes: StockRepor
                 <th className="px-card-x h-row-head font-medium">Crash began</th>
                 <th className="px-3 h-row-head text-right font-medium">Its fall during the crash</th>
                 <th className="px-3 h-row-head text-right font-medium">NIFTY 50&apos;s fall</th>
-                <th className="px-card-x h-row-head text-right font-medium">Back in 6 months</th>
+                <th className="px-card-x h-row-head text-right font-medium">Above start-of-crash price 6 months on</th>
               </tr>
             </thead>
             <tbody className="divide-y">

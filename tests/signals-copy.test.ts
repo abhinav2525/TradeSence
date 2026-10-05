@@ -29,9 +29,9 @@ describe("washoutSentence", () => {
 
 describe("firedLine", () => {
   test("active, past and never", () => {
-    expect(firedLine(w({}), "2020-01-01")).toBe("Fired 6 times since 2020 · this one began 1 Oct 2026");
-    expect(firedLine(w({ status: "quiet", since: null, lastStart: "2025-04-07", fired: 1 }), "2020-01-01")).toBe("Fired once since 2020 · last began 7 Apr 2025");
-    expect(firedLine(w({ status: "quiet", since: null, lastStart: null, fired: 0 }), "2020-01-01")).toBe("Hasn't fired since 1 Jan 2020");
+    expect(firedLine(w({}), "2020-01-01")).toBe("6 washouts since 2020 · this one began 1 Oct 2026");
+    expect(firedLine(w({ status: "quiet", since: null, lastStart: "2025-04-07", fired: 1 }), "2020-01-01")).toBe("1 washout since 2020 · last began 7 Apr 2025");
+    expect(firedLine(w({ status: "quiet", since: null, lastStart: null, fired: 0 }), "2020-01-01")).toBe("No washout since 1 Jan 2020");
   });
 });
 
@@ -41,7 +41,7 @@ describe("readingSentence", () => {
 
   test("under 20%: six-month record, beat, first-month losses by date, sample size", () => {
     expect(readingSentence("under", hs, eps)).toBe(
-      "Every washout with six months behind it was higher six months on, and the median beat an ordinary day at every horizon. The first month was lower once (9 Mar 2020). Only 5 washouts so far: a small sample.",
+      "All 5 washouts with six months behind them had the index higher six months after they began, and the median beat an ordinary day at every horizon. The first month was lower once (9 Mar 2020). Only 5 washouts so far: a small sample.",
     );
   });
   test("under 20%: not all higher, not beating", () => {

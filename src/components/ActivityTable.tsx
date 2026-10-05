@@ -26,8 +26,8 @@ export default function ActivityTable({ rows, empty }: { rows: ActivityRow[]; em
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="big-keeping">Kept vs normal</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="huge-volume">Volume vs normal</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="delivery-pct">Delivery % (usual)</Term></TableHead>
-            <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price</TableHead>
-            <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}>Traded</TableHead>
+            <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price move that day</TableHead>
+            <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}>₹ traded that day</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

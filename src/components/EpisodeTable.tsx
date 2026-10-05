@@ -33,10 +33,10 @@ export default function EpisodeTable({
             <thead className="sticky top-0 z-10 bg-card">
               <tr className="border-b text-muted-foreground">
                 <th className={cn(head, "pl-card-x text-left")}>Started</th>
-                <th className={head}>{under ? "Lowest" : "Highest"}</th>
-                <th className={head}>{under ? "Sessions under" : "Sessions over"}</th>
+                <th className={head}>{under ? "Lowest share above" : "Highest share above"}</th>
+                <th className={head}>{under ? "Sessions under 20%" : "Sessions over 80%"}</th>
                 {HORIZONS.map((h) => (
-                  <th key={h.key} className={cn(head, "last:pr-card-x")}>{h.label}</th>
+                  <th key={h.key} className={cn(head, "last:pr-card-x")}>Index after {h.label}</th>
                 ))}
               </tr>
             </thead>

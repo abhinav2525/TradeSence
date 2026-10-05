@@ -10,6 +10,8 @@ export const SIZE_LABEL: Record<SizeGroup, string> = { large: "Large", mid: "Mid
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
 /** The leaderboard. The ranked measure is bold; NIFTY 50 Report Cards are linked where one exists. */
+const PERIOD_WORDS: Record<number, string> = { 1: "1 day", 5: "1 week", 21: "1 month", 63: "3 months", 126: "6 months" };
+
 export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }: { rows: LeaderRow[]; firstRank?: number; rank: RankBy; period: number; empty: string }) {
   if (rows.length === 0) return <p className="px-card-x py-8 text-body-sm text-muted-foreground">{empty}</p>;
   return (
@@ -23,8 +25,8 @@ export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }
             <TableHead className={cn(head, "hidden sm:table-cell")}><Term id="size-group">Size</Term></TableHead>
             <TableHead className={cn(head, "text-right")}><Term id="value-traded">₹ traded</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Shares</TableHead>
-            <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price</TableHead>
-            <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}><Term id="unusual-activity">Unusual days</Term></TableHead>
+            <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price move, {PERIOD_WORDS[period] ?? `${period} sessions`}</TableHead>
+            <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}><Term id="unusual-activity">Unusual days</Term> in period</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

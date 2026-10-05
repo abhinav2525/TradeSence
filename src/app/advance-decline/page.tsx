@@ -165,7 +165,7 @@ export default async function Page({
             <AdLineChart data={series.map((s) => ({ date: s.date, net: s.net }))} selectedDate={wanted ? p.date : null} />
             <CardFooter>
               The level is arbitrary; the slope is the reading. A line that falls while the index holds
-              near its high is a divergence worth watching.
+              near its high means the two disagree. Our study of that has not finished, so it is not a signal.
             </CardFooter>
           </Card>
 

@@ -116,7 +116,7 @@ export default async function Page({
       sub: `${nearBelow.length} just below it, ${nearAbove.length} just above it`,
     },
     {
-      label: "Median volume, today's crossers",
+      label: "Crossers' volume (median)",
       term: "volume-ratio",
       value: crossRatios.length ? percentile(crossRatios, 50).toFixed(1) : "—",
       unit: crossRatios.length ? "×" : undefined,
@@ -143,7 +143,7 @@ export default async function Page({
       <PageHeader
         eyebrow="NIFTY 50 · Stocks"
         title="Screener"
-        description="Stocks that crossed their average on the session, and the ones about to. Volume says whether the move had conviction behind it."
+        description="Stocks that crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock&apos;s own last 20 sessions."
         actions={
           <>
             <MaTabs base="/screener" ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}`} />
@@ -235,8 +235,8 @@ export default async function Page({
             <p className="mt-0.5 text-[12px] text-muted-foreground">Within {NEAR_PCT}% of the {label}, closest first</p>
           </div>
           <div className="grid gap-cards xl:grid-cols-2">
-            <NearCard title="Could cross up next" desc="Just below the average" rows={nearBelow} tone="down" />
-            <NearCard title="Could cross down next" desc="Just above the average" rows={nearAbove} tone="up" />
+            <NearCard title="Just below the average" desc="Within 2% under it" rows={nearBelow} tone="down" />
+            <NearCard title="Just above the average" desc="Within 2% over it" rows={nearAbove} tone="up" />
           </div>
         </div>
       )}
@@ -264,7 +264,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
               <TableHead className={cn(head, "text-right")}>Gap now</TableHead>
-              <TableHead className={cn(head, "text-right")}>5 sessions ago</TableHead>
+              <TableHead className={cn(head, "text-right")}>Gap 5 sessions ago</TableHead>
               <TableHead className={cn(head, "pr-card-x text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
             </TableRow>
           </TableHeader>

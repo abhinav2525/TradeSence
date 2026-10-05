@@ -9,17 +9,17 @@ type Row = FlowRow & { extra: number | null; ratio: number | null };
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
 /** A sector's stocks by money above their own normal; Report Card links where one exists. */
-export default function FlowStocks({ rows, withCard }: { rows: Row[]; withCard: Set<string> }) {
+export default function FlowStocks({ rows, withCard, periodLabel }: { rows: Row[]; withCard: Set<string>; periodLabel: string }) {
   return (
     <div className="max-h-[560px] overflow-auto">
       <Table className="tabular-nums">
         <TableHeader className="sticky top-0 z-10 bg-card">
           <TableRow className="hover:bg-transparent">
             <TableHead className={cn(head, "pl-card-x")}>Stock</TableHead>
-            <TableHead className={cn(head, "text-right")}>Extra ₹</TableHead>
+            <TableHead className={cn(head, "text-right")}>Extra ₹ traded</TableHead>
             <TableHead className={cn(head, "text-right")}><Term id="trading-vs-normal">vs normal</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="value-traded">₹ traded</Term></TableHead>
-            <TableHead className={cn(head, "pr-card-x text-right")}>Price</TableHead>
+            <TableHead className={cn(head, "pr-card-x text-right")}>Price move, {periodLabel}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

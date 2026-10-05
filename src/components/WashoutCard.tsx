@@ -22,7 +22,7 @@ export default function WashoutCard({
           </div>
           <p className="text-body-sm leading-5 text-foreground-2">{washoutSentence(washout)}</p>
           <p className="text-[12px] leading-4 text-muted-foreground">
-            Only the 200-day SMA: it is the one average our study of past washouts found reliable.
+            Only the 200-day SMA: it is the only average our study of past washouts found a pattern for, from a handful of cases.
           </p>
         </div>
         <div className="min-w-0">

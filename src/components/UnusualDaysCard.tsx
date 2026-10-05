@@ -30,7 +30,7 @@ export default function UnusualDaysCard({ rows, className }: { rows: ActivityRow
                 {r.deliveryPct !== null && r.usualDeliveryPct !== null && ` · delivery ${r.deliveryPct.toFixed(0)}% (usual ${r.usualDeliveryPct.toFixed(0)}%)`}
               </span>
               <span className={cn("tabular-nums font-medium", r.changePct === null ? "text-muted-foreground" : r.changePct >= 0 ? "text-up" : "text-down")}>
-                {r.changePct === null ? "—" : `${signed(r.changePct, 1)}%`}
+                {r.changePct === null ? "—" : `price ${signed(r.changePct, 1)}% that day`}
               </span>
             </li>
           ))}

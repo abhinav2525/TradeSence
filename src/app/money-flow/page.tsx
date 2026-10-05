@@ -93,7 +93,7 @@ export default async function Page({
                 <Term id="trading-vs-normal">Trading vs normal</Term> {PERIOD_PHRASE[period]} to {formatDate(asOf)}
               </h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
-                Each <Term id="nse-sector">sector</Term> against its own last 3 months; the line is 1× (a usual amount). Green: its stocks mostly rose. Red: mostly fell. Heavy trading can be selling as much as buying. Pick a sector to see the stocks driving it.
+                Each <Term id="nse-sector">sector</Term> against its own last 3 months; the line is 1× (a usual amount). Bar length: trading. Colour: price move (green: its stocks mostly rose; red: mostly fell). Heavy trading can be selling as much as buying. Pick a sector to see the stocks driving it.
               </p>
               {short.length > 0 && (
                 <p className="mt-2 rounded-md border bg-raised px-3 py-2 text-[12px] text-foreground-2">
@@ -105,8 +105,8 @@ export default async function Page({
               <span>Sector</span>
               <span />
               <span className="text-right">vs normal</span>
-              <span className="text-right"><Term id="share-of-trading">Share</Term> (usual)</span>
-              <span className="text-right">Median move</span>
+              <span className="text-right"><Term id="share-of-trading">Share of all trading</Term> (usual)</span>
+              <span className="text-right">Typical stock&apos;s price move</span>
             </div>
             <FlowBars sectors={sectors} selected={sector} hrefFor={(s) => href({ sector: s === sector ? null : s })} />
             <CardFooter>
@@ -140,13 +140,13 @@ export default async function Page({
             <Card className="overflow-hidden">
               <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
                 <div>
-                  <h2 className="text-heading text-foreground">{picked.sector}: who drove it</h2>
+                  <h2 className="text-heading text-foreground">{picked.sector}: most extra trading</h2>
                   <p className="mt-0.5 text-[12px] text-muted-foreground">
                     Stocks by extra rupees traded above their own normal, {PERIOD_PHRASE[period]}. {picked.up} rose, {picked.down} fell.
                   </p>
                 </div>
               </div>
-              <FlowStocks rows={stocks} withCard={withCard} />
+              <FlowStocks rows={stocks} withCard={withCard} periodLabel={PERIOD_LABEL[period]} />
               <CardFooter>Top {stocks.length} of {picked.stocks} stocks. Report Cards cover stocks that have been in the NIFTY 50 since 2020.</CardFooter>
             </Card>
           )}

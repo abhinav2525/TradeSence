@@ -25,9 +25,9 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
         <TableRow className="hover:bg-transparent">
           <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
           <TableHead className={cn(head, "text-right")}>Crossings</TableHead>
-          <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Avg run</TableHead>
+          <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Avg time on one side</TableHead>
           <TableHead className={head}>Now</TableHead>
-          <TableHead className={cn(head, "hidden text-right md:table-cell")}>In run</TableHead>
+          <TableHead className={cn(head, "hidden text-right md:table-cell")}>Time on this side</TableHead>
           <TableHead className={cn(head, "hidden pr-card-x text-right sm:table-cell")}>Last crossed</TableHead>
         </TableRow>
       </TableHeader>
@@ -46,7 +46,7 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
                 </div>
               </TableCell>
               <TableCell className="hidden px-3 py-cell text-right text-body-sm text-muted-foreground sm:table-cell">
-                {r.avgDaysPerRun ? `${r.avgDaysPerRun.toFixed(0)}d` : "—"}
+                {r.avgDaysPerRun ? `${r.avgDaysPerRun.toFixed(0)} sessions` : "—"}
               </TableCell>
               <TableCell className="px-3 py-cell">
                 <Badge variant={above ? "up" : "down"} title={`${above ? "Above" : "Below"} the ${maLabel}`}>
@@ -54,7 +54,7 @@ export default function CrossingsTable({ rows, maLabel }: Props) {
                   {above ? "Above" : "Below"}
                 </Badge>
               </TableCell>
-              <TableCell className="hidden px-3 py-cell text-right text-body-sm text-foreground md:table-cell">{r.daysInCurrentRun}</TableCell>
+              <TableCell className="hidden px-3 py-cell text-right text-body-sm text-foreground md:table-cell">{r.daysInCurrentRun} sessions</TableCell>
               <TableCell className="hidden py-cell pl-3 pr-card-x text-right text-body-sm text-muted-foreground sm:table-cell">
                 {r.lastCrossing ? formatDate(r.lastCrossing) : "Never"}
               </TableCell>
