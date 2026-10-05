@@ -236,7 +236,8 @@ DATABASE_URL=postgres://localhost:5432/tradesence_test bun run db:migrate
 ## Load data
 
 ```bash
-bun run ingest:nifty50                          # load membership since 2020 from the CSV
+bun run ingest:nifty50                          # load NIFTY 50 membership since 2020 from the CSV
+bun run ingest:members bank                     # load Nifty Bank membership since 2020 (any registered key)
 bun run ingest:symbol-changes                   # ticker renames (needed by the next steps)
 bun run ingest:backfill 2016-09-28 2026-09-25   # ~2,600 files, ~28 min, ~250 MB
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses (~15s)
@@ -299,7 +300,8 @@ Every data pipeline, how it runs and what is automated: [docs/pipelines.md](docs
 | `bun run db:generate` | Schema change → migration file |
 | `bun run db:migrate` | Apply migrations |
 | `bun run db:studio` | Browse the data |
-| `bun run ingest:nifty50` | Load NIFTY 50 membership since 2020 from `src/ingest/nifty50-history.csv` (replaces the table; refuses a file that isn't 50 members every day) |
+| `bun run ingest:nifty50` | Load NIFTY 50 membership since 2020 from `src/ingest/nifty50-history.csv` (same as `ingest:members nifty50`) |
+| `bun run ingest:members <nifty50\|bank> [--force]` | Load one registered index's membership from its CSV ([0034](docs/decisions/0034-nifty-bank-true-membership.md)): replaces only that index's rows in one transaction; refuses a file that breaks the index's size schedule, and one with fewer rows than are stored unless `--force`. Manual only |
 | `bun run ingest:corporate-actions <start> <end>` | Load NSE splits/bonuses/dividends for a range (one request per year) |
 | `bun run ingest:symbol-changes` | Load NSE's full list of ticker renames |
 | `bun run ingest:indices <start> <end>` | Load daily closes of every NSE index (resumable) |
@@ -359,6 +361,20 @@ Postgres's 65,535 bind-parameter cap).
 | `weekdaysBetween` | `(startIso, endIso) => string[]` | Every weekday in an inclusive range, computed in UTC so a DST shift cannot drop a day. Skips weekends (~30% fewer requests); exchange holidays are left to the 404 path. |
 | `backfill` | `(startIso, endIso, { delayMs?, onProgress?, ingest? }) => Promise<Tally>` | Oldest-first, rate-limited, resumable. Wraps each day in a guard so no single failure — network *or* database — can end the run. |
 
+### `src/ingest/indices.ts` — the index registry (decision 0034)
+
+| Name | Signature | Notes |
+|---|---|---|
+| `INDICES`, `NIFTY50`, `NIFTY_BANK` | `IndexEntry { key, members, prices, list, label, file, sizes }` | One entry per index tracked on true membership: page key (`u`), `index_members` name, NSE's `index_prices` name, `INDEX_LISTS` key, label, CSV, and the expected size by date. Pure data. |
+| `cleanIndex` | `(v) => IndexEntry` | The pages' `u` param: a registered key, else the NIFTY 50. |
+| `indexByKey`, `sizeOn`, `uParam`, `membersPhrase` | | Lookup; size on a date; `""` or `"&u=bank"` for links; "Nifty Bank's 14 members". |
+
+### `src/ingest/membership-checks.ts` — nightly membership warnings
+
+| Function | Signature | Notes |
+|---|---|---|
+| `membershipWarnings` | `(today, entries = INDICES) => Promise<string[]>` | Per index: the file vs NSE's list in `index_constituents` (only if fetched today, else "could not check"), and the file vs `index_members` ("edited but not loaded"). Never writes. |
+
 ### `src/ingest/nifty50.ts` — index membership
 
 | Function | Signature | Notes |
@@ -369,11 +385,12 @@ Postgres's 65,535 bind-parameter cap).
 
 | Function | Signature | Notes |
 |---|---|---|
-| `parseMembershipHistory` / `readMembershipHistory` | `(text) / () => MembershipRow[]` | Reads `nifty50-history.csv`. Throws on a bad date, a removal before an addition, or a wrong header — never skips a row. |
+| `parseMembershipHistory` / `readMembershipHistory` | `(text, label?) / (entry = NIFTY50) => MembershipRow[]` | Reads an index's CSV (`nifty50-history.csv`, `niftybank-history.csv`). Throws on a bad date, a removal before an addition, or a wrong header — never skips a row. |
 | `membersOn` | `(rows, date) => string[]` | Members on a date: `added_on` inclusive, `removed_on` exclusive (NSE's "effective from" date). |
-| `validateMembershipHistory` | `(rows, size) => string[]` | Every day the count isn't `size`, and any stock listed twice at once. Membership only changes on boundary dates, so checking those checks every day. |
+| `validateMembershipHistory` | `(rows, size \| SizeStep[]) => string[]` | Every day the count isn't the expected size (a number, or a dated schedule such as Nifty Bank's 12 then 14), and any stock listed twice at once. Membership only changes on boundary dates, so checking those checks every day. |
 | `membershipDrift` | `(rows, live, date) => { added, removed }` | How NSE's live list differs from the file. The nightly job warns when it is non-empty. |
-| `loadNifty50History` | `(text?) => Promise<number>` | Validates, then replaces `index_members` for NIFTY50 in one transaction. |
+| `loadMembership` | `(entry, { text?, force? }) => Promise<number>` | Validates against the entry's size schedule, then replaces only that index's `index_members` rows in one transaction; refuses a shrink unless `force`. |
+| `loadNifty50History` | `(text?) => Promise<number>` | `loadMembership(NIFTY50)`. |
 
 ### `src/indicators/moving-average.ts` — the maths
 
@@ -387,7 +404,7 @@ Postgres's 65,535 bind-parameter cap).
 | Function | Signature | Notes |
 |---|---|---|
 | `segmentByGaps` | `(dates: string[], maxGapDays = 21) => number[][]` | Splits a series at holes. Without it, a partially loaded history would average 2018 closes with 2024 closes and write the result out as an ordinary non-null number. |
-| `computeIndicators` | `(indexName = "NIFTY50", opts?: { onUnexplainedJump }) => Promise<number>` | Recomputes every average for every member, per contiguous segment. Cheap enough (~5s for 113k rows) that there is no incremental path to get subtly wrong. Averages are computed on split-adjusted closes, then scaled back into each day's own rupees, so they compare directly with that day's raw `close`. `onUnexplainedJump` reports >30% overnight moves no corporate action explains. |
+| `computeIndicators` | `(indexNames = every registered index, opts?: { onUnexplainedJump }) => Promise<number>` | Recomputes every average for every member, past and present, of every registered index (each stock once), per contiguous segment. Cheap enough (~5s for 113k rows) that there is no incremental path to get subtly wrong. Averages are computed on split-adjusted closes, then scaled back into each day's own rupees, so they compare directly with that day's raw `close`. `onUnexplainedJump` reports >30% overnight moves no corporate action explains. |
 
 ### `src/indicators/adjust.ts` — split/bonus adjustment
 
@@ -479,7 +496,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 |---|---|
 | `adjustedAverages(h)` | SMA 50, SMA 200, EMA 200 on adjusted closes per gap segment; shared by `computeIndicators` and whole-market breadth. |
 | `addStock(counts, stock, include, onlyDate?)`, `newCounts`, `MA_KINDS` | Per-day above/total per average; a null average is left out; `include` = liquidity or membership; `onlyDate` = latest session only. |
-| `LIST_UNIVERSES`, `cleanUniverse` | The 42 NSE index lists offered (NSE's nifty-50 file left out); the page's `u` param check. |
+| `LIST_UNIVERSES`, `cleanUniverse`, `pointInTime` | The 42 NSE index lists offered (NSE's nifty-50 file left out); the page's `u` param check; the registered index behind a universe (`nifty50`, `bank`) or null for today's-list universes. |
 | `computeBreadth` | Every company (liquid days) + every index-list member (latest day) through `loadAdjustedHistory`; `breadth_daily` upserted, never deleted. |
 | `universeSeries(u, ma)` | `src/query/breadth.ts`: one universe's daily breadth from `breadth_daily`. |
 
@@ -505,7 +522,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `unusualDays(h)`, `unusualScore` | One company's unusual days (the four kinds, thresholds `KEPT_X`, `VOLUME_X`, `JUMP_PTS`); sort key = largest measure ÷ its threshold. Share counts split-adjusted. |
 | `computeUnusualDays` | Every company through `loadAdjustedHistory`, `unusual_days` replaced in one transaction. `bun run activity` and nightly. |
 | `companies(funds)`, `fundSymbols`, `readFundSymbols` | `universe.ts`: each company once under its latest symbol, ETFs out (`fund-symbols.txt`). |
-| `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all or NIFTY 50 members on that date), counts, a stock's last 92 days. |
+| `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all, or NIFTY 50 / Nifty Bank members on that date), counts, a stock's last 92 days. |
 
 ### `src/research/volume-market.ts`, `cli-volume-market.ts` — research 0004
 
@@ -639,6 +656,8 @@ Breadth uses the NIFTY 50 as it actually was on each day **since 2020-01-01**, n
 today's 50 projected backwards (that would be survivorship-biased: it drops the stocks
 that collapsed and were removed). The membership lives in
 `src/ingest/nifty50-history.csv`, built from NSE Indices press releases, and is checked
-to have exactly 50 members on every day. NSE changes the index about twice a year; the
+to have exactly 50 members on every day. Nifty Bank works the same way
+(`src/ingest/niftybank-history.csv`: 12 banks until 30 Dec 2025, 14 since; the registry in
+`src/ingest/indices.ts` binds each file to its index, [0034](docs/decisions/0034-nifty-bank-true-membership.md)). NSE changes the index about twice a year; the
 nightly job warns when its live list no longer matches the file. How to add a change:
 [docs/decisions/0005](docs/decisions/0005-point-in-time-membership.md).

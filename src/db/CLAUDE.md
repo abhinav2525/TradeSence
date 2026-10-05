@@ -22,7 +22,7 @@ are generated from it into `drizzle/` (`drizzle.config.ts`).
 - `daily_delivery` is its own table, not columns on `daily_prices` (a separate file that can fail alone); delivery % is not stored, it is deliverable ÷ traded.
 - `corporate_actions.factor` is null only for `kind = 'unparsed'`, and is 1 for `demerger` (the real factor is derived at compute time).
 - Prices are `doublePrecision`, not `numeric`: they feed averages, not ledgers.
-- `index_members.index_name` is `NIFTY50`; `index_prices.index_name` is NSE's spelling, e.g. `Nifty 50`; `index_constituents.index_key` is a slug (`total-market`, `nifty-100`). They are different strings.
+- `index_members.index_name` is `NIFTY50` / `NIFTYBANK`; `index_prices.index_name` is NSE's spelling, e.g. `Nifty 50`, `Nifty Bank`; `index_constituents.index_key` is a slug (`total-market`, `bank`). They are different strings: take them from the registry `src/ingest/indices.ts` (decision 0034), never type them.
 
 ## See also
 - `src/indicators/` (writes `daily_indicators`, `unusual_days`, `volume_leaders`, the three Money flow tables, `fund_symbols`), `src/ingest/` (writes everything else).

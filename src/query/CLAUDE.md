@@ -12,14 +12,14 @@ so they can be tested without a database.
 ## Files
 | File | What it's for |
 |---|---|
-| `breadth.ts` | Breadth page. `MA_COLUMNS` (average → column), re-exports `MaKind`/`MA_LABELS` from `src/lib/ma.ts`, `breadthSeries` (% of members above an average per day), `resolveSession` (snap a date back to a real session), `adjacentSessions`, `breakdownOn` (one day's above/below lists). Other pages reuse `resolveSession` and `MaKind`. |
+| `breadth.ts` | Breadth page. `MA_COLUMNS` (average → column), re-exports `MaKind`/`MA_LABELS` from `src/lib/ma.ts`, `breadthSeries` (% of members above an average per day), `resolveSession` (snap a date back to a real session), `adjacentSessions`, `breakdownOn` (one day's above/below lists; snaps on the given index's own sessions). Each takes the membership name (`NIFTY50`, `NIFTYBANK` from `ingest/indices`). Other pages reuse `resolveSession` and `MaKind`. |
 | (also in `breadth.ts`) | `universeSeries(u, ma)`: whole-market / index-list breadth from `breadth_daily` (bound values, no `sql.raw`). |
 | `crossings.ts` | `/crossings`: `crossingStats` counts how often each member crossed its average, in one SQL window query. Also feeds the Screener's crosser badge. |
 | `advance-decline.ts` | `/advance-decline`: `advanceDeclineCounts` (SQL) plus pure `deriveAdvanceDecline` (RANA, McClellan, summation, A/D line, 10-day advancing share), computed per request, per gap segment. |
 | `screener.ts` | `/screener`: `screenerOn` loads every member's history to a date; pure `readSymbol` (cross, run before, 5-session gap), `volumeAtLeast`, `percentile`, `crosserBadge`, `NEAR_PCT = 1`. |
 | `stock-report.ts` | `/stock/[symbol]`: `stockReport` builds the whole Report Card (eight lights, horizons, adjusted price line, events) from `../indicators/risk` and `market-risk`; `supportedStocks` lists current and past members. |
 | `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
-| `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all or NIFTY 50, sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
+| `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all, `nifty50` or `bank`: members on that date; sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
 | `volume.ts` | `/volume` (Top volume): `topVolume` reads `volume_leaders` joined to NSE's index lists (size group, sector, optional index filter; rank by value or shares); `sectorsPresent`; `PAGE_SIZE = 100` and pure `pageOfRows` (a page past the end shows the last, decision 0026). |
 | `money-flow.ts` | `/money-flow`: `moneyFlowRows(period)` reads `money_flow` (the page sums per sector with `sectorFlows` from `../indicators/money-flow`); `withReportCard` (drill-down links); `shortSessionsIn(period)` reads `short_sessions` inside the window; `sectorHistory(sector)` reads `sector_flow_weeks` (52 weeks, by its key). |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
@@ -31,11 +31,12 @@ so they can be tested without a database.
 - Daily moves come from `change_pct`; `advanceDeclineCounts` counts `> 0`, `< 0`, `= 0`. Never derive a move from `prev_close`.
 - Breadth fed into the Report Card's crash check is cut at the shown date (`b.date <= date`) so no hindsight leaks in. Keep it that way for any "as of" figure.
 - A new Report Card number also goes into `src/audit/report-card.ts` (root CLAUDE.md).
-- NSE's index name in `index_prices` is `"Nifty 50"` (`stock-report.ts`, `signals.ts`, `glossary-live.ts` each spell it); membership uses `NIFTY50` (`INDEX_NAME` from `ingest/nifty50`).
+- Index names come from the registry `ingest/indices.ts` (`NIFTY50.members`, `NIFTY_BANK.prices`…). Older code still spells `"Nifty 50"` (`stock-report.ts`, `signals.ts`) and `INDEX_NAME`; step B moves them to the registry.
+- `has_card` (activity, volume) and `withReportCard` (money flow) mean "ever in the NIFTY 50": Report Cards don't cover Nifty Bank yet (decision 0034).
 - `topVolume` takes its "as of" date from the table, not the rows, so a filter that matches nothing still shows the date.
 
 ## See also
 - `src/indicators/` for the maths these queries call; `src/lib/glossary.ts` for the `TermId`s `glossary-live.ts` switches on.
-- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `activity-query.test.ts`, `volume-query.test.ts`, `glossary-live.test.ts`, `money-flow.test.ts`.
+- Tests: `tests/breadth.test.ts`, `breakdown-on-date.test.ts`, `crossings.test.ts`, `advance-decline.test.ts`, `screener.test.ts`, `stock-report.test.ts`, `signals-query.test.ts`, `activity-query.test.ts`, `volume-query.test.ts`, `glossary-live.test.ts`, `money-flow.test.ts`, `index-pages.test.ts` (every query on Nifty Bank, a leaver counted only before it left).
 - Decisions 0009 (screener), 0011 and 0014 (Report Card), 0013 (rounding), 0017 (Signals), 0024 (Unusual activity), 0025 (Top volume), 0026 (page size), 0028 (Money flow).
 <!-- folder-claude-md:end -->

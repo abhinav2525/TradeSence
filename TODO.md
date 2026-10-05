@@ -26,6 +26,17 @@ every `/activity` row link somewhere), the breadth-thrust study (Signals). Check
 
 ## Next up
 
+### Nifty Bank and Nifty Financial Services, true history (spec 2026-10-05) — a, b
+- [x] **Step A, Nifty Bank** (decision 0034): membership since 2020 from press releases, one
+  index registry, guarded `ingest:members`, averages for every member, nightly drift and
+  "file differs from database" warnings, `u=bank` on Breadth, Advance/Decline, Crossings,
+  Screener and Unusual activity ("x of N", no percentile wording).
+- [ ] **Step B**: a Report Card for every Nifty Bank member (peers = that index; the market
+  line stays the NIFTY 50), `has_card` on Activity / Top volume / Money flow for them, the
+  audit over every card; Signals as episode rows only, on Nifty Bank's own close.
+- [ ] **Nifty Financial Services**: build `niftyfinservice-history.csv` from the press
+  releases (20 members), then one registry entry + its live drift test.
+
 ### Signals page (`/signals`, design handoff §3) — a
 - [ ] **Study the breadth thrust first** (Zweig: 10-day advancing share < 40% → > 61.5%
   within 10 sessions). Designed for thousands of NYSE stocks; with 50 it may fire too
@@ -129,7 +140,8 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 
 ## Explain-terms polish (deferred from the decision 0012 review) — n
 - [ ] Crossings page "Calmest"/"Median" tiles include ex-members (YESBANK, 0 crossings):
-  rank today's members by rate, as `/learn/whipsaw` now does.
+  rank today's members by rate, as `/learn/whipsaw` now does. Same on Nifty Bank (UNIONBANK,
+  a member since Dec 2025, is "Calmest" with 3).
 - [ ] Popover "Today:" on a past date (`?date=`) should name the session ("On 23 Mar 2020:").
 - [ ] `/learn/ema`: add a live example (KOTAKBANK's 200 EMA).
 - [ ] Bigger ⓘ tap target on phones (16 px now; 24 px minimum); cap popover height in landscape.

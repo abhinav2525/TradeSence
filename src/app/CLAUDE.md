@@ -8,12 +8,12 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 ## Routes
 | Route (file) | What it shows |
 |---|---|
-| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables, and the washout notice while the alarm is Active on the latest session. Params `ma`, `date`, `u` (`cleanUniverse`: nifty50 default, `market`, or an NSE index-list key). NIFTY 50 uses `breadthSeries`, `breakdownOn`, `adjacentSessions`, `signalsData`; other universes `universeSeries` (no member tables, "history building" under 20 sessions) |
-| `/advance-decline` | Advancers vs decliners, A/D line, McClellan and summation from `advanceDeclineSeries`. Params `date` (snaps back to the prior session), `ma` (only carried for nav) |
-| `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3) |
-| `/crossings` | Members ranked by whipsaw count (`crossingStats`). Param `ma` |
+| `/` (`page.tsx`) | Breadth: % of members above the chosen average, histogram, chart since 2020, Above/Below tables, and the washout notice while the alarm is Active on the latest session. Params `ma`, `date`, `u` (`cleanUniverse`: nifty50 default, `market`, or an NSE index-list key). NIFTY 50 and `bank` (`pointInTime`) use `breadthSeries`, `breakdownOn`, `adjacentSessions` on true membership (`bank`: "Members counted x of N", no percentile); the washout notice is NIFTY 50 only; other universes `universeSeries` (no member tables, "history building" under 20 sessions) |
+| `/advance-decline` | Advancers vs decliners, A/D line, McClellan and summation from `advanceDeclineSeries`. Params `date` (snaps back to the prior session), `u` (`cleanIndex`: nifty50/bank), `ma` (only carried for nav) |
+| `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3), `u` (nifty50/bank) |
+| `/crossings` | Members ranked by whipsaw count (`crossingStats`). Params `ma`, `u` (nifty50/bank) |
 | `/signals` | Washout alarm, what happened next, every episode (`signalsData`); always the 200-day SMA, no date nav. Params `cond` (under/over), `ma` (only carried for nav) |
-| `/activity` | Unusual activity: one day's stocks with big keeping, huge volume or delivery jump/collapse (`activityOn`, `kindCounts`, `filterKinds`). Params `date` (snaps back, own session list), `set` (all/nifty50), `kinds` (comma list of kept/volume/jump/collapse), `ma` (nav only) |
+| `/activity` | Unusual activity: one day's stocks with big keeping, huge volume or delivery jump/collapse (`activityOn`, `kindCounts`, `filterKinds`). Params `date` (snaps back, own session list), `set` (all/nifty50/bank), `kinds` (comma list of kept/volume/jump/collapse), `ma` (nav only) |
 | `/volume` | Top volume leaderboard (`topVolume`), in pages of 100 (`pageOfRows`). Params `period` (1/5/21/63/126), `rank` (value/shares), `size` (large/mid/small/micro), `sector` and `index` (each must match a list we hold), `page` (1-999), `ma` (nav only). No date nav |
 | `/money-flow` | Money flow: each NSE sector's ₹ traded vs its own 3-month normal, share of trading, median move; a sector's stocks by extra ₹ (`moneyFlowRows`, `sectorFlows`, `sectorStocks`, `shortSessionsIn`). Params `period` (1/5/21, `cleanFlowPeriod`), `sector` (`cleanSector`: must match a sector in the table), `ma` (nav only). No date nav |
 | `/stock` | Picker of stocks with a Report Card (`supportedStocks`) |
@@ -28,6 +28,7 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 
 ## Rules here
 - `params` and `searchParams` are Promises: `await` them. Every page sets `export const dynamic = "force-dynamic"`.
+- `u` on Advance/Decline, Crossings and the Screener goes through the one shared `cleanIndex` (`src/ingest/indices.ts`) and is kept by every link, MaTabs, DateNav and arrows/1–3 (`uParam`), but not by the cross-page keys (owner).
 - Every search param is validated by strict comparisons with a default fallback (`isMaKind`, `isView`, `isVol`, `isHorizon`, `isCondition`, `isSet`, `cleanKinds`, `cleanPeriod`, `cleanDate` regex), copied into each page; a new page copies the pattern (root CLAUDE.md, `sql.raw`). Free-text params (`sector`, `index`) are accepted only if they match a list read from the database or `INDEX_LISTS`.
 - Dynamic segments are checked before any query: `cleanSymbol` (decode once, `^[A-Z0-9&-]{1,20}$`) and `isTermId` call `notFound()` on anything else.
 - Pages wrap in `AppShell` (its `current` nav key, `asOf` date) and mount `Hotkeys`; pages with sessions use `DateNav`, pages with an average use `MaTabs`.

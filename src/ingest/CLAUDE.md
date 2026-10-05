@@ -3,7 +3,7 @@
 
 # src/ingest
 
-Everything that downloads from NSE and writes raw tables: bhavcopy prices, index closes, delivery figures, corporate actions, ticker renames, NIFTY 50 membership and today's index member lists. Each `cli-*.ts` is a thin `bun run ingest:*` entry point; the logic lives in the module it imports.
+Everything that downloads from NSE and writes raw tables: bhavcopy prices, index closes, delivery figures, corporate actions, ticker renames, index membership (NIFTY 50, Nifty Bank) and today's index member lists. Each `cli-*.ts` is a thin `bun run ingest:*` entry point; the logic lives in the module it imports.
 
 ## Files
 | File | What it's for |
@@ -16,11 +16,13 @@ Everything that downloads from NSE and writes raw tables: bhavcopy prices, index
 | `index-constituents.ts` | `INDEX_LISTS` (43 NSE `ind_*list.csv` files) into `index_constituents`; `ingestIndexLists` replaces each index in its own transaction and keeps yesterday's on a failed or >10%-shorter list; `sizeProblems` flags a stock in no or several size groups. `UNIVERSE_KEY`, `SIZE_KEYS` |
 | `corporate-actions.ts` | NSE JSON feed into `corporate_actions`; `classifyAction` reads `subject` into kind + factor, `parseExDate` (also used by `symbol-changes.ts`) |
 | `symbol-changes.ts` | `symbolchange.csv` into `symbol_changes`; `symbolLineage` (every symbol a company traded under, with date windows; handles reused tickers) |
-| `nifty50-history.csv` | Hand-kept membership since 2020, one row per period; comment header explains the columns |
-| `nifty50-history.ts` | Parses/validates that file, `membersOn`, `membershipDrift`, `loadNifty50History` (replaces `index_members` in one transaction); `HISTORY_START` |
-| `nifty50.ts` | `INDEX_NAME = "NIFTY50"` and `fetchNifty50Symbols` (NSE's live list, used only as the nightly drift check) |
-| `cli-nightly.ts` | Cron job, in order: trailing-window prices, index closes, delivery, corporate actions (±1 month), renames, membership drift warning, unparsed-action warnings, `computeIndicators`, index lists, `refreshFundSymbols`, `computeUnusualDays`, `computeVolumeLeaders`, then (own process) `src/audit/report-card.ts` and `ops/backup.sh`. Later steps warn and carry on; none stops the rest |
-| `cli-day.ts`, `cli-backfill.ts`, `cli-indices.ts`, `cli-corporate-actions.ts` (one request per calendar year), `cli-symbol-changes.ts`, `cli-nifty50.ts`, `cli-delivery.ts` (`ingest:delivery start end`), `cli-index-lists.ts` | Arg parsing + logging around the functions above; each ends with `sql.end()` |
+| `indices.ts` | The index registry (decision 0034): `INDICES`, `NIFTY50`, `NIFTY_BANK`, each binding page key `u`, `index_members` name, NSE `index_prices` name, `INDEX_LISTS` key, label, CSV and size schedule; `cleanIndex`, `indexByKey`, `sizeOn`, `uParam`, `membersPhrase`. Pure data, no db import |
+| `nifty50-history.csv`, `niftybank-history.csv` | Hand-kept membership since 2020, one row per period, each citing its press release; comment header explains the columns (Nifty Bank: 12 banks, 14 from 2025-12-31) |
+| `nifty50-history.ts` | Parses/validates any registered index's file (`readMembershipHistory(entry)`, `validateMembershipHistory(rows, size or schedule)`), `membersOn`, `membershipDrift`, `loadMembership(entry, {force})` (replaces only that index's rows in one transaction; refuses a shrink without force), `loadNifty50History`; `HISTORY_START` |
+| `membership-checks.ts` | `membershipWarnings(today)`: nightly, each file vs NSE's list in `index_constituents` (fetched today only) and vs `index_members`; warning lines, never writes |
+| `nifty50.ts` | `INDEX_NAME = "NIFTY50"` and `fetchNifty50Symbols` (NSE's live list; now used only by tests, the nightly reads `index_constituents`) |
+| `cli-nightly.ts` | Cron job, in order: trailing-window prices, index closes, delivery, corporate actions (±1 month), renames, unparsed-action warnings, `computeIndicators` (every registered index, in its own try/catch), index lists, `membershipWarnings`, `refreshFundSymbols`, `computeUnusualDays`, `computeVolumeLeaders`, `computeMoneyFlow`, `computeBreadth`, `analyzeTables`, then (own process) `src/audit/report-card.ts` and `ops/backup.sh`. Later steps warn and carry on; none stops the rest |
+| `cli-day.ts`, `cli-backfill.ts`, `cli-indices.ts`, `cli-corporate-actions.ts` (one request per calendar year), `cli-symbol-changes.ts`, `cli-members.ts` (`ingest:members <key> [--force]`; `ingest:nifty50` = `nifty50`), `cli-delivery.ts` (`ingest:delivery start end`), `cli-index-lists.ts` | Arg parsing + logging around the functions above; each ends with `sql.end()` |
 
 ## Rules here
 - A fetcher returns an error result on any failure (network, bad JSON, empty parse, wrong header); never treat failure as "nothing there". Empty `symbolchange.csv` parse is an error for that reason.
@@ -30,12 +32,13 @@ Everything that downloads from NSE and writes raw tables: bhavcopy prices, index
 - Writes are upserts chunked at 1000 rows (Postgres' 65535 bind-parameter cap); batches are de-duplicated by key first because NSE repeats rows.
 - Test seams are the injected `deps.download` / `opts.download` / `opts.ingest` parameters, not mocks (root CLAUDE.md, Testing).
 - A new nightly step goes in `cli-nightly.ts` as warn-and-continue, and in `docs/pipelines.md`.
+- Index names (`NIFTYBANK`, `Nifty Bank`, `bank`) come from `indices.ts` only; a membership reload is manual (`cli-members.ts`), never nightly.
 - Status rules, write order, header validation and the file quirks are in the root CLAUDE.md; the membership-file rules are under "Membership is point-in-time".
 
 ## See also
 - `src/indicators/` — reads these tables; `cli-nightly.ts` calls its compute functions
 - `ops/` — `backup.sh` and the launchd job that runs `cli-nightly.ts`
 - `docs/pipelines.md` — update when a nightly step changes
-- docs/decisions 0002–0007 (adjustment, renames, demergers, membership, index closes, weekends), 0021 (delivery, backup), 0025 (index lists, Top volume)
-- `tests/bhavcopy.test.ts`, `ingest-day.test.ts`, `holiday-provisional.test.ts`, `backfill-resilience.test.ts`, `corporate-actions.test.ts`, `symbol-changes.test.ts`, `nifty50-history.test.ts`, `index-prices.test.ts`, `delivery.test.ts`, `index-constituents.test.ts`
+- docs/decisions 0002–0007 (adjustment, renames, demergers, membership, index closes, weekends), 0021 (delivery, backup), 0025 (index lists, Top volume), 0034 (Nifty Bank, registry)
+- `tests/bhavcopy.test.ts`, `ingest-day.test.ts`, `holiday-provisional.test.ts`, `backfill-resilience.test.ts`, `corporate-actions.test.ts`, `symbol-changes.test.ts`, `nifty50-history.test.ts`, `niftybank-history.test.ts`, `indices.test.ts`, `membership-checks.test.ts`, `index-prices.test.ts`, `delivery.test.ts`, `index-constituents.test.ts`
 <!-- folder-claude-md:end -->

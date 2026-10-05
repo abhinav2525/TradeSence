@@ -12,13 +12,14 @@ queried from `src/query/`; nothing here touches the database.
 |---|---|
 | `AppShell.tsx`, `SiteNav.tsx`, `PageHeader.tsx` | Page frame: fixed sidebar + content column; `SiteNav` owns the `Section` type and the grouped page list (Market, Stocks, Research, Help), each with its hotkey hint |
 | `MaTabs.tsx`, `DateNav.tsx`, `DatePicker.tsx` | URL-driven controls: pick the average, step or jump sessions (all navigate via links / `router.push`) |
+| `IndexTabs.tsx` | NIFTY 50 / Nifty Bank switch (`u`, from `ingest/indices`), beside MaTabs on Advance/Decline, Crossings and the Screener (decision 0034) |
 | `Hotkeys.tsx` + `hotkey-target.ts` | Keyboard shortcuts; the key-to-URL routing is the pure, tested `hotkeyTarget` (1–3 do nothing on Report Card, Signals, Unusual activity, Top volume and Money flow; `u`, `v` and `m` open those three) |
 | `ThemeToggle.tsx` | Theme switch; also exports `toggleTheme()` used by `Hotkeys` |
 | `DensityToggle.tsx` | Compact/comfortable switch (decision 0020); exports `toggleDensity()` used by `Hotkeys` (`d`) |
 | `Term.tsx` | Label with an ⓘ popover from `src/lib/glossary.ts` |
-| `BreadthHero.tsx`, `AdHero.tsx`, `Readout.tsx` | Headline cards and stat tiles (`Readout` takes `Tile[]`) |
+| `BreadthHero.tsx`, `AdHero.tsx`, `Readout.tsx` | Headline cards and stat tiles (`Readout` takes `Tile[]`); `BreadthHero noPercentile` and `AdHero of` give the small-index wording ("x of Nifty Bank's 14 members") |
 | `BreadthArea.tsx`, `AdLineChart.tsx`, `McClellanBars.tsx`, `CrossingsBars.tsx`, `StockPriceChart.tsx`, `DrawdownChart.tsx`, `WashoutSpark.tsx`, `ReturnBuckets.tsx` | Recharts charts on `ui/chart`'s `ChartContainer` |
-| `MemberTable.tsx`, `CrossingsTable.tsx`, `ScreenerTable.tsx`, `AdRecentTable.tsx`, `CrashTable.tsx`, `EpisodeTable.tsx` | Tables; `ScreenerTable` is client-side for its symbol filter; `CrashTable` shows each fall's peak-to-low date span under the %, so it can't be read as one day's move |
+| `MemberTable.tsx`, `CrossingsTable.tsx`, `ScreenerTable.tsx`, `AdRecentTable.tsx`, `CrashTable.tsx`, `EpisodeTable.tsx` | Tables; the first three take an optional `cards` list (link a symbol only if it has a Report Card, `reportCardHref`); `ScreenerTable` is client-side for its symbol filter; `CrashTable` shows each fall's peak-to-low date span under the %, so it can't be read as one day's move |
 | `ActivityTable.tsx`, `UnusualDaysCard.tsx` | Unusual activity: the table of flagged stocks (exports `KIND_LABEL`, links to a Report Card when `hasCard`) and the Report Card's "last 3 months" list, facts only |
 | `FlowBars.tsx`, `FlowStocks.tsx`, `FlowHistoryChart.tsx` | Money flow: sector bars vs a 1× line, coloured by median move (move shown beside the × on phones), each row links to its sector; the sector's stocks by extra ₹; its 52-week line (whole-step axis, rings on short-session weeks) |
 | `VolumeTable.tsx` | Top volume leaderboard (`firstRank` for pages of 100; exports `SIZE_LABEL`; the ranked measure is bold) |
