@@ -1,7 +1,9 @@
 # TODO
 
-> Features live here. Speed, architecture, system design and operations live in
-> [`TODO-engineering.md`](TODO-engineering.md), with measured baselines and triggers.
+> **The main list: only items the owner has picked, in priority order.** Proposals wait in the
+> advisors' own lists until picked: [`TODO-research.md`](TODO-research.md) (quant advisor: what to
+> measure, study, show) and [`TODO-engineering.md`](TODO-engineering.md) (lead engineer: speed,
+> architecture, operations). A picked item moves here; the advisor's list keeps a "→ picked" note.
 
 **Vision:** fetch all of NSE's cash-market data and build cash-market intelligence on it.
 The NIFTY 50 breadth dashboard is the starting point, not the end state. Prefer designs

@@ -1,4 +1,7 @@
-# Engineering roadmap: speed, architecture, system design
+# Engineering roadmap: speed, architecture, system design (the lead engineer's list)
+
+Kept by the `lead-engineer` agent. Items wait here until the owner picks one; a picked item
+moves to `TODO.md` (the main list) and this file keeps a "→ picked, <date>" note.
 
 Separate from `TODO.md` (features) on purpose. This list is about making the system itself
 better: faster, simpler, safer to run, and using the right tool for each job. Every item
