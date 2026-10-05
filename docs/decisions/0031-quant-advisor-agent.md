@@ -67,6 +67,22 @@ Not built (suggested, deferred): `ui-reviewer` (a global `ui-consistency-enforce
 `feed-watcher`. Ops items that assume this Mac (phone notifications, self-restart after
 reboot) are on hold: the owner is considering a separate always-on server.
 
+## Added the same day: a routing policy and two saved workflows
+
+The owner asked for something that runs the agents efficiently without them having to decide
+each time, and without wasting tokens. Two things:
+
+1. **A routing policy in `CLAUDE.md`:** which agents run for which kind of work, decided once.
+   Small changes run no agents at all; a new feature or study runs the full path; owner
+   decisions are asked in one question at the start.
+2. **Two saved workflow scripts** (`.claude/workflows/`): `review-spec` (the two advisors in
+   parallel, two structured verdicts, nothing built) and `ship-feature` (technical-lead builds
+   → three read-only checkers in parallel reading only the changed files → one fix pass only
+   if there is something Critical/Important → one final code review → a merge-ready report;
+   never merges or pushes). Token discipline is built in: structured outputs, no fleet, steps
+   skipped when they have nothing to do, checkers scoped to the diff. The owner still approves
+   the spec and the merge; nothing else needs them.
+
 ## Why
 
 A proposer who cannot build has no reason to prefer easy ideas, and a brief that carries the

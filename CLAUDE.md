@@ -53,6 +53,21 @@ Four read-only checkers: `nightly-doctor` (did last night run; morning report), 
 study), `plain-language-editor` (owner-facing copy before it ships), `test-auditor` (hollow tests,
 missing failing cases; run on a branch before review).
 
+**Routing policy: who runs when** (decided once, so no per-task deliberation and no agent runs on
+small work). Owner decisions are gathered in **one question at the start**, never one by one;
+checkers read only the changed files.
+
+| Work | Agents | Owner asked |
+|---|---|---|
+| Small change to an existing page/query/test | none: build + tests in the main session | no |
+| New feature or page | `.claude/workflows/review-spec.js` (quant + engineering, parallel) → owner approves → `.claude/workflows/ship-feature.js` (technical-lead builds → data-integrity + test-auditor (+ plain-language if owner-facing text) in parallel on the diff → fix pass only if needed → one code review) → main session merges, rebuilds :3000 | once (spec), once (merge) |
+| Research study | same two workflows with `study: true`; the quant advisor drafts the rules first | same |
+| Owner-facing text only | `plain-language-editor` | no |
+| "Is it running?" / morning | `nightly-doctor` | no |
+
+Workflows need the owner's opt-in to run ("run the review-spec workflow for …"); the main
+session can also run the same agents one by one when a workflow is overkill.
+
 **`docs/pipelines.md` lists every pipeline and its automation status** — update it
 when a pipeline or a nightly step changes.
 
