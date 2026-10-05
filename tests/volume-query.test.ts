@@ -11,7 +11,10 @@ beforeEach(async () => {
   ]);
   const v = (symbol: string, turnover: number, shares: number) => ({ asOf: "2026-10-01", symbol, period: 21, turnover, shares, changePct: 1, sessions: 21, unusualDays: 0 });
   await db.insert(schema.volumeLeaders).values([v("BIGBANK", 900, 10), v("SMALLIT", 100, 500), v("MIDBANK", 300, 50)]);
-  await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "BIGBANK", addedOn: "2020-01-01", removedOn: null });
+  await db.insert(schema.indexMembers).values([
+    { indexName: "NIFTY50", symbol: "BIGBANK", addedOn: "2020-01-01", removedOn: null },
+    { indexName: "NIFTYBANK", symbol: "MIDBANK", addedOn: "2020-01-01", removedOn: null },
+  ]);
 });
 const base = { period: 21 as const, rank: "value" as const, size: null, sector: null, indexKey: null };
 
@@ -29,6 +32,10 @@ describe("topVolume", () => {
     const big = (await topVolume(base)).rows[0]!;
     expect(big).toMatchObject({ sector: "Financial Services", size: "large", hasCard: true });
     expect((await topVolume(base)).asOf).toBe("2026-10-01");
+  });
+  test("a Nifty-Bank-only stock has no Report Card link yet (cards are NIFTY 50 members past and present)", async () => {
+    const mid = (await topVolume(base)).rows.find((r) => r.symbol === "MIDBANK")!;
+    expect(mid.hasCard).toBe(false);
   });
   test("sectors present in the universe", async () => {
     expect(await sectorsPresent()).toEqual(["Financial Services", "Information Technology"]);

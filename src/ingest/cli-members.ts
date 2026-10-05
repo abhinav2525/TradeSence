@@ -5,18 +5,18 @@
  * the index's member counts, and one with fewer periods than are stored unless
  * --force. Manual only: the nightly job never reloads membership.
  */
-import { INDICES, indexByKey } from "./indices";
+import { INDICES, parseMembersArgs } from "./indices";
 import { loadMembership } from "./nifty50-history";
 import { sql } from "../db";
 
-const [key, ...rest] = process.argv.slice(2);
-const entry = key ? indexByKey(key) : undefined;
-if (!entry || rest.some((a) => a !== "--force")) {
+const args = parseMembersArgs(process.argv.slice(2));
+if (!args) {
   console.error(`usage: bun run ingest:members <${INDICES.map((x) => x.key).join("|")}> [--force]`);
   process.exit(2);
 }
+const { entry, force } = args;
 try {
-  const n = await loadMembership(entry, { force: rest.includes("--force") });
+  const n = await loadMembership(entry, { force });
   console.log(`[members] ${entry.label}: loaded ${n} membership periods from ${entry.file.pathname.split("/").at(-1)}`);
 } catch (e) {
   console.error(`[members] ${e instanceof Error ? e.message : e}`);

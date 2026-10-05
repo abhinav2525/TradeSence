@@ -368,6 +368,7 @@ Postgres's 65,535 bind-parameter cap).
 | `INDICES`, `NIFTY50`, `NIFTY_BANK` | `IndexEntry { key, members, prices, list, label, file, sizes }` | One entry per index tracked on true membership: page key (`u`), `index_members` name, NSE's `index_prices` name, `INDEX_LISTS` key, label, CSV, and the expected size by date. Pure data. |
 | `cleanIndex` | `(v) => IndexEntry` | The pages' `u` param: a registered key, else the NIFTY 50. |
 | `indexByKey`, `sizeOn`, `uParam`, `membersPhrase` | | Lookup; size on a date; `""` or `"&u=bank"` for links; "Nifty Bank's 14 members". |
+| `parseMembersArgs` | `(argv) => { entry, force } \| null` | `ingest:members`' arguments: exactly a registered key, then only `--force`; anything else is `null` (usage). |
 
 ### `src/ingest/membership-checks.ts` — nightly membership warnings
 

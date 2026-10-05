@@ -8,7 +8,7 @@ import McClellanBars from "@/components/McClellanBars";
 import AdRecentTable from "@/components/AdRecentTable";
 import Hotkeys from "@/components/Hotkeys";
 import IndexTabs from "@/components/IndexTabs";
-import { NIFTY50, cleanIndex, membersPhrase, uParam } from "@/ingest/indices";
+import { NIFTY50, cleanIndex, membersPhrase, sizeOn, uParam } from "@/ingest/indices";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, signed } from "@/lib/format";
 import { advanceDeclineSeries, type AdPoint } from "@/query/advance-decline";
@@ -193,7 +193,7 @@ export default async function Page({
               19-day EMA minus 39-day EMA of (advancing − declining) ÷ (advancing + declining) × 1,000.
               {isNifty
                 ? " Ratio adjustment keeps a 50-stock reading on a stable scale."
-                : ` With only ${membersPhrase(ix, p.date).replace(`${ix.label}'s `, "")} it swings far more than the NIFTY 50's: read which side of zero it is on, not how far.`}
+                : ` With only ${sizeOn(ix.sizes, p.date)} members it swings far more than the NIFTY 50's: read which side of zero it is on, not how far.`}
             </CardFooter>
           </Card>
 

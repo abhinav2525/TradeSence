@@ -267,8 +267,9 @@ export default async function Page({
           <Card className="lg:col-span-12">
             <BreadthArea data={chart} selectedDate={view.date} />
             <CardFooter>
-              Under the halfway line, most of the index closed below its own {label}. The
-              shaded bands mark the extremes: under 20% and over 80%.
+              Under the halfway line, most of the index closed below its own {label}.{" "}
+              {/* With 14 banks, 20% is three banks: not an extreme. */}
+              {small ? "The shaded bands mark under 20% and over 80%." : "The shaded bands mark the extremes: under 20% and over 80%."}
               {small && ` With ${size} members, one bank is about ${Math.round(100 / size)} points, so the line moves in steps.`}
             </CardFooter>
           </Card>

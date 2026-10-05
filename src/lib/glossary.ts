@@ -55,7 +55,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "nifty-bank", term: "Nifty Bank", topic: "Basics",
     short: "NSE's index of the largest, most traded bank shares: 12 banks until 30 Dec 2025, 14 since. Pick it on a page to see that page for the banks instead of the NIFTY 50.",
     read: "\"5 of Nifty Bank's 14 members\" means 5 of the banks that were in the index that day.",
-    what: "Banks are a large slice of the NIFTY 50, so their health matters for the whole market. tradeSence uses Nifty Bank's real membership on each day since 2020, rebuilt from NSE Indices' press releases, so a bank counts only while it was in the index. Because there are so few members, one bank moves a share by about 7 percentage points; read the count, not the decimals.",
+    what: "Banks are a large slice of the NIFTY 50, so their health matters for the whole market. tradeSence uses Nifty Bank's real membership on each day since 2020, rebuilt from NSE Indices' press releases, working back from today's list, so a bank counts only while it was in the index. Because there are so few members, one bank moves a share by about 7 percentage points; read the count, not the decimals.",
     calc: { plain: "Same rules as for the NIFTY 50, counted over Nifty Bank's members on each day. A bank without enough history for an average yet is left out of that count and the page says \"x of N counted\"." },
     example: "YES BANK left Nifty Bank on 27 Mar 2020 and came back on 31 Dec 2025, when the index grew from 12 to 14 banks. It counts before the first date and after the second, not in between.",
     mistakes: [

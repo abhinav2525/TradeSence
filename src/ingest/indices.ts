@@ -62,6 +62,14 @@ export function cleanIndex(v: string | undefined): IndexEntry {
   return INDICES.find((x) => x.key === v) ?? NIFTY50;
 }
 
+/** `bun run ingest:members <key> [--force]`'s arguments; null (print usage) for anything else. */
+export function parseMembersArgs(argv: readonly string[]): { entry: IndexEntry; force: boolean } | null {
+  const [key, ...rest] = argv;
+  const entry = key ? indexByKey(key) : undefined;
+  if (!entry || rest.some((a) => a !== "--force")) return null;
+  return { entry, force: rest.includes("--force") };
+}
+
 /** The expected member count on a date (the last step on or before it). */
 export function sizeOn(sizes: readonly SizeStep[], dateIso: string): number {
   return sizes.filter((s) => s.from <= dateIso).at(-1)?.n ?? 0;

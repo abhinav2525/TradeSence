@@ -25,6 +25,20 @@ describe("the committed Nifty Bank history", () => {
     expect(membersOn(rows, "2025-12-31")).toEqual(expect.arrayContaining(["UNIONBANK", "YESBANK"]));
   });
 
+  test("both sides of each change date", () => {
+    const on = (d: string) => membersOn(rows, d);
+    expect(on("2021-03-30")).toContain("BANKBARODA");
+    expect(on("2021-03-30")).not.toContain("AUBANK");
+    expect(on("2021-03-31")).toContain("AUBANK");
+    expect(on("2021-03-31")).not.toContain("BANKBARODA");
+    expect(on("2024-09-27")).toContain("BANDHANBNK");
+    expect(on("2024-09-27")).not.toContain("CANBK");
+    expect(on("2024-09-30")).toContain("CANBK");
+    expect(on("2024-09-30")).not.toContain("BANDHANBNK");
+    expect(on("2025-12-30")).not.toContain("UNIONBANK");
+    expect(on("2025-12-31")).toContain("UNIONBANK");
+  });
+
   // Live: if this fails, NSE has changed the index and the file needs a new row.
   test("today's members are exactly NSE's published list", async () => {
     const file = INDEX_LISTS.find((x) => x.key === NIFTY_BANK.list)!.file;

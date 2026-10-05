@@ -1,10 +1,11 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { eq } from "drizzle-orm";
-import { INDICES, NIFTY50, indexByKey, cleanIndex, sizeOn, uParam, membersPhrase } from "../src/ingest/indices";
+import { INDICES, NIFTY50, NIFTY_BANK, indexByKey, cleanIndex, sizeOn, uParam, membersPhrase, parseMembersArgs } from "../src/ingest/indices";
 import { INDEX_LISTS } from "../src/ingest/index-constituents";
 import { fetchIndexDay } from "../src/ingest/index-prices";
-import { loadMembership, validateMembershipHistory } from "../src/ingest/nifty50-history";
+import { loadMembership, readMembershipHistory, validateMembershipHistory } from "../src/ingest/nifty50-history";
+import { readFileSync } from "node:fs";
 
 const HEADER = "symbol,added_on,removed_on,listed_as,source\n";
 
@@ -66,6 +67,16 @@ describe("cleanIndex (the pages' u parameter)", () => {
     for (const v of [undefined, "", "BANK", "bank ", "private-bank", "market", "NIFTYBANK", "bank'--", "__proto__", "constructor"]) {
       expect(cleanIndex(v)).toBe(NIFTY50);
     }
+  });
+});
+
+describe("parseMembersArgs (bun run ingest:members <key> [--force])", () => {
+  test("a registered key, with or without --force", () => {
+    expect(parseMembersArgs(["bank"])).toEqual({ entry: NIFTY_BANK, force: false });
+    expect(parseMembersArgs(["bank", "--force"])).toEqual({ entry: NIFTY_BANK, force: true });
+  });
+  test("anything else is refused (null), so nothing loads", () => {
+    for (const argv of [["NIFTYBANK"], ["Bank"], [], ["bank", "--forse"]]) expect(parseMembersArgs(argv)).toBeNull();
   });
 });
 
@@ -138,7 +149,7 @@ describe("loadMembership", () => {
     await loadMembership(NIFTY50);
     const before = await stored("NIFTY50");
     const n = await loadMembership(bank);
-    expect(n).toBeGreaterThan(12);
+    expect(n).toBe(readMembershipHistory(bank).length);
     expect(await stored("NIFTY50")).toEqual(before);
     expect((await stored("NIFTYBANK")).length).toBe(n);
   });
@@ -158,6 +169,14 @@ describe("loadMembership", () => {
     await loadMembership(bank);
     const before = await stored("NIFTYBANK");
     await expect(loadMembership(bank, { text: HEADER + "ONLYONE,2020-01-01,,,s\n", force: true })).rejects.toThrow(/members/);
+    expect(await stored("NIFTYBANK")).toEqual(before);
+  });
+
+  test("the NIFTY 50's file loaded under the Nifty Bank entry is refused, and keeps what was there", async () => {
+    await loadMembership(bank);
+    const before = await stored("NIFTYBANK");
+    const nifty50File = readFileSync(NIFTY50.file, "utf8");
+    await expect(loadMembership(bank, { text: nifty50File, force: true })).rejects.toThrow(/expected 12/);
     expect(await stored("NIFTYBANK")).toEqual(before);
   });
 });
