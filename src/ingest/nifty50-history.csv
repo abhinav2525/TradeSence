@@ -55,7 +55,7 @@ POWERGRID,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 RELIANCE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 SBILIFE,2020-09-25,,,added ind_prs20082020
 SBIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)
-SHREECEM,2020-03-27,2022-09-30,,added ind_prs18022020; removed ind_prs01092022
+SHREECEM,2020-03-19,2022-09-30,,added ind_prs16032020 (announced ind_prs18022020 for 27 Mar; Yes Bank's removal was brought forward to 19 Mar); removed ind_prs01092022
 SHRIRAMFIN,2024-03-28,,,added ind_prs28022024
 SUNPHARMA,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 TATACONSUM,2021-03-31,,,added ind_prs23022021
@@ -69,5 +69,5 @@ ULTRACEMCO,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 UPL,2020-01-01,2024-03-28,,start of 2020 (reconstructed from the changes below); removed ind_prs28022024
 VEDL,2020-01-01,2020-07-31,,start of 2020 (reconstructed from the changes below); removed ind_prs02072020_1
 WIPRO,2020-01-01,2026-09-30,,start of 2020 (reconstructed from the changes below); removed ind_prs10082026
-YESBANK,2020-01-01,2020-03-27,,start of 2020 (reconstructed from the changes below); removed ind_prs18022020
+YESBANK,2020-01-01,2020-03-19,,start of 2020 (reconstructed from the changes below); removed ind_prs16032020 (brought forward from 27 Mar after the Yes Bank reconstruction scheme)
 ZEEL,2020-01-01,2020-09-25,,start of 2020 (reconstructed from the changes below); removed ind_prs20082020

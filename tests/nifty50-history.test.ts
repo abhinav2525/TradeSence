@@ -82,8 +82,10 @@ describe("the committed NIFTY 50 history", () => {
   });
 
   test("matches known changes", () => {
-    expect(membersOn(rows, "2020-03-26")).toContain("YESBANK");
-    expect(membersOn(rows, "2020-03-27")).not.toContain("YESBANK");
+    // brought forward from 27 Mar to 19 Mar 2020 after the Yes Bank reconstruction scheme (decision 0036)
+    expect(membersOn(rows, "2020-03-18")).toContain("YESBANK");
+    expect(membersOn(rows, "2020-03-19")).not.toContain("YESBANK");
+    expect(membersOn(rows, "2020-03-19")).toContain("SHREECEM");
     expect(membersOn(rows, "2023-07-12")).toContain("HDFC");
     expect(membersOn(rows, "2023-07-13")).toContain("LTM"); // LTIMindtree, then LTIM
   });
@@ -111,7 +113,7 @@ describe("loadNifty50History", () => {
     expect(stored).toHaveLength(n);
     expect(stored.find((m) => m.symbol === "OLDSEED")).toBeUndefined();
     expect(stored.find((m) => m.symbol === "YESBANK"))
-      .toMatchObject({ addedOn: "2020-01-01", removedOn: "2020-03-27" });
+      .toMatchObject({ addedOn: "2020-01-01", removedOn: "2020-03-19" });
   });
 
   test("refuses to load a history that is not 50 members throughout", async () => {

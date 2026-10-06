@@ -15,9 +15,10 @@ describe("the committed Nifty Bank history", () => {
   });
 
   test("matches known changes", () => {
-    expect(membersOn(rows, "2020-03-26")).toContain("YESBANK");
-    expect(membersOn(rows, "2020-03-27")).not.toContain("YESBANK");
-    expect(membersOn(rows, "2020-03-27")).toContain("BANDHANBNK");
+    // brought forward from 27 Mar to 19 Mar 2020 after the Yes Bank reconstruction scheme (decision 0036)
+    expect(membersOn(rows, "2020-03-18")).toContain("YESBANK");
+    expect(membersOn(rows, "2020-03-19")).not.toContain("YESBANK");
+    expect(membersOn(rows, "2020-03-19")).toContain("BANDHANBNK");
     expect(membersOn(rows, "2022-03-30")).toContain("RBLBANK");
     expect(membersOn(rows, "2022-03-31")).not.toContain("RBLBANK");
     expect(membersOn(rows, "2024-09-30")).toContain("CANBK");

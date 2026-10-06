@@ -1,0 +1,39 @@
+# Nifty Financial Services membership since 2020-01-01. One row per period in the index.
+# symbol = today's NSE symbol; listed_as = the symbol it had when added, if different.
+# removed_on is the first day OUT of the index (blank = still a member).
+# Sources: NSE Indices press releases, https://www.niftyindices.com/Press_Release/<source>.pdf
+# Size: 20 stocks throughout.
+# The 2020-01-01 list is reconstructed backwards from today's list through the changes below,
+# as for the NIFTY 50 and Nifty Bank (docs/decisions/0005, 0034).
+symbol,added_on,removed_on,listed_as,source
+AXISBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+BAJAJFINSV,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+BAJAJHLDNG,2020-01-01,2021-03-31,,start of 2020 (reconstructed from the changes below); removed ind_prs23022021
+BAJFINANCE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+BSE,2025-09-30,,,added ind_prs22082025
+CHOLAFIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+EDELWEISS,2020-01-01,2020-06-26,,start of 2020 (reconstructed from the changes below); removed ind_prs10062020 (the March 2020 review, deferred by COVID to 26 Jun)
+HDFC,2020-01-01,2023-07-13,,start of 2020 (reconstructed from the changes below); removed ind_prs04072023 (merger into HDFCBANK)
+HDFCAMC,2020-06-26,2025-09-30,,added ind_prs10062020; removed ind_prs22082025
+IBULHSGFIN,2020-01-01,2020-06-26,,start of 2020 (reconstructed from the changes below); removed ind_prs10062020
+HDFCBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+HDFCLIFE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+ICICIBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+ICICIGI,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+ICICIPRULI,2020-01-01,2026-03-30,,start of 2020 (reconstructed from the changes below); removed ind_prs23022026
+IDFC,2024-03-28,2024-10-10,,added ind_prs28022024; removed ind_prs04102024 (merger into IDFCFIRSTB)
+IEX,2022-08-08,2024-03-28,,added ind_prs11072022 (Piramal demerger replacement); removed ind_prs28022024
+JIOFIN,2025-03-28,,,added ind_prs21022025
+KOTAKBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+LICHSGFIN,2023-07-13,,,added ind_prs04072023
+M&MFIN,2020-01-01,2022-03-31,,start of 2020 (reconstructed from the changes below); removed ind_prs24022022_1
+MCX,2024-10-10,2025-03-28,,added ind_prs04102024 (IDFC merger replacement); removed ind_prs21022025
+MFSL,2026-03-30,,,added ind_prs23022026
+MUTHOOTFIN,2021-03-31,,,added ind_prs23022021
+PEL,2020-06-26,2022-08-08,,added ind_prs10062020 (announced ind_prs18022020 for 27 Mar, deferred); removed ind_prs11072022 (scheme of arrangement)
+PFC,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+RECLTD,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+SBICARD,2022-03-31,,,added ind_prs24022022_1
+SBILIFE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+SBIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+SHRIRAMFIN,2020-01-01,,SRTRANSFIN,start of 2020 (reconstructed from the changes below); renamed from SRTRANSFIN 2022-12-20

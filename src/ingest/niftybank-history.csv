@@ -9,7 +9,7 @@
 symbol,added_on,removed_on,listed_as,source
 AUBANK,2021-03-31,,,added ind_prs23022021
 AXISBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
-BANDHANBNK,2020-03-27,2024-09-30,,added ind_prs12032020 (F&O non-availability of YESBANK); removed ind_prs23082024
+BANDHANBNK,2020-03-19,2024-09-30,,added ind_prs16032020 (announced ind_prs12032020 for 27 Mar; brought forward to 19 Mar); removed ind_prs23082024
 BANKBARODA,2020-01-01,2021-03-31,,start of 2020 (reconstructed from the changes below); removed ind_prs23022021
 BANKBARODA,2022-03-31,,,added ind_prs24022022_1
 CANBK,2024-09-30,,,added ind_prs23082024
@@ -23,5 +23,5 @@ PNB,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 RBLBANK,2020-01-01,2022-03-31,,start of 2020 (reconstructed from the changes below); removed ind_prs24022022_1
 SBIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 UNIONBANK,2025-12-31,,,added ind_prs01122025 (size 12 -> 14)
-YESBANK,2020-01-01,2020-03-27,,start of 2020 (reconstructed from the changes below); removed ind_prs12032020
+YESBANK,2020-01-01,2020-03-19,,start of 2020 (reconstructed from the changes below); removed ind_prs16032020 (brought forward from 27 Mar after the Yes Bank reconstruction scheme)
 YESBANK,2025-12-31,,,added ind_prs01122025 (size 12 -> 14)
