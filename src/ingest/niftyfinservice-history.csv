@@ -15,7 +15,6 @@ CHOLAFIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 EDELWEISS,2020-01-01,2020-06-26,,start of 2020 (reconstructed from the changes below); removed ind_prs10062020 (the March 2020 review, deferred by COVID to 26 Jun)
 HDFC,2020-01-01,2023-07-13,,start of 2020 (reconstructed from the changes below); removed ind_prs04072023 (merger into HDFCBANK)
 HDFCAMC,2020-06-26,2025-09-30,,added ind_prs10062020; removed ind_prs22082025
-IBULHSGFIN,2020-01-01,2020-06-26,,start of 2020 (reconstructed from the changes below); removed ind_prs10062020
 HDFCBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 HDFCLIFE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 ICICIBANK,2020-01-01,,,start of 2020 (reconstructed from the changes below)
@@ -33,6 +32,7 @@ MUTHOOTFIN,2021-03-31,,,added ind_prs23022021
 PEL,2020-06-26,2022-08-08,,added ind_prs10062020 (announced ind_prs18022020 for 27 Mar, deferred); removed ind_prs11072022 (scheme of arrangement)
 PFC,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 RECLTD,2020-01-01,,,start of 2020 (reconstructed from the changes below)
+SAMMAANCAP,2020-01-01,2020-06-26,IBULHSGFIN,start of 2020 (reconstructed from the changes below); removed ind_prs10062020; renamed from IBULHSGFIN 2024-07-26
 SBICARD,2022-03-31,,,added ind_prs24022022_1
 SBILIFE,2020-01-01,,,start of 2020 (reconstructed from the changes below)
 SBIN,2020-01-01,,,start of 2020 (reconstructed from the changes below)

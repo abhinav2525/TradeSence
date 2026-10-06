@@ -14,8 +14,8 @@ describe("the committed Nifty Financial Services history", () => {
     expect(on(HISTORY_START)).toHaveLength(20);
   });
 
-  test("26 Jun 2020 (the March 2020 review, deferred by COVID): EDELWEISS and IBULHSGFIN out, HDFCAMC and PEL in", () => {
-    for (const s of ["EDELWEISS", "IBULHSGFIN"]) {
+  test("26 Jun 2020 (the March 2020 review, deferred by COVID): EDELWEISS and IBULHSGFIN (now SAMMAANCAP) out, HDFCAMC and PEL in", () => {
+    for (const s of ["EDELWEISS", "SAMMAANCAP"]) { // SAMMAANCAP: Indiabulls Housing Finance then
       expect(on("2020-06-25")).toContain(s);
       expect(on("2020-06-26")).not.toContain(s);
     }
@@ -52,6 +52,16 @@ describe("the committed Nifty Financial Services history", () => {
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({ addedOn: "2020-01-01", removedOn: null, listedAs: "SRTRANSFIN" });
     expect(rows.some((x) => x.symbol === "SRTRANSFIN")).toBe(false);
+  });
+
+  // Found on the real data (decision 0037): stored under its old ticker, it had no prices at all,
+  // because bhavcopy history is joined back from today's symbol (decision 0003).
+  test("Indiabulls Housing Finance is stored under today's symbol SAMMAANCAP, listed as IBULHSGFIN", () => {
+    const r = rows.filter((x) => x.symbol === "SAMMAANCAP");
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ addedOn: "2020-01-01", removedOn: "2020-06-26", listedAs: "IBULHSGFIN" });
+    expect(rows.some((x) => x.symbol === "IBULHSGFIN")).toBe(false);
+    expect(on("2020-06-25")).toContain("SAMMAANCAP");
   });
 
   // Live: if this fails, NSE has changed the index and the file needs a new row.

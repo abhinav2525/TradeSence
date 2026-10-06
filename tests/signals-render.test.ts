@@ -21,6 +21,11 @@ describe("EpisodeTable", () => {
     expect(t).not.toMatch(/median|higher in/i);
     expect(t).not.toContain("8%");
   });
+  test("Nifty Financial Services: 'its close' without a stray s (decision 0037)", () => {
+    const t = text(renderToString(createElement(EpisodeTable, { cond: "under", episodes: [ep], first: "2020-01-01", indexLabel: "Nifty Financial Services", tested: false })));
+    expect(t).toContain("Nifty Financial Services' close on that first day");
+    expect(t).not.toContain("Services's");
+  });
   test("the NIFTY 50 keeps the share", () => {
     const t = text(renderToString(createElement(EpisodeTable, { cond: "under", episodes: [ep], first: "2020-01-01" })));
     expect(t).toContain("Lowest share above");

@@ -6,7 +6,7 @@ import { HORIZONS } from "@/research/forward-returns";
 import type { Condition, Episode } from "@/indicators/signals";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { NIFTY50 } from "@/ingest/indices";
+import { NIFTY50, possessive } from "@/ingest/indices";
 
 const head = "h-row-head px-3 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
 
@@ -69,7 +69,7 @@ export default function EpisodeTable({
       )}
       <p className="mt-auto border-t px-card-x py-3 text-[12px] text-muted-foreground">
         An episode starts on the first close {name}; another within 10 sessions continues it. Returns run from the
-        {` ${indexLabel}`}&apos;s close on that first day. Not yet: that many sessions haven&apos;t passed. —: a gap in the data.
+        {` ${possessive(indexLabel)}`} close on that first day. Not yet: that many sessions haven&apos;t passed. —: a gap in the data.
       </p>
     </Card>
   );
