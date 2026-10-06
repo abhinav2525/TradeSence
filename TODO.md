@@ -133,7 +133,9 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
     liquidity filter so tiny stocks don't add noise. The real test is the whole market
     (needs `change_pct` for every stock, Broader universes); a NIFTY 50 trial is possible now.
 - [ ] **Sector tag for every stock**, from NSE's sector-index constituent files. Needed for
-  sector rotation and the leaderboard.
+  sector rotation and the leaderboard. *NIFTY 50 members since 2020 are done* (hand-kept
+  `src/lib/sectors.ts`, shown on Breadth and Screener, [0021](docs/decisions/0021-sector-tags.md));
+  the whole market still needs a fetched source.
 - [ ] **Company names**, for the Report Card and the stock list.
 - [ ] **NIFTY 50 membership 2016–2019** (optional): same press-release method as decision
   0005; then move `HISTORY_START` back.

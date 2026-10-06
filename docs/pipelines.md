@@ -103,7 +103,7 @@ flowchart LR
 | **Source** | `src/ingest/nifty50-history.csv`, hand-kept and built from NSE Indices press releases (12 changes since 2020) |
 | **Writes** | `index_members` (66 rows) |
 | **Nightly** | **Check only**: compares the file with NSE's live list and prints `WARNING NIFTY 50 changed` if they differ |
-| **By hand** | Twice a year (end of March / end of September): add the rows, then `bun run ingest:nifty50 && bun run indicators`. Steps: [0005](decisions/0005-point-in-time-membership.md#how-to-update-it-twice-a-year-2-minutes) |
+| **By hand** | Twice a year (end of March / end of September): add the rows, then `bun run ingest:nifty50 && bun run indicators`. Steps: [0005](decisions/0005-point-in-time-membership.md#how-to-update-it-twice-a-year-2-minutes). A new member also needs its sector in `src/lib/sectors.ts` ([0021](decisions/0021-sector-tags.md)); `tests/sectors.test.ts` fails until it has one |
 | **Guard** | The loader refuses any file that isn't exactly 50 members on every day |
 | **Code** | `src/ingest/nifty50-history.ts`, `nifty50.ts` |
 

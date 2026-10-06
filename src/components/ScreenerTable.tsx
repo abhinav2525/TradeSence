@@ -11,6 +11,8 @@ import { formatPrice, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ScreenerRow } from "@/query/screener";
 import { GLOSSARY } from "@/lib/glossary";
+import { sectorOf, shortSector } from "@/lib/sectors";
+import SectorCell from "@/components/SectorCell";
 
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const pctText = (v: number | null) => (v === null ? "—" : `${signed(v, 2)}%`);
@@ -25,30 +27,37 @@ type Props = {
 /** The main list. Client-side only so the symbol filter responds as you type. */
 export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
   const [q, setQ] = useState("");
-  const shown = q ? rows.filter((r) => r.symbol.includes(q.trim().toUpperCase())) : rows;
+  const needle = q.trim().toUpperCase();
+  const shown = needle
+    ? rows.filter((r) => {
+        const s = sectorOf(r.symbol);
+        return r.symbol.includes(needle) || (s !== null && (s.toUpperCase().includes(needle) || shortSector(s).toUpperCase().includes(needle)));
+      })
+    : rows;
   const side = view === "below" ? "Above" : "Below";
 
   return (
     <div>
       {rows.length > 0 && (
       <div className="flex items-center justify-end px-card-x pb-3">
-        <label htmlFor="symbol-filter" className="sr-only">Filter by symbol</label>
+        <label htmlFor="symbol-filter" className="sr-only">Filter by symbol or sector</label>
         <input
           id="symbol-filter"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Filter symbol"
+          placeholder="Symbol or sector"
           className="h-8 w-40 rounded-[8px] border border-input bg-transparent px-2.5 font-mono text-[12px] uppercase text-foreground placeholder:normal-case placeholder:text-muted-foreground"
         />
       </div>
       )}
       {shown.length === 0 ? (
-        <p className="px-card-x pb-8 pt-2 text-body-sm text-muted-foreground">{q ? `No symbol matches “${q}”.` : empty}</p>
+        <p className="px-card-x pb-8 pt-2 text-body-sm text-muted-foreground">{q ? `No symbol or sector matches “${q}”.` : empty}</p>
       ) : (
         <Table containerClassName="max-h-[560px] overflow-y-auto" className="tabular-nums">
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
+              <TableHead className={cn(head, "hidden sm:table-cell")} title={GLOSSARY.sector.short}>Sector</TableHead>
               <TableHead className={cn(head, "text-right")}>Close</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Day</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>{maLabel}</TableHead>
@@ -64,6 +73,7 @@ export default function ScreenerTable({ rows, view, maLabel, empty }: Props) {
             {shown.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
                 <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <SectorCell symbol={r.symbol} />
                 <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">{formatPrice(r.close)}</TableCell>
                 <TableCell
                   className={cn(

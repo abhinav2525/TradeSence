@@ -10,7 +10,7 @@ design choice), written in plain language for the owner, who reads these instead
 | File | What it's for |
 |---|---|
 | `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file, plus "Research NNNN" rows for studies |
-| `NNNN-short-name.md` | One decision. 0001–0020 so far, from the launchd nightly job (0001) to the UI density switch (0020); see the README table for the list |
+| `NNNN-short-name.md` | One decision. 0001–0021 so far, from the launchd nightly job (0001) to sector tags (0021); see the README table for the list |
 
 ## Format of a decision file
 - Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015, 0017, 0020).

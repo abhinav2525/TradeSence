@@ -20,6 +20,7 @@ import { NEAR_PCT, isNear, percentile, screenerOn, volumeAtLeast, type ScreenerR
 import { GLOSSARY } from "@/lib/glossary";
 import Term from "@/components/Term";
 import SlidingPill from "@/components/SlidingPill";
+import SectorCell from "@/components/SectorCell";
 
 export const dynamic = "force-dynamic";
 
@@ -263,6 +264,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
+              <TableHead className={cn(head, "hidden sm:table-cell")} title={GLOSSARY.sector.short}>Sector</TableHead>
               <TableHead className={cn(head, "text-right")}>Gap now</TableHead>
               <TableHead className={cn(head, "text-right")}>5 sessions ago</TableHead>
               <TableHead className={cn(head, "pr-card-x text-right")} title={GLOSSARY["volume-ratio"].short}>Volume vs 20d</TableHead>
@@ -272,6 +274,7 @@ function NearCard({ title, desc, rows, tone }: { title: string; desc: string; ro
             {rows.map((r) => (
               <TableRow key={r.symbol} className="hover:bg-raised">
                 <TableCell className="py-cell pl-card-x pr-3 text-body-sm font-semibold text-foreground"><Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link></TableCell>
+                <SectorCell symbol={r.symbol} />
                 <TableCell className={cn("px-3 py-cell text-right text-body-sm font-medium", tone === "down" ? "text-down" : "text-up")}>
                   {signed(r.pctFromMa!, 2)}%
                 </TableCell>

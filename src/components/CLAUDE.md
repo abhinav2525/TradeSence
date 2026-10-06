@@ -23,6 +23,7 @@ queried from `src/query/`; nothing here touches the database.
 | `signals-copy.ts` | Pure, tested sentences for Signals and the notice: `washoutSentence`, `firedLine`, `readingSentence`, `noticeText`, `noticeVisible`, `pctText`, `toneClass` |
 | `StockChecks.tsx`, `LightDot.tsx`, `RiskCalculator.tsx`, `StockEvents.tsx`, `StockList.tsx` | Stock Report Card: `checksOf(report)` builds the eight checks, `LightSummary`, traffic lights, the ₹ calculator, share-count events/renames/dividend count, the stock index |
 | `LearnList.tsx` | `/learn`: every glossary term grouped by topic, with a filter |
+| `SectorCell.tsx` | Table cell with a stock's short sector name (full name on hover), hidden on phones; used by `MemberTable`, `ScreenerTable` and the Screener's near-the-line cards |
 | `CountUp.tsx`, `SlidingPill.tsx`, `VolumeTrack.tsx` | Motion and small visuals: counting figures, the sliding thumb of a segmented switch, the volume-vs-normal track |
 
 ## Rules here

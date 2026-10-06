@@ -15,6 +15,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { formatDate, formatInt, formatPrice, ordinal, signed } from "../lib/format";
 import type { TermId } from "../lib/glossary";
+import { sectorOf, shortSector } from "../lib/sectors";
 
 const SHOWCASE = "KOTAKBANK";
 /** Under this many sessions, "fewest crossings" would just mean "newest stock". */
@@ -98,6 +99,18 @@ async function build(id: TermId): Promise<string | null> {
       }
       const top = rows.filter((r) => r.volRatio !== null).sort((a, b) => b.volRatio! - a.volRatio!)[0];
       return top ? `On ${formatDate(d)}, ${top.symbol} traded the heaviest volume against its normal: ${top.volRatio!.toFixed(1)}×.` : null;
+    }
+    case "sector": {
+      const d = await resolveSession("sma200");
+      if (!d) return null;
+      const { rows } = await screenerOn("sma200", d);
+      const count = new Map<string, number>();
+      for (const r of rows) {
+        const s = sectorOf(r.symbol);
+        if (s) count.set(shortSector(s), (count.get(shortSector(s)) ?? 0) + 1);
+      }
+      const [top, n] = [...count].sort((a, b) => b[1] - a[1])[0] ?? [];
+      return top ? `On ${formatDate(d)}, ${top} was the largest sector in the NIFTY 50, with ${n} of its ${rows.length} stocks.` : null;
     }
     case "whipsaw": {
       // Today's members only, ranked by rate: an ex-member (or a stock with a short

@@ -12,6 +12,7 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 |---|---|
 | `setup.ts` | Preload (from `bunfig.toml`): forces `DATABASE_URL` to `TEST_DATABASE_URL` or `tradesence_test`, throws unless it ends in `_test` |
 | `bhavcopy`, `fetch-bhavcopy`, `download-resilience`, `backfill`, `backfill-resilience`, `ingest-day`, `holiday-provisional` | Bhavcopy parsing (UDiFF and legacy), URLs, live fetches, retries, weekend days, `ingest_log` settle/resume rules |
+| `sectors` | Every member in the membership CSV has a sector, no stale entries; live check against NSE's Industry column |
 | `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history` | Other ingest pipelines: `classifyAction` wordings, `symbolLineage`, index closes, membership CSV checks |
 | `indicators`, `compute`, `history`, `adjust`, `volume`, `episodes` | `sma`/`ema`, `computeIndicators` across renames, splits and demergers, the shared `loadAdjustedHistory`, adjustment factors, `volumeRatios`, episode spans |
 | `ma` | `src/lib/ma.ts` stays import-free and matches `breadth.ts`'s columns; MaTabs doesn't import `src/query` |
@@ -26,7 +27,7 @@ cross-cutting regression files. Run from the repo root (see root CLAUDE.md: prel
 
 ## Rules here
 - DB tests clear the tables they use in `beforeEach` (`db.delete(schema.…)`) and seed their own rows; never rely on another file's data.
-- Some tests hit the live NSE archive on purpose (`fetch-bhavcopy`, `backfill`, `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history`). They need a network connection.
+- Some tests hit the live NSE archive on purpose (`fetch-bhavcopy`, `backfill`, `corporate-actions`, `symbol-changes`, `index-prices`, `nifty50`, `nifty50-history`, `sectors`). They need a network connection.
 - `nifty50-history.test.ts` compares the CSV with NSE's live list, so it fails after a rebalance: add a row to the CSV, don't skip the test.
 - Fakes go through the injected `download` / `ingest` parameters (see `review-fixes`, `index-prices`), not a mocking library.
 - Parser fixtures are rows copied verbatim from NSE files; a new corporate-action wording goes into `corporate-actions.test.ts` first.

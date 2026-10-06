@@ -18,6 +18,7 @@ ticks, motion settings and small Report Card wording helpers. No database access
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
 | `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
 | `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
+| `sectors.ts` | `SECTORS`: NSE's "Industry" name for every NIFTY 50 member since 2020, keyed by today's symbol; `sectorOf`, `shortSector` (FMCG, IT, Auto…). Hand-kept; decision 0021. |
 | `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`) and the density spacing tokens. |
 
 ## Rules here

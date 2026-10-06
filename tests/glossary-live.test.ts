@@ -31,6 +31,17 @@ describe("liveExample", () => {
     expect(await liveExample("episode")).toBeNull(); // no washout yet
   });
 
+  test("sector names the biggest sector among the session's members", async () => {
+    await db.insert(schema.indexMembers).values([
+      { indexName: "NIFTY50", symbol: "HDFCBANK", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTY50", symbol: "SBIN", addedOn: "2020-01-01", removedOn: null },
+      { indexName: "NIFTY50", symbol: "TCS", addedOn: "2020-01-01", removedOn: null },
+    ]);
+    const row = (symbol: string) => ({ tradeDate: "2026-10-01", symbol, close: 110, sma50: 100, sma200: 100, ema200: 100, changePct: 1, volRatio: 1, turnover: 1e9 });
+    await db.insert(schema.dailyIndicators).values([row("HDFCBANK"), row("SBIN"), row("TCS")]);
+    expect(await liveExample("sector")).toBe("On 1 Oct 2026, Financial Services was the largest sector in the NIFTY 50, with 2 of its 3 stocks.");
+  });
+
   test("net advances and SMA read today's numbers", async () => {
     await db.insert(schema.indexMembers).values([
       { indexName: "NIFTY50", symbol: "KOTAKBANK", addedOn: "2020-01-01", removedOn: null },
