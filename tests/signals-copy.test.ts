@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test";
 import {
-  firedLine, noticeText, noticeVisible, pctText, readingSentence, toneClass, washoutSentence,
+  UNTESTED_LINE, firedLine, noticeText, noticeVisible, pctText, readingSentence, toneClass, washoutSentence,
 } from "../src/components/signals-copy";
 import type { Episode, HorizonSummary, Washout } from "../src/indicators/signals";
 
@@ -83,4 +83,25 @@ test("pctText and toneClass", () => {
   expect(toneClass(-2)).toBe("text-down");
   expect(toneClass(0.01)).toBe("text-foreground-2");
   expect(toneClass(null)).toBe("text-foreground-2");
+});
+
+describe("Nifty Bank wording (decision 0035)", () => {
+  test("the count of members, then the share; same line, same states", () => {
+    expect(washoutSentence(w({ pct: (2 / 14) * 100, above: 2, total: 14 }), "Nifty Bank")).toBe(
+      "2 of Nifty Bank's 14 members are above their 200-day SMA (14%), under the 20% line. This washout began on 1 Oct 2026.",
+    );
+    expect(washoutSentence(w({ status: "watching", pct: (3 / 14) * 100, above: 3, total: 14, since: null }), "Nifty Bank")).toBe(
+      "3 of Nifty Bank's 14 members are above their 200-day SMA (21%), 1 pts above the 20% line.",
+    );
+  });
+  test("the NIFTY 50 sentence is unchanged when the label is given", () => {
+    expect(washoutSentence(w({}), "NIFTY 50")).toBe(washoutSentence(w({})));
+  });
+  test("the untested line, word for word", () => {
+    expect(UNTESTED_LINE).toBe("Same 20% line as the NIFTY 50 alarm; never tested on this index; several episodes are the same sell-off.");
+  });
+  test("no rare or percentile wording", () => {
+    const all = [washoutSentence(w({ above: 2, total: 14 }), "Nifty Bank"), UNTESTED_LINE].join(" ");
+    expect(all).not.toMatch(/rare|percentile|median/i);
+  });
 });

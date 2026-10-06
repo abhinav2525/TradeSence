@@ -35,8 +35,8 @@ export function washoutStatus(pct: number): Status {
   return "quiet";
 }
 
-/** One session with both readings: 200-day SMA breadth and the NIFTY 50 close. */
-export type Day = { date: string; pct: number; close: number };
+/** One session with both readings: 200-day SMA breadth and the index's close (counts when known). */
+export type Day = { date: string; pct: number; close: number; above?: number; total?: number };
 
 /** The segment each session belongs to; a hole over MAX_GAP_DAYS starts a new one. */
 export function segmentIds(dates: string[]): number[] {
@@ -67,6 +67,8 @@ export type Episode = {
   last: string;
   extreme: number; // lowest reading for "under", highest for "over"
   sessions: number; // qualifying sessions within the episode
+  extremeAbove?: number; // on the extreme day, when the days carry counts ("1 of 12")
+  extremeTotal?: number;
   returns: Returns;
   pending: Record<HorizonKey, boolean>; // true: the horizon runs past the latest session
 };
@@ -88,11 +90,14 @@ export function episodesOf(days: Day[], cond: Condition): Episode[] {
       returns[h.key] = forwardReturnSafe(closes, seg, s.start, h.sessions);
       pending[h.key] = s.start + h.sessions >= days.length;
     }
+    const extreme = cond === "under" ? Math.min(...span) : Math.max(...span);
+    const at = days[s.start + span.indexOf(extreme)]!;
     return {
       start: days[s.start]!.date,
       last: days[s.last]!.date,
-      extreme: cond === "under" ? Math.min(...span) : Math.max(...span),
+      extreme,
       sessions: s.sessions,
+      ...(at.above !== undefined && at.total !== undefined ? { extremeAbove: at.above, extremeTotal: at.total } : {}),
       returns,
       pending,
     };
@@ -154,6 +159,8 @@ export type Washout = {
   since: string | null; // first day of the ongoing washout, when Active
   lastStart: string | null; // first day of the latest washout, ongoing or not
   fired: number; // washouts since the first session, including an ongoing one
+  above?: number; // members above / counted on the latest session ("2 of 14")
+  total?: number;
 };
 
 export function washoutOf(days: Day[], under: Episode[]): Washout | null {
@@ -168,6 +175,7 @@ export function washoutOf(days: Day[], under: Episode[]): Washout | null {
     since: status === "active" && latest ? latest.start : null,
     lastStart: latest?.start ?? null,
     fired: under.length,
+    ...(today.above !== undefined && today.total !== undefined ? { above: today.above, total: today.total } : {}),
   };
 }
 

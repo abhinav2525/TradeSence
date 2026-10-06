@@ -140,3 +140,15 @@ describe("buildSignals", () => {
     expect(s.episodes.under).toEqual([]);
   });
 });
+
+describe("episode counts (decision 0035: 'x of N' for a small index)", () => {
+  test("an episode carries the count on its lowest day when the days have counts", () => {
+    const days: Day[] = [30, 16.7, 8.3, 25, 30].map((pct, i) => ({
+      date: day(i), pct, close: 100, above: [4, 2, 1, 3, 4][i]!, total: 12,
+    }));
+    expect(episodesOf(days, "under")[0]).toMatchObject({ extreme: 8.3, extremeAbove: 1, extremeTotal: 12 });
+  });
+  test("without counts, nothing extra", () => {
+    expect(episodesOf(mk([30, 10, 30]), "under")[0]!.extremeAbove).toBeUndefined();
+  });
+});

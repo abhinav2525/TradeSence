@@ -23,8 +23,14 @@ export function toneClass(v: number | null): string {
 
 const times = (n: number) => (n === 1 ? "once" : `${n} times`);
 
-export function washoutSentence(w: Washout): string {
-  const lead = `${Math.round(w.pct)}% of NIFTY 50 stocks are above their 200-day SMA`;
+/** Shown wherever Signals runs on an index other than the NIFTY 50 (quant review; decision 0035). */
+export const UNTESTED_LINE = "Same 20% line as the NIFTY 50 alarm; never tested on this index; several episodes are the same sell-off.";
+
+/** The NIFTY 50 reads as a share; a smaller index as a count ("2 of Nifty Bank's 14 members"). */
+export function washoutSentence(w: Washout, label = "NIFTY 50"): string {
+  const lead = label === "NIFTY 50" || w.above === undefined || w.total === undefined
+    ? `${Math.round(w.pct)}% of ${label} stocks are above their 200-day SMA`
+    : `${w.above} of ${label}'s ${w.total} members are above their 200-day SMA (${Math.round(w.pct)}%)`;
   if (w.status === "active") return `${lead}, under the ${WASHOUT_LINE}% line. This washout began on ${formatDate(w.since)}.`;
   if (w.status === "watching") {
     const gap = Math.round(w.pct - WASHOUT_LINE);

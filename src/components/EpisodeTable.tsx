@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 
 const head = "h-row-head px-3 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
 
-/** Every episode of the selected condition, newest first, with the NIFTY 50's returns from its first day. */
+/** Every episode of the selected condition, newest first, with the index's returns from its first day. */
 export default function EpisodeTable({
-  cond, episodes, first, className,
-}: { cond: Condition; episodes: Episode[]; first: string; className?: string }) {
+  cond, episodes, first, indexLabel = "NIFTY 50", className,
+}: { cond: Condition; episodes: Episode[]; first: string; indexLabel?: string; className?: string }) {
   const rows = [...episodes].reverse();
   const under = cond === "under";
   const name = under ? "under 20%" : "over 80%";
@@ -33,7 +33,7 @@ export default function EpisodeTable({
             <thead className="sticky top-0 z-10 bg-card">
               <tr className="border-b text-muted-foreground">
                 <th className={cn(head, "pl-card-x text-left")}>Started</th>
-                <th className={head}>{under ? "Lowest share above" : "Highest share above"}</th>
+                <th className={head}>{under ? (indexLabel === "NIFTY 50" ? "Lowest share above" : "Fewest above") : "Highest share above"}</th>
                 <th className={head}>{under ? "Sessions under 20%" : "Sessions over 80%"}</th>
                 {HORIZONS.map((h) => (
                   <th key={h.key} className={cn(head, "last:pr-card-x")}>Index after {h.label}</th>
@@ -44,7 +44,10 @@ export default function EpisodeTable({
               {rows.map((e) => (
                 <tr key={e.start}>
                   <td className="py-cell pl-card-x pr-3 text-foreground">{formatDate(e.start)}</td>
-                  <td className="px-3 py-cell text-right text-foreground-2">{e.extreme.toFixed(0)}%</td>
+                  <td className="px-3 py-cell text-right text-foreground-2">
+                    {/* a small index reads as a count: "1 of 12" (decision 0035) */}
+                    {indexLabel !== "NIFTY 50" && e.extremeAbove !== undefined ? `${e.extremeAbove} of ${e.extremeTotal}` : `${e.extreme.toFixed(0)}%`}
+                  </td>
                   <td className="px-3 py-cell text-right text-foreground-2">{e.sessions}</td>
                   {HORIZONS.map((h) => {
                     const v = e.returns[h.key];
@@ -62,7 +65,7 @@ export default function EpisodeTable({
       )}
       <p className="mt-auto border-t px-card-x py-3 text-[12px] text-muted-foreground">
         An episode starts on the first close {name}; another within 10 sessions continues it. Returns run from the
-        NIFTY 50&apos;s close on that first day. Not yet: that many sessions haven&apos;t passed. —: a gap in the data.
+        {` ${indexLabel}`}&apos;s close on that first day. Not yet: that many sessions haven&apos;t passed. —: a gap in the data.
       </p>
     </Card>
   );

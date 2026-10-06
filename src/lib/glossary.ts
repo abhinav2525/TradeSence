@@ -166,7 +166,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "washout", term: "Washout (breadth under 20%)", topic: "Breadth",
     short: "When fewer than 20% of NIFTY 50 stocks close above their 200-day average: nearly the whole index is in a downtrend. Rare, and historically followed by better-than-usual returns.",
     read: "Active: under 20% now. Watching: 20–25%, close to the line or just recovered. Quiet: above 25%. It says the selling has been broad, not that the bottom is in.",
-    what: "Research 0001 tested what the NIFTY 50 did after each breadth level since 2020. Only this one stood out: when it was written (Oct 2026), every past washout had been followed by a higher index six months later. There have been only a handful, and the first month can still hurt: in March 2020 the index fell another 14% first. The Signals page shows the up-to-date count. tradeSence uses the 200-day SMA only, because the 50-day version was noisy.",
+    what: "Research 0001 tested what the NIFTY 50 did after each breadth level since 2020. Only this one stood out: when it was written (Oct 2026), every past washout had been followed by a higher index six months later. There have been only a handful, and the first month can still hurt: in March 2020 the index fell another 14% first. The Signals page shows the up-to-date count. tradeSence uses the 200-day SMA only, because the 50-day version was noisy. Signals can also run the same 20% line on Nifty Bank's members, as a plain list of episodes: that version was never tested, one bank moves the share by about 7 points, and several of its episodes are the same sell-off.",
     calc: { plain: "Each session: the share of that day's NIFTY 50 members whose close is above their 200-day SMA. Under 20% is a washout. Weak days within 10 sessions of each other are one washout (see Episode)." },
     example: "8 of 50 stocks above their 200-day SMA is 16%: a washout. 11 of 50 is 22%: Watching.",
     mistakes: [
@@ -189,11 +189,11 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   },
   "forward-return": {
     id: "forward-return", term: "Forward return", topic: "Breadth",
-    short: "How much the NIFTY 50 rose or fell over the next 1, 3 or 6 months (21, 63 or 126 sessions) from a given day. Used to test whether a signal was followed by anything unusual.",
+    short: "How much the index (the NIFTY 50, or Nifty Bank on its Signals view) rose or fell over the next 1, 3 or 6 months (21, 63 or 126 sessions) from a given day.",
     read: "Compare it with the same figure for an ordinary day: a signal only matters if what followed it was better or worse than usual.",
     what: "It is history, not a forecast. tradeSence shows the median (the middle value) across episodes, how many were higher, the best and the worst, next to the median for every session since 2020.",
     calc: {
-      plain: "NIFTY 50 close h sessions later ÷ close on the day, minus 1. Left out when that day hasn't come yet, or when the data has a gap in between.",
+      plain: "The index's close h sessions later ÷ its close on the day, minus 1. Left out when that day hasn't come yet, or when the data has a gap in between. Nifty Bank's Signals view uses Nifty Bank's own close.",
       exact: "return = close[t + h] ÷ close[t] − 1, h = 21, 63, 126",
     },
     example: "The NIFTY 50 closed at 22,000 on the day a washout began and at 24,200 126 sessions later: a 6-month forward return of +10%.",
