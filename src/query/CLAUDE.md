@@ -17,10 +17,11 @@ so they can be tested without a database.
 | `crossings.ts` | `/crossings`: `crossingStats` counts how often each member crossed its average, in one SQL window query. Also feeds the Screener's crosser badge. |
 | `advance-decline.ts` | `/advance-decline`: `advanceDeclineCounts` (SQL) plus pure `deriveAdvanceDecline` (RANA, McClellan, summation, A/D line, 10-day advancing share), computed per request, per gap segment. |
 | `screener.ts` | `/screener`: `screenerOn` loads every member's history to a date; pure `readSymbol` (cross, run before, 5-session gap), `volumeAtLeast`, `percentile`, `crosserBadge`, `NEAR_PCT = 1`. |
-| `stock-report.ts` | `/stock/[symbol]`: `stockReport` builds the whole Report Card (eight lights, horizons, adjusted price line, events) from `../indicators/risk` and `market-risk`; `supportedStocks` lists current and past members. |
-| `signals.ts` | `/signals` and the Breadth washout notice: `signalsData` joins `breadthSeries("sma200")` to NIFTY 50 closes by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
+| `stock-report.ts` | `/stock/[symbol]`: `stockReport` builds the whole Report Card (eight lights, horizons, adjusted price line, events) from `../indicators/risk` and `market-risk`; `stockReport(symbol, date?, peersKey?)`: any registered index's member; `peersKey` (`u`) picks only the Strength peers, the market line (beta, crashes, every "vs the NIFTY 50") is always the NIFTY 50 (decision 0035). `supportedStocks` lists current and past members of every registered index with `currentIn`. |
+| `signals.ts` | `/signals` and the Breadth washout notice: `signalsData(ix = NIFTY50)` joins `breadthSeries("sma200", ix.members)` to the index's own closes (`ix.prices`) by date and hands them to `buildSignals` (`../indicators/signals`). Always the 200-day SMA. |
 | `activity.ts` | `/activity` and the Report Card's "Unusual days" card, from the nightly `unusual_days` table: `activitySession` / `activityNeighbours` / `activityFirst` (date nav), `activityOn(date, set)` (all, `nifty50` or `bank`: members on that date; sorted by `unusualScore`), pure `kindCounts` / `filterKinds`, `recentUnusual(symbol, toDate, 92)`. Kinds and score live in `../indicators/activity`. |
 | `volume.ts` | `/volume` (Top volume): `topVolume` reads `volume_leaders` joined to NSE's index lists (size group, sector, optional index filter; rank by value or shares); `sectorsPresent`; `PAGE_SIZE = 100` and pure `pageOfRows` (a page past the end shows the last, decision 0026). |
+| `card-indices.ts` | `CARD_INDEX_NAMES`: the SQL list of registered membership names, i.e. "has a Report Card" (bound values, no raw SQL). |
 | `money-flow.ts` | `/money-flow`: `moneyFlowRows(period)` reads `money_flow` (the page sums per sector with `sectorFlows` from `../indicators/money-flow`); `withReportCard` (drill-down links); `shortSessionsIn(period)` reads `short_sessions` inside the window; `sectorHistory(sector)` reads `sector_flow_weeks` (52 weeks, by its key). |
 | `glossary-live.ts` | `liveExample(id)`: one live sentence per glossary term for `/learn`, built from the same queries the pages use. Never throws; returns null when there's nothing to show. |
 
@@ -31,8 +32,8 @@ so they can be tested without a database.
 - Daily moves come from `change_pct`; `advanceDeclineCounts` counts `> 0`, `< 0`, `= 0`. Never derive a move from `prev_close`.
 - Breadth fed into the Report Card's crash check is cut at the shown date (`b.date <= date`) so no hindsight leaks in. Keep it that way for any "as of" figure.
 - A new Report Card number also goes into `src/audit/report-card.ts` (root CLAUDE.md).
-- Index names come from the registry `ingest/indices.ts` (`NIFTY50.members`, `NIFTY_BANK.prices`…). Older code still spells `"Nifty 50"` (`stock-report.ts`, `signals.ts`) and `INDEX_NAME`; step B moves them to the registry.
-- `has_card` (activity, volume) and `withReportCard` (money flow) mean "ever in the NIFTY 50": Report Cards don't cover Nifty Bank yet (decision 0034).
+- Index names come from the registry `ingest/indices.ts` (`NIFTY50.members`, `NIFTY_BANK.prices`…). `INDEX_NAME` survives in a few older queries.
+- `has_card` (activity, volume) and `withReportCard` (money flow) mean "ever in a registered index" (`CARD_INDEX_NAMES`, decision 0035), the same set `supportedStocks` lists.
 - `topVolume` takes its "as of" date from the table, not the rows, so a filter that matches nothing still shows the date.
 
 ## See also

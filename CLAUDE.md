@@ -6,16 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A NIFTY 50 market-breadth tracker (the Breadth page also covers the whole liquid market and
 NSE's other index lists, decision 0030; and Advance/Decline, Crossings, Screener, Unusual
-activity and Breadth also run on **Nifty Bank's** real membership, `u=bank`, decision 0034). Every evening it downloads NSE's free end-of-day
+activity, Breadth and Signals also run on **Nifty Bank's** real membership, `u=bank`, decisions 0034/0035;
+every Nifty Bank member has a Report Card). Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
 plus that percentage charted since 2020, on the index's real membership each day. Other
 pages: `/advance-decline` (`src/query/advance-decline.ts`: advancers vs decliners, McClellan,
 A/D line), `/screener` (`src/query/screener.ts`: today's crossings with volume, and stocks
 near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators/risk.ts`:
-the beginner's Report Card and risk calculator), `/crossings` (`src/query/crossings.ts`: members ranked by how often they
+the beginner's Report Card and risk calculator, for every member of every registered index), `/crossings` (`src/query/crossings.ts`: members ranked by how often they
 whipsaw across an average), `/signals` (`src/query/signals.ts` + `src/indicators/signals.ts`:
-the breadth washout alarm and what the index did after each episode, 200-day SMA only),
+the breadth washout alarm and what the index did after each episode, 200-day SMA only; `u=bank`
+shows only Nifty Bank's episode rows, no medians, decision 0035),
 `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual
 stock-days, whole market, NIFTY 50 or Nifty Bank, from the nightly `unusual_days` table), `/volume`
 (`src/query/volume.ts`: most-traded Nifty Total Market stocks by ₹ or shares over rolling
@@ -283,6 +285,15 @@ ranking and counted flat months as losses. Remove a stock from its peers by symb
 compare with `NOISE_PCT` (`src/indicators/risk.ts`)
 ([0013](docs/decisions/0013-independent-audit-and-rounding.md)). A new Report Card number
 goes into `src/audit/report-card.ts` in the same change.
+
+**The Report Card's market is always the NIFTY 50** ([0035](docs/decisions/0035-nifty-bank-report-cards-and-signals.md),
+owner): beta, Bad days, In crashes (NIFTY 50 breadth finds the crashes), bumpiness and worst
+fall compare with the NIFTY 50 for every stock, banks included. The stock's index (`u`, the
+first registered index it was in by default) picks only the Strength peers; a non-NIFTY-50
+peer set reads "11 of 13", never a percentile. Never make Nifty Bank a bank's market line:
+HDFC Bank is a quarter to a third of it. The audit checks every (stock, index) card.
+Signals for any index but the NIFTY 50 shows episode rows only (its 20% line was never
+tested there); don't add medians or "higher in x of y" for it, and don't retune the line.
 
 **Motion goes through the tokens** ([0015](docs/decisions/0015-app-motion.md)). Durations come
 from `--motion-*` in `globals.css` / `MOTION` in `src/lib/motion.ts`; charts spread

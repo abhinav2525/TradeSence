@@ -12,12 +12,12 @@ Next.js 16 App Router: the root layout, the global stylesheet and one server-ren
 | `/advance-decline` | Advancers vs decliners, A/D line, McClellan and summation from `advanceDeclineSeries`. Params `date` (snaps back to the prior session), `u` (`cleanIndex`: nifty50/bank), `ma` (only carried for nav) |
 | `/screener` | Today's crossings with volume ratio and stocks within `NEAR_PCT` of the line (`screenerOn`). Params `ma`, `date`, `view` (above/below/near), `vol` (any/1.5/2/3), `u` (nifty50/bank) |
 | `/crossings` | Members ranked by whipsaw count (`crossingStats`). Params `ma`, `u` (nifty50/bank) |
-| `/signals` | Washout alarm, what happened next, every episode (`signalsData`); always the 200-day SMA, no date nav. Params `cond` (under/over), `ma` (only carried for nav) |
+| `/signals` | Washout alarm, what happened next, every episode (`signalsData`); always the 200-day SMA, no date nav. Params `cond` (under/over), `ma` (only carried for nav), `u` (`bank`: the alarm card and washout episode rows only, no medians or over-80% side, decision 0035) |
 | `/activity` | Unusual activity: one day's stocks with big keeping, huge volume or delivery jump/collapse (`activityOn`, `kindCounts`, `filterKinds`). Params `date` (snaps back, own session list), `set` (all/nifty50/bank), `kinds` (comma list of kept/volume/jump/collapse), `ma` (nav only) |
 | `/volume` | Top volume leaderboard (`topVolume`), in pages of 100 (`pageOfRows`). Params `period` (1/5/21/63/126), `rank` (value/shares), `size` (large/mid/small/micro), `sector` and `index` (each must match a list we hold), `page` (1-999), `ma` (nav only). No date nav |
 | `/money-flow` | Money flow: each NSE sector's ₹ traded vs its own 3-month normal, share of trading, median move; a sector's stocks by extra ₹ (`moneyFlowRows`, `sectorFlows`, `sectorStocks`, `shortSessionsIn`). Params `period` (1/5/21, `cleanFlowPeriod`), `sector` (`cleanSector`: must match a sector in the table), `ma` (nav only). No date nav |
-| `/stock` | Picker of stocks with a Report Card (`supportedStocks`) |
-| `/stock/[symbol]` | Report Card, risk calculator, crash table, adjusted price and drawdown charts (`stockReport`, charts through `chartPrice`/`chartDrawdown`), and the Unusual days card (`recentUnusual`, last 92 days). Params `date`, `h` (1w/1m/3m/1y) |
+| `/stock` | Picker of stocks with a Report Card (`supportedStocks`): NIFTY 50, then "In Nifty Bank, not the NIFTY 50", then former members |
+| `/stock/[symbol]` | Report Card, risk calculator, crash table, adjusted price and drawdown charts (`stockReport`, charts through `chartPrice`/`chartDrawdown`), and the Unusual days card (`recentUnusual`, last 92 days). Params `date`, `h` (1w/1m/3m/1y), `u` (Strength peers; honoured only for an index the stock was in, carried by date nav and arrows only when not the default) |
 | `/learn`, `/learn/[id]` | Glossary list and one term's page with a live example (`liveExample`); unknown ids 404 |
 
 ## Files

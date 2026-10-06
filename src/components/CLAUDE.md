@@ -12,7 +12,7 @@ queried from `src/query/`; nothing here touches the database.
 |---|---|
 | `AppShell.tsx`, `SiteNav.tsx`, `PageHeader.tsx` | Page frame: fixed sidebar + content column; `SiteNav` owns the `Section` type and the grouped page list (Market, Stocks, Research, Help), each with its hotkey hint |
 | `MaTabs.tsx`, `DateNav.tsx`, `DatePicker.tsx` | URL-driven controls: pick the average, step or jump sessions (all navigate via links / `router.push`) |
-| `IndexTabs.tsx` | NIFTY 50 / Nifty Bank switch (`u`, from `ingest/indices`), beside MaTabs on Advance/Decline, Crossings and the Screener (decision 0034) |
+| `IndexTabs.tsx` | NIFTY 50 / Nifty Bank switch (`u`, from `ingest/indices`), beside MaTabs on Advance/Decline, Crossings and the Screener (decision 0034), in the Signals header, and on a Report Card whose stock is in two indices (`only`, `label`: the peer switch, decision 0035) |
 | `Hotkeys.tsx` + `hotkey-target.ts` | Keyboard shortcuts; the key-to-URL routing is the pure, tested `hotkeyTarget` (1–3 do nothing on Report Card, Signals, Unusual activity, Top volume and Money flow; `u`, `v` and `m` open those three) |
 | `ThemeToggle.tsx` | Theme switch; also exports `toggleTheme()` used by `Hotkeys` |
 | `DensityToggle.tsx` | Compact/comfortable switch (decision 0020); exports `toggleDensity()` used by `Hotkeys` (`d`) |
@@ -23,9 +23,9 @@ queried from `src/query/`; nothing here touches the database.
 | `ActivityTable.tsx`, `UnusualDaysCard.tsx` | Unusual activity: the table of flagged stocks (exports `KIND_LABEL`, links to a Report Card when `hasCard`) and the Report Card's "last 3 months" list, facts only |
 | `FlowBars.tsx`, `FlowStocks.tsx`, `FlowHistoryChart.tsx` | Money flow: sector bars vs a 1× line, coloured by median move (move shown beside the × on phones), each row links to its sector; the sector's stocks by extra ₹; its 52-week line (whole-step axis, rings on short-session weeks) |
 | `VolumeTable.tsx` | Top volume leaderboard (`firstRank` for pages of 100; exports `SIZE_LABEL`; the ranked measure is bold) |
-| `WashoutCard.tsx`, `ForwardReturns.tsx`, `WashoutNotice.tsx` | Signals: the alarm card, the Under/Over "what happened next" card (`?cond=` links + `SlidingPill`), and the one-line notice on Breadth |
-| `signals-copy.ts` | Pure, tested sentences for Signals and the notice: `washoutSentence`, `firedLine`, `readingSentence`, `noticeText`, `noticeVisible`, `pctText`, `toneClass` |
-| `StockChecks.tsx`, `LightDot.tsx`, `RiskCalculator.tsx`, `StockEvents.tsx`, `StockList.tsx` | Stock Report Card: `checksOf(report)` builds the eight checks, `LightSummary`, traffic lights, the ₹ calculator, share-count events/renames/dividend count, the stock index |
+| `WashoutCard.tsx`, `ForwardReturns.tsx`, `WashoutNotice.tsx` | Signals: the alarm card (`indexLabel`; a non-NIFTY-50 index gets the count wording), the Under/Over "what happened next" card (`?cond=` links + `SlidingPill`), and the one-line notice on Breadth |
+| `signals-copy.ts` | Pure, tested sentences for Signals and the notice: `washoutSentence(w, label)` ("4 of Nifty Bank's 14 members…" for another index), `UNTESTED_LINE`, `firedLine`, `readingSentence`, `noticeText`, `noticeVisible`, `pctText`, `toneClass` |
+| `StockChecks.tsx`, `LightDot.tsx`, `RiskCalculator.tsx`, `StockEvents.tsx`, `StockList.tsx` | Stock Report Card: `checksOf(report)` builds the eight checks (Strength reads "11 of 13 other Nifty Bank members" when the peers aren't the NIFTY 50's), `peersLine` (the "only Strength uses these peers" sentence), `LightSummary`, traffic lights, the ₹ calculator, share-count events/renames/dividend count, the stock index (`StockList` takes the groups its page builds) |
 | `LearnList.tsx` | `/learn`: every glossary term grouped by topic, with a filter |
 | `CountUp.tsx`, `SlidingPill.tsx`, `VolumeTrack.tsx` | Motion and small visuals: counting figures, the sliding thumb of a segmented switch, the volume-vs-normal track |
 

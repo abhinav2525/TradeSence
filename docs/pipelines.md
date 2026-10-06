@@ -136,7 +136,7 @@ build TODO item 6.
 | Indicators not recomputed | The averages step failed; the later steps still run on yesterday's averages | Each run |
 | Unreadable corporate action | A split/bonus worded in a way the parser doesn't know | Last 31 days |
 | Unexplained jump | A member moved >30% overnight with no corporate action (a missed split, or a real crash) | Last 31 days |
-| Report Card audit | Any Report Card number that differs from an independent recalculation from raw prices (`src/audit/report-card.ts`, [0013](decisions/0013-independent-audit-and-rounding.md)); one line per mismatch, first 10 listed. A crashed audit is a warning too | Latest session, each run |
+| Report Card audit | Any Report Card number that differs from an independent recalculation from raw prices (`src/audit/report-card.ts`, [0013](decisions/0013-independent-audit-and-rounding.md)), for every card: each registered index's members on the session, with that index's peers ([0035](decisions/0035-nifty-bank-report-cards-and-signals.md); 64 cards, ~6 s); one line per mismatch, first 10 listed. A crashed audit is a warning too | Latest session, each run |
 | Backup failed / iCloud copy stopped | `pg_dump` failure, or iCloud stalling or full ([0021](decisions/0021-database-health-and-delivery.md)) | Each run |
 
 Also, failed price downloads are stored as `error` and retried the next night, and a day

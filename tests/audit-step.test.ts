@@ -39,3 +39,15 @@ describe("auditWarnings", () => {
     expect(auditWarnings(0, "")).toEqual(["Report Card audit did not finish (exit 0)"]);
   });
 });
+
+import { auditSummary } from "../src/audit/nightly";
+
+describe("the audit's own summary line (decision 0035)", () => {
+  test("the line the audit prints for several indices still parses, with or without mismatches", () => {
+    const cards = [{ label: "NIFTY 50", n: 50 }, { label: "Nifty Bank", n: 14 }];
+    expect(auditWarnings(0, auditSummary("2026-10-06", cards, 2168, 0))).toEqual([]);
+    expect(auditWarnings(1, `${auditSummary("2026-10-06", cards, 2168, 2)}\n  ✗ X`)[0]).toBe(
+      "Report Card audit: 2 mismatches on session 2026-10-06 (bun run audit:report-card)",
+    );
+  });
+});

@@ -20,10 +20,10 @@ arrays, used by those, the queries in `src/query/` and the research scripts.
 | `gaps.ts` | `MAX_GAP_DAYS = 21` and `segmentByGaps`: the one copy of the gap rule. |
 | `adjust.ts` | `adjustmentFactors` (product of later events' factors), `demergerFactor` (last close ÷ ex-date open, null if it can't be priced honestly), `findUnexplainedJumps`. |
 | `volume.ts` | `volumeRatios`: volume ÷ mean of the 20 prior sessions, restarting after a gap; `VOLUME_WINDOW`. |
-| `risk.ts` | Report Card risk measures: `adjustedLine`, drawdowns, `horizonStats`, `periodReturn`, `dailyVolatility`, `rankAmongPeers`, `NOISE_PCT`, `THRESHOLDS` and every `*Light` function. |
+| `risk.ts` | Report Card risk measures: `adjustedLine`, drawdowns, `horizonStats`, `periodReturn`, `dailyVolatility`, `rankAmongPeers` (`pct`, `of`, `below`), `NOISE_PCT`, `THRESHOLDS` and every `*Light` function. |
 | `market-risk.ts` | Lights 6–8: `ewmaVolatility` (RiskMetrics λ=0.94), `rangeHitRate`, `marketCapture` (beta, up/down capture), `crashEpisodes`. |
 | `episodes.ts` | `findEpisodeSpans` (start, last, sessions) and `findEpisodes` (starts only), `MERGE_GAP = 10`: one episode rule for research 0001/0002, the crash light and Signals. |
-| `signals.ts` | Signals page maths: `washoutStatus` (Active < 20, Watching 20–25), `segmentIds`, gap-safe `forwardReturnSafe`, `median`, `episodesOf` (with `pending` horizons), `summarizeHorizons`, `bucketMedians`, `buildSignals`. |
+| `signals.ts` | Signals page maths: `washoutStatus` (Active < 20, Watching 20–25), `segmentIds`, gap-safe `forwardReturnSafe`, `median`, `episodesOf` (with `pending` horizons, and the count on the extreme day when days carry `above`/`total`), `summarizeHorizons`, `bucketMedians`, `buildSignals`. |
 | `activity.ts` | Unusual activity rules, shared with research 0003: `unusualDays(history)` flags liquid days (median turnover ≥ ₹1 crore) as kept / volume / jump / collapse against the prior 20 sessions; `unusualScore`, `windowMean`, `EXCLUDED_DAYS`, `MAX_MOVE_GAP_DAYS`, thresholds. |
 | `compute-activity.ts`, `cli-activity.ts` | `computeUnusualDays` rebuilds `unusual_days` for every company (not funds) in one transaction; `bun run activity`. |
 | `volume-leaders.ts` | `leaderStats`: one stock's turnover, shares and move over 1/5/21/63/126-session windows (`PERIODS`); `windowMove`, the shared rule for a window's price move (also Money flow). |

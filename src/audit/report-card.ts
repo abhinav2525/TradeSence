@@ -15,6 +15,7 @@ import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { stockReport } from "../query/stock-report";
 import { INDICES } from "../ingest/indices"; // names only: which cards exist, never any maths
+import { auditSummary } from "./nightly";
 
 const MAX_GAP = 21, SHARE = ["split", "bonus", "bonus+split", "consolidation"];
 type Pt = { d: string; level: number; seg: number; close: number; turnover: number };
@@ -185,11 +186,9 @@ const cmp = (sym: string, what: string, mine: number | null, app: number | null 
   if (!ok) mism.push(`${sym} ${what}: mine=${mine.toFixed(4)} app=${app.toFixed(4)}`);
 };
 
-let cardCount = 0;
 for (const card of cards) {
 const peer6m = card.members.map((m) => ({ m, r: ret(lines.get(m)!, 126) })).filter((x): x is { m: string; r: number } => x.r !== null);
 for (const sym of card.members) {
-  cardCount++;
   const m = card.key === INDICES[0]!.key ? sym : `${sym} [${card.label}]`; // the label in mismatch lines
   const res = await stockReport(sym, today, card.key);
   if (res.kind !== "ok") { mism.push(`${m}: app says ${res.kind}`); continue; }
@@ -248,7 +247,8 @@ for (const sym of card.members) {
   });
 }
 }
-console.log(`session ${today} · ${cardCount} cards (${cards.map((c) => `${c.label} ${c.members.length}`).join(", ")}) · ${checked} numbers compared · ${mism.length} mismatches · ${((performance.now() - started) / 1000).toFixed(1)} s`);
+console.log(auditSummary(today, cards.map((c) => ({ label: c.label, n: c.members.length })), checked, mism.length));
+console.log(`took ${((performance.now() - started) / 1000).toFixed(1)} s`);
 for (const x of mism) console.log("  ✗", x);
 if (mism.length === 0) console.log("✓ every number matches the independent recalculation");
 process.exit(mism.length ? 1 : 0);

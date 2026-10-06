@@ -31,9 +31,10 @@ every `/activity` row link somewhere), the breadth-thrust study (Signals). Check
   index registry, guarded `ingest:members`, averages for every member, nightly drift and
   "file differs from database" warnings, `u=bank` on Breadth, Advance/Decline, Crossings,
   Screener and Unusual activity ("x of N", no percentile wording).
-- [ ] **Step B**: a Report Card for every Nifty Bank member (peers = that index; the market
-  line stays the NIFTY 50), `has_card` on Activity / Top volume / Money flow for them, the
-  audit over every card; Signals as episode rows only, on Nifty Bank's own close.
+- [x] **Step B** (decision 0035): a Report Card for every Nifty Bank member (peers = that index,
+  "11 of 13"; the market line stays the NIFTY 50), `has_card` on Activity / Top volume / Money
+  flow for them, the audit over every card (64, 0 mismatches); Signals as episode rows only,
+  on Nifty Bank's own close.
 - [ ] **Nifty Financial Services**: build `niftyfinservice-history.csv` from the press
   releases (20 members), then one registry entry + its live drift test.
 

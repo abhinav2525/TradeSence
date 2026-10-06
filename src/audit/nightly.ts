@@ -10,6 +10,12 @@ const MAX_LISTED = 10;
 const SUMMARY = /^session (\S+) · .* · (\d+) mismatches$/;
 
 /** No warnings for a clean audit; otherwise a summary, then one line per mismatch. */
+/** The audit's summary line; it must end in "N mismatches" for SUMMARY (timings go on their own line). */
+export function auditSummary(session: string, cards: { label: string; n: number }[], compared: number, mismatches: number): string {
+  const total = cards.reduce((a, c) => a + c.n, 0);
+  return `session ${session} · ${total} cards (${cards.map((c) => `${c.label} ${c.n}`).join(", ")}) · ${compared} numbers compared · ${mismatches} mismatches`;
+}
+
 export function auditWarnings(exitCode: number, stdout: string): string[] {
   const lines = stdout.split("\n").map((l) => l.trim());
   const summary = lines.map((l) => SUMMARY.exec(l)).find((m) => m !== null);

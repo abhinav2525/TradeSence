@@ -432,10 +432,12 @@ Postgres's 65,535 bind-parameter cap).
 | `horizonStats` | `(line, sessions) => HorizonStats \| null` | Every overlapping stretch: 10th percentile, median, worst (with start), share negative, 20 histogram bins. Null under 3× the horizon. |
 | `dailyVolatility`, `periodReturn`, `percentRank` | | Std. dev. of the last 250 moves (≥ 60 needed); % over N sessions; % of a list at or below a value. |
 | `trendLight`, `strengthLight`, `ratioLight`, `liquidityLight`, `THRESHOLDS` | | Every light's cut-off in one place (decision 0011). |
-| `stockReport` | `(symbol, date?) => { kind: "unknown" \| "no-data" \| "ok" }` | Assembles a `StockReport` as of a date: checks, horizons, adjusted price, drawdown, events, dividends. |
-| `supportedStocks` | `() => { symbol, current }[]` | Every symbol ever in the NIFTY 50 since 2020, current members first. |
-| `rankAmongPeers`, `NOISE_PCT` | `(symbol, value, peers) => { pct, of } \| null` | Strength: % of the *other* members beaten; self removed by symbol, gaps under 1e-9 pts are noise (decision 0013). |
-| `audit:report-card` | `bun run audit:report-card [date]` | `src/audit/report-card.ts`: recomputes every Report Card number from raw prices with no shared code; exits 1 on a mismatch. |
+| `stockReport` | `(symbol, date?, peersKey?) => { kind: "unknown" \| "no-data" \| "ok" }` | Assembles a `StockReport` as of a date: checks, horizons, adjusted price, drawdown, events, dividends. Any registered index's member; `peersKey` (`u`) picks the Strength peers among the indices the stock was in (default: the first, NIFTY 50 before Nifty Bank); the market line is always the NIFTY 50 (decision 0035). Carries `peerIndex`, `indices`, `strength.below`. |
+| `supportedStocks` | `() => { symbol, current, currentIn }[]` | Every symbol ever in a registered index since 2020, current members first; `currentIn` = registry keys it is in today. |
+| `CARD_INDEX_NAMES` | `src/query/card-indices.ts` | The SQL list of registered membership names: "has a Report Card" for `supportedStocks`, `stockReport`, Activity, Top volume and Money flow. |
+| `rankAmongPeers`, `NOISE_PCT` | `(symbol, value, peers) => { pct, of, below } \| null` | Strength: % (and count) of the *other* members beaten; self removed by symbol, gaps under 1e-9 pts are noise (decision 0013). |
+| `audit:report-card` | `bun run audit:report-card [date]` | `src/audit/report-card.ts`: recomputes every Report Card number from raw prices with no shared code, for every (stock, index) card on the session; exits 1 on a mismatch. |
+| `auditSummary`, `auditWarnings` | `src/audit/nightly.ts` | The audit's summary line (must end in "N mismatches") and the nightly's reading of it. |
 
 ### `src/lib/glossary.ts`, `src/components/Term.tsx` and `src/query/glossary-live.ts` — explaining terms
 
@@ -471,7 +473,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `summarizeHorizons` | `(days, episodes) => HorizonSummary[]` | Per horizon: n, median, how many higher (`> NOISE_PCT`), best, worst, and the all-sessions median as the baseline. |
 | `bucketMedians` | `(days, h = 63) => { buckets, all }` | Median 3-month return per breadth bucket, by session. |
 | `buildSignals` | `(days) => Signals` | Everything the page and the Breadth notice need. |
-| `signalsData` | `() => Promise<Signals>` | Joins `breadthSeries("sma200")` to `index_prices` ("Nifty 50") by date. |
+| `signalsData` | `(ix = NIFTY50) => Promise<Signals>` | Joins `breadthSeries("sma200", ix.members)` to `index_prices` (`ix.prices`) by date. `/signals?u=bank` shows only the washout episodes for a non-NIFTY-50 index (decision 0035). |
 
 ### `src/indicators/history.ts` — one company's adjusted history
 

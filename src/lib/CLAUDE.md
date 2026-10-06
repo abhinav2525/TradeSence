@@ -19,7 +19,7 @@ ticks and trimmed chart data, motion settings and small Report Card wording help
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
 | `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
 | `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
-| `report-card-link.ts` | `reportCardHref(symbol, cards?)`: the Report Card link, or null when a `cards` list is given and lacks the symbol (Nifty Bank views, decision 0034). Import-free |
+| `report-card-link.ts` | `reportCardHref(symbol, cards?)`: the Report Card link, or null when a `cards` list is given and lacks the symbol (lists like `/?u=private-bank` hold stocks without a card; decision 0034). Import-free |
 | `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`) and the density spacing tokens. |
 
 ## Rules here
