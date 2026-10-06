@@ -10,7 +10,7 @@ design choice), written in plain language for the owner, who reads these instead
 | File | What it's for |
 |---|---|
 | `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file, plus "Research NNNN" rows for studies (the table is not strictly in number order: rows 0023–0026 sit between the research rows) |
-| `NNNN-short-name.md` | One decision. 0001–0035 so far, from the launchd nightly job (0001) to Report Cards and Signals for Nifty Bank (0035). See the README table for the list |
+| `NNNN-short-name.md` | One decision. 0001–0037 so far, from the launchd nightly job (0001) to Nifty Financial Services on its real membership (0037). See the README table for the list |
 
 ## Format of a decision file
 - Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015, 0020, 0022, 0024, 0025; 0017 has no spec line though a spec and plan exist).

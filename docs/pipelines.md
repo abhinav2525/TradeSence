@@ -19,7 +19,7 @@ and whether it is automated. Why each one exists is in [decisions/](decisions/RE
 | 14 | [Top volume](#14-top-volume) | Pipelines 1, 3, 12, 13 | Nightly | ✅ Yes |
 | 15 | [Money flow](#15-money-flow) | Pipelines 1, 3, 13 | Nightly | ✅ Yes |
 | 16 | [Breadth beyond the NIFTY 50](#16-breadth-beyond-the-nifty-50) | Pipelines 1, 3, 13 | Nightly | ✅ Yes |
-| 5 | [Index membership (NIFTY 50, Nifty Bank)](#5-index-membership-nifty-50-nifty-bank) | Hand-kept CSVs from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
+| 5 | [Index membership (NIFTY 50, Nifty Bank, Nifty Financial Services)](#5-index-membership-nifty-50-nifty-bank-nifty-financial-services) | Hand-kept CSVs from NSE press releases | Twice a year | ⚠️ **Half**: the check is automatic, the update is manual |
 | 6 | [Safety checks](#6-safety-checks) | Pipelines 1–5 | Nightly | ⚠️ **Half**: checks run automatically, but they only write to a log file and nobody is notified |
 | 7 | [Dashboard](#7-dashboard) | Postgres | Every page view | ✅ Yes (but the server is started by hand) |
 | 8 | [One-time setup and backfills](#8-one-time-setup-and-backfills) | Same as 1–5 | Once | ➖ Not needed |
@@ -34,7 +34,7 @@ flowchart LR
     A["1 · Daily prices<br/>bhavcopy, last 7 days"] --> D
     B["2 · Corporate actions<br/>-31 / +30 days"] --> D
     C["3 · Ticker renames<br/>full list"] --> D
-    M["5 · Membership CSVs<br/>(hand-kept: NIFTY 50, Nifty Bank)"] --> D
+    M["5 · Membership CSVs<br/>(hand-kept: NIFTY 50, Nifty Bank,<br/>Nifty Financial Services)"] --> D
     M -. "nightly check vs NSE live lists (13)" .-> W
     D["4 · Moving averages<br/>adjusted + stitched"] --> W["6 · Safety checks<br/>WARNING lines in the log"]
     D --> P["7 · Dashboard"]
@@ -102,23 +102,23 @@ flowchart LR
 
 | | |
 |---|---|
-| **What** | 50 SMA, 200 SMA and 200 EMA, plus each day's % move (`change_pct`, for Advance/Decline) volume vs its 20-session normal (`vol_ratio`, for the Screener) and ₹ turnover (`turnover`, for the Report Card), for every member, past and present, of every registered index (NIFTY 50 and Nifty Bank, `src/ingest/indices.ts`; each stock once), on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
+| **What** | 50 SMA, 200 SMA and 200 EMA, plus each day's % move (`change_pct`, for Advance/Decline) volume vs its 20-session normal (`vol_ratio`, for the Screener) and ₹ turnover (`turnover`, for the Report Card), for every member, past and present, of every registered index (NIFTY 50, Nifty Bank and Nifty Financial Services, `src/ingest/indices.ts`; each stock once; 93 stocks, ~222k rows, ~7 s), on every day. Adjusted for splits, bonuses and demergers, and joined across renames |
 | **Reads** | `daily_prices`, `corporate_actions`, `symbol_changes`, `index_members` |
 | **Writes** | `daily_indicators` (~180,000 rows, 75 stocks), fully recomputed each time (~6 s) |
 | **Nightly** | ✅ after pipelines 1–3; inside its own error catch, so a failure no longer skips the later steps and the backup ([0034](decisions/0034-nifty-bank-true-membership.md)) |
 | **By hand** | `bun run indicators` |
 | **Code** | `src/indicators/compute.ts`, `adjust.ts`, `moving-average.ts` |
 
-## 5. Index membership (NIFTY 50, Nifty Bank)
+## 5. Index membership (NIFTY 50, Nifty Bank, Nifty Financial Services)
 
 | | |
 |---|---|
-| **What** | Who was in each tracked index on each day since 2020-01-01, so the history isn't biased toward today's winners. The indices are listed once in `src/ingest/indices.ts` ([0034](decisions/0034-nifty-bank-true-membership.md)) |
-| **Source** | `src/ingest/nifty50-history.csv` (12 changes since 2020) and `src/ingest/niftybank-history.csv` (5 changes), hand-kept from NSE Indices press releases |
-| **Writes** | `index_members` (66 NIFTY 50 rows, 18 Nifty Bank rows). Loading one index replaces only that index's rows, in one transaction |
+| **What** | Who was in each tracked index on each day since 2020-01-01, so the history isn't biased toward today's winners. The indices are listed once in `src/ingest/indices.ts` ([0034](decisions/0034-nifty-bank-true-membership.md), [0037](decisions/0037-nifty-financial-services-true-membership.md)) |
+| **Source** | `src/ingest/nifty50-history.csv` (12 changes since 2020) `src/ingest/niftybank-history.csv` (5 changes) and `src/ingest/niftyfinservice-history.csv` (10 changes), hand-kept from NSE Indices press releases |
+| **Writes** | `index_members` (66 NIFTY 50 rows, 18 Nifty Bank rows, 31 Nifty Financial Services rows). Loading one index replaces only that index's rows, in one transaction |
 | **Nightly** | **Check only**, after the index lists (13): compares each file with NSE's list downloaded that night and prints `WARNING <index> changed: NSE added …`; prints `… differs from the database` if a file was edited but not loaded; never loads anything itself |
-| **By hand** | Twice a year (end of March / end of September): add the rows, then `bun run ingest:members <nifty50\|bank> && bun run indicators` (`ingest:nifty50` still works). Steps: [0005](decisions/0005-point-in-time-membership.md#how-to-update-it-twice-a-year-2-minutes) |
-| **Guard** | The loader refuses a file that breaks the index's member count on any day (NIFTY 50: 50; Nifty Bank: 12 until 2025-12-30, 14 from 2025-12-31), and a file with fewer rows than are stored unless `--force` |
+| **By hand** | Twice a year (end of March / end of September): add the rows, then `bun run ingest:members <nifty50\|bank\|financial-services> && bun run indicators` (`ingest:nifty50` still works). Steps: [0005](decisions/0005-point-in-time-membership.md#how-to-update-it-twice-a-year-2-minutes) |
+| **Guard** | The loader refuses a file that breaks the index's member count on any day (NIFTY 50: 50; Nifty Bank: 12 until 2025-12-30, 14 from 2025-12-31; Nifty Financial Services: 20), and a file with fewer rows than are stored unless `--force` |
 | **Code** | `src/ingest/indices.ts`, `nifty50-history.ts`, `membership-checks.ts`, `cli-members.ts` |
 
 ## 6. Safety checks
@@ -131,12 +131,12 @@ build TODO item 6.
 |---|---|---|
 | Corporate actions not updated | NSE feed down or blocked | Each run |
 | Symbol changes not updated | Rename list unreachable | Each run |
-| NIFTY 50 / Nifty Bank changed | NSE rebalanced and the CSV needs rows (or NSE's list wasn't refreshed: "could not check") | Each run |
+| NIFTY 50 / Nifty Bank / Nifty Financial Services changed | NSE rebalanced and the CSV needs rows (or NSE's list wasn't refreshed: "could not check") | Each run |
 | Membership file differs from the database | A CSV edited but not loaded with `ingest:members` | Each run |
 | Indicators not recomputed | The averages step failed; the later steps still run on yesterday's averages | Each run |
 | Unreadable corporate action | A split/bonus worded in a way the parser doesn't know | Last 31 days |
 | Unexplained jump | A member moved >30% overnight with no corporate action (a missed split, or a real crash) | Last 31 days |
-| Report Card audit | Any Report Card number that differs from an independent recalculation from raw prices (`src/audit/report-card.ts`, [0013](decisions/0013-independent-audit-and-rounding.md)), for every card: each registered index's members on the session, with that index's peers ([0035](decisions/0035-nifty-bank-report-cards-and-signals.md); 64 cards, ~6 s); one line per mismatch, first 10 listed. A crashed audit is a warning too | Latest session, each run |
+| Report Card audit | Any Report Card number that differs from an independent recalculation from raw prices (`src/audit/report-card.ts`, [0013](decisions/0013-independent-audit-and-rounding.md)), for every card: each registered index's members on the session, with that index's peers ([0035](decisions/0035-nifty-bank-report-cards-and-signals.md), [0037](decisions/0037-nifty-financial-services-true-membership.md); 84 cards, ~8 s); one line per mismatch, first 10 listed. A crashed audit is a warning too | Latest session, each run |
 | Backup failed / iCloud copy stopped | `pg_dump` failure, or iCloud stalling or full ([0021](decisions/0021-database-health-and-delivery.md)) | Each run |
 
 Also, failed price downloads are stored as `error` and retried the next night, and a day

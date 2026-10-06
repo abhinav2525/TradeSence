@@ -35,8 +35,11 @@ every `/activity` row link somewhere), the breadth-thrust study (Signals). Check
   "11 of 13"; the market line stays the NIFTY 50), `has_card` on Activity / Top volume / Money
   flow for them, the audit over every card (64, 0 mismatches); Signals as episode rows only,
   on Nifty Bank's own close.
-- [ ] **Nifty Financial Services**: build `niftyfinservice-history.csv` from the press
-  releases (20 members), then one registry entry + its live drift test.
+- [x] **Nifty Financial Services** (decisions 0036, 0037): `niftyfinservice-history.csv` from the
+  press releases (20 members, 10 changes), one registry entry + its live drift test; every page
+  above runs on it (`u=financial-services`, `set=financial-services`), audit 84 cards, 0 mismatches.
+- [ ] **The three large indices wait** (Nifty 500, Midcap 150, Smallcap 250): too many changes to
+  rebuild by hand from press releases; they stay on today's lists on Breadth (owner: "later").
 
 ### Signals page (`/signals`, design handoff §3) — a
 - [ ] **Study the breadth thrust first** (Zweig: 10-day advancing share < 40% → > 61.5%

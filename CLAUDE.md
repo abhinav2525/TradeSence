@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A NIFTY 50 market-breadth tracker (the Breadth page also covers the whole liquid market and
 NSE's other index lists, decision 0030; and Advance/Decline, Crossings, Screener, Unusual
-activity, Breadth and Signals also run on **Nifty Bank's** real membership, `u=bank`, decisions 0034/0035;
-every Nifty Bank member has a Report Card). Every evening it downloads NSE's free end-of-day
+activity, Breadth and Signals also run on **Nifty Bank's** and **Nifty Financial Services'** real
+membership, `u=bank` / `u=financial-services`, decisions 0034/0035/0037; every member of either has a Report Card). Every evening it downloads NSE's free end-of-day
 bhavcopy, stores all NSE equity closes, computes three moving averages for index
 members, and serves a page showing how many constituents trade above each average —
 plus that percentage charted since 2020, on the index's real membership each day. Other
@@ -17,9 +17,9 @@ near the line), `/stock/[symbol]` (`src/query/stock-report.ts` + `src/indicators
 the beginner's Report Card and risk calculator, for every member of every registered index), `/crossings` (`src/query/crossings.ts`: members ranked by how often they
 whipsaw across an average), `/signals` (`src/query/signals.ts` + `src/indicators/signals.ts`:
 the breadth washout alarm and what the index did after each episode, 200-day SMA only; `u=bank`
-shows only Nifty Bank's episode rows, no medians, decision 0035),
+or `u=financial-services` shows only that index's episode rows, no medians, decision 0035),
 `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual
-stock-days, whole market, NIFTY 50 or Nifty Bank, from the nightly `unusual_days` table), `/volume`
+stock-days, whole market or any registered index (`set=`), from the nightly `unusual_days` table), `/volume`
 (`src/query/volume.ts`: most-traded Nifty Total Market stocks by ₹ or shares over rolling
 windows, filtered by NSE size list, sector and index; decision 0025), `/money-flow`
 (`src/indicators/money-flow.ts`: each NSE sector's ₹ traded against its own 3-month normal,
@@ -102,7 +102,7 @@ bunx tsc --noEmit                              # typecheck (no linter configured
 bun run db:generate && bun run db:migrate      # schema change -> migration -> apply
 
 bun run ingest:nifty50                         # membership since 2020, from the CSV
-bun run ingest:members bank [--force]          # one registered index's CSV (refuses a shrink without --force)
+bun run ingest:members bank [--force]          # one registered index's CSV: nifty50, bank, financial-services (refuses a shrink without --force)
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses; ~15s
 bun run ingest:symbol-changes                  # NSE ticker renames; one file
 bun run ingest:indices 2020-01-01 2026-10-02   # every NSE index, daily; ~12 min
@@ -327,18 +327,22 @@ the injected `download` / `ingest` parameters rather than a mocking library.
 
 ## Membership is point-in-time, from hand-kept files
 
-`src/ingest/nifty50-history.csv` and `src/ingest/niftybank-history.csv` are the source of
-truth for who was in the NIFTY 50 and Nifty Bank on each day since 2020
-([0005](docs/decisions/0005-point-in-time-membership.md), [0034](docs/decisions/0034-nifty-bank-true-membership.md)).
+`src/ingest/nifty50-history.csv`, `niftybank-history.csv` and `niftyfinservice-history.csv` are the
+source of truth for who was in the NIFTY 50, Nifty Bank and Nifty Financial Services on each day since 2020
+([0005](docs/decisions/0005-point-in-time-membership.md), [0034](docs/decisions/0034-nifty-bank-true-membership.md),
+[0037](docs/decisions/0037-nifty-financial-services-true-membership.md)).
 Every name an index goes by (page key `u`, `index_members` name, NSE's `index_prices` name,
-`INDEX_LISTS` key, file, size by date) lives once, in the registry `src/ingest/indices.ts`;
-never type `"NIFTYBANK"` or `"Nifty Bank"` elsewhere. Nifty Financial Services is not
-registered yet (its file doesn't exist). Rows use **today's** symbol (renamed members are
-joined through `symbol_changes`), and `removed_on` is the first day *out*. `loadMembership`
+`INDEX_LISTS` key, file, size by date, glossary term) lives once, in the registry `src/ingest/indices.ts`;
+never type `"NIFTYBANK"` or `"Nifty Bank"` elsewhere, and loop over `INDICES` rather than listing
+indices (registry order = default-card order). Possessives go through `possessive()` ("Nifty
+Financial Services'"). A new index = registry entry + CSV + live drift test + glossary entry.
+Nifty 500 / Midcap 150 / Smallcap 250 stay on today's lists. Rows use **today's** symbol (renamed
+members are joined through `symbol_changes`; a row under an old ticker silently has no prices,
+0037), and `removed_on` is the first day *out*. `loadMembership`
 refuses a file that breaks its size schedule on any day (NIFTY 50: 50; Nifty Bank: 12, then
-14 from 2025-12-31), replaces only that index's rows in one transaction, and refuses to
+14 from 2025-12-31; Nifty Financial Services: 20), replaces only that index's rows in one transaction, and refuses to
 store fewer rows than are there unless `--force`; reloading is manual, never nightly.
-`tests/nifty50-history.test.ts` and `tests/niftybank-history.test.ts` check each file
+`tests/nifty50-history.test.ts`, `niftybank-history.test.ts` and `niftyfinservice-history.test.ts` check each file
 against NSE's live list, so **they fail when NSE rebalances** — that is the signal
 to add a row, not a flaky test. The nightly job warns the same way, and when a file
 differs from the database (edited but not loaded). Never go back to seeding today's list over one open

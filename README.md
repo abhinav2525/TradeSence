@@ -237,7 +237,7 @@ DATABASE_URL=postgres://localhost:5432/tradesence_test bun run db:migrate
 
 ```bash
 bun run ingest:nifty50                          # load NIFTY 50 membership since 2020 from the CSV
-bun run ingest:members bank                     # load Nifty Bank membership since 2020 (any registered key)
+bun run ingest:members bank                     # load Nifty Bank membership since 2020 (any registered key: nifty50, bank, financial-services)
 bun run ingest:symbol-changes                   # ticker renames (needed by the next steps)
 bun run ingest:backfill 2016-09-28 2026-09-25   # ~2,600 files, ~28 min, ~250 MB
 bun run ingest:corporate-actions 2016-01-01 2026-11-01  # splits/bonuses (~15s)
@@ -361,13 +361,13 @@ Postgres's 65,535 bind-parameter cap).
 | `weekdaysBetween` | `(startIso, endIso) => string[]` | Every weekday in an inclusive range, computed in UTC so a DST shift cannot drop a day. Skips weekends (~30% fewer requests); exchange holidays are left to the 404 path. |
 | `backfill` | `(startIso, endIso, { delayMs?, onProgress?, ingest? }) => Promise<Tally>` | Oldest-first, rate-limited, resumable. Wraps each day in a guard so no single failure — network *or* database — can end the run. |
 
-### `src/ingest/indices.ts` — the index registry (decision 0034)
+### `src/ingest/indices.ts` — the index registry (decisions 0034, 0037)
 
 | Name | Signature | Notes |
 |---|---|---|
-| `INDICES`, `NIFTY50`, `NIFTY_BANK` | `IndexEntry { key, members, prices, list, label, file, sizes }` | One entry per index tracked on true membership: page key (`u`), `index_members` name, NSE's `index_prices` name, `INDEX_LISTS` key, label, CSV, and the expected size by date. Pure data. |
-| `cleanIndex` | `(v) => IndexEntry` | The pages' `u` param: a registered key, else the NIFTY 50. |
-| `indexByKey`, `sizeOn`, `uParam`, `membersPhrase` | | Lookup; size on a date; `""` or `"&u=bank"` for links; "Nifty Bank's 14 members". |
+| `INDICES`, `NIFTY50`, `NIFTY_BANK`, `NIFTY_FIN_SERVICE` | `IndexEntry { key, members, prices, list, label, term, file, sizes }` | One entry per index tracked on true membership, in default-card order: page key (`u`), `index_members` name, NSE's `index_prices` name, `INDEX_LISTS` key, label, its glossary entry, CSV, and the expected size by date. `IndexKey` is the union of the keys. Pure data. |
+| `cleanIndex`, `isIndexKey` | `(v) => IndexEntry` / `(v) => v is IndexKey` | The pages' `u` param: a registered key, else the NIFTY 50; the strict key check (Unusual activity's `set`). |
+| `indexByKey`, `sizeOn`, `uParam`, `membersPhrase`, `possessive`, `indexLabels` | | Lookup; size on a date; `""` or `"&u=bank"` for links; "Nifty Bank's 14 members"; "Nifty Financial Services'" (a name ending in s takes the apostrophe alone); "NIFTY 50, Nifty Bank or Nifty Financial Services". |
 | `parseMembersArgs` | `(argv) => { entry, force } \| null` | `ingest:members`' arguments: exactly a registered key, then only `--force`; anything else is `null` (usage). |
 
 ### `src/ingest/membership-checks.ts` — nightly membership warnings
@@ -386,7 +386,7 @@ Postgres's 65,535 bind-parameter cap).
 
 | Function | Signature | Notes |
 |---|---|---|
-| `parseMembershipHistory` / `readMembershipHistory` | `(text, label?) / (entry = NIFTY50) => MembershipRow[]` | Reads an index's CSV (`nifty50-history.csv`, `niftybank-history.csv`). Throws on a bad date, a removal before an addition, or a wrong header — never skips a row. |
+| `parseMembershipHistory` / `readMembershipHistory` | `(text, label?) / (entry = NIFTY50) => MembershipRow[]` | Reads an index's CSV (`nifty50-history.csv`, `niftybank-history.csv`, `niftyfinservice-history.csv`). Throws on a bad date, a removal before an addition, or a wrong header — never skips a row. |
 | `membersOn` | `(rows, date) => string[]` | Members on a date: `added_on` inclusive, `removed_on` exclusive (NSE's "effective from" date). |
 | `validateMembershipHistory` | `(rows, size \| SizeStep[]) => string[]` | Every day the count isn't the expected size (a number, or a dated schedule such as Nifty Bank's 12 then 14), and any stock listed twice at once. Membership only changes on boundary dates, so checking those checks every day. |
 | `membershipDrift` | `(rows, live, date) => { added, removed }` | How NSE's live list differs from the file. The nightly job warns when it is non-empty. |
@@ -526,7 +526,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `unusualDays(h)`, `unusualScore` | One company's unusual days (the four kinds, thresholds `KEPT_X`, `VOLUME_X`, `JUMP_PTS`); sort key = largest measure ÷ its threshold. Share counts split-adjusted. |
 | `computeUnusualDays` | Every company through `loadAdjustedHistory`, `unusual_days` replaced in one transaction. `bun run activity` and nightly. |
 | `companies(funds)`, `fundSymbols`, `readFundSymbols` | `universe.ts`: each company once under its latest symbol, ETFs out (`fund-symbols.txt`). |
-| `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all, or NIFTY 50 / Nifty Bank members on that date), counts, a stock's last 92 days. |
+| `activitySession`, `activityNeighbours`, `activityFirst`, `activityOn`, `cleanActivitySet`, `kindCounts`, `filterKinds`, `recentUnusual` | `src/query/activity.ts`: date navigation, a day's list (all, or a registered index's members on that date; `cleanActivitySet` checks `set`), counts, a stock's last 92 days. |
 
 ### `src/research/volume-market.ts`, `cli-volume-market.ts` — research 0004
 
@@ -662,6 +662,8 @@ that collapsed and were removed). The membership lives in
 `src/ingest/nifty50-history.csv`, built from NSE Indices press releases, and is checked
 to have exactly 50 members on every day. Nifty Bank works the same way
 (`src/ingest/niftybank-history.csv`: 12 banks until 30 Dec 2025, 14 since; the registry in
-`src/ingest/indices.ts` binds each file to its index, [0034](docs/decisions/0034-nifty-bank-true-membership.md)). NSE changes the index about twice a year; the
+`src/ingest/indices.ts` binds each file to its index, [0034](docs/decisions/0034-nifty-bank-true-membership.md)), and so does
+Nifty Financial Services (`src/ingest/niftyfinservice-history.csv`: 20 members, 10 changes since
+2020, [0037](docs/decisions/0037-nifty-financial-services-true-membership.md)). NSE changes the index about twice a year; the
 nightly job warns when its live list no longer matches the file. How to add a change:
 [docs/decisions/0005](docs/decisions/0005-point-in-time-membership.md).

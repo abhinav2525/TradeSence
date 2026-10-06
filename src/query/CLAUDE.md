@@ -12,7 +12,7 @@ so they can be tested without a database.
 ## Files
 | File | What it's for |
 |---|---|
-| `breadth.ts` | Breadth page. `MA_COLUMNS` (average → column), re-exports `MaKind`/`MA_LABELS` from `src/lib/ma.ts`, `breadthSeries` (% of members above an average per day), `resolveSession` (snap a date back to a real session), `adjacentSessions`, `breakdownOn` (one day's above/below lists; snaps on the given index's own sessions). Each takes the membership name (`NIFTY50`, `NIFTYBANK` from `ingest/indices`). Other pages reuse `resolveSession` and `MaKind`. |
+| `breadth.ts` | Breadth page. `MA_COLUMNS` (average → column), re-exports `MaKind`/`MA_LABELS` from `src/lib/ma.ts`, `breadthSeries` (% of members above an average per day), `resolveSession` (snap a date back to a real session), `adjacentSessions`, `breakdownOn` (one day's above/below lists; snaps on the given index's own sessions). Each takes the membership name (`NIFTY50`, `NIFTYBANK`, `NIFTYFINSERVICE` from `ingest/indices`). Other pages reuse `resolveSession` and `MaKind`. |
 | (also in `breadth.ts`) | `universeSeries(u, ma)`: whole-market / index-list breadth from `breadth_daily` (bound values, no `sql.raw`). |
 | `crossings.ts` | `/crossings`: `crossingStats` counts how often each member crossed its average, in one SQL window query. Also feeds the Screener's crosser badge. |
 | `advance-decline.ts` | `/advance-decline`: `advanceDeclineCounts` (SQL) plus pure `deriveAdvanceDecline` (RANA, McClellan, summation, A/D line, 10-day advancing share), computed per request, per gap segment. |
