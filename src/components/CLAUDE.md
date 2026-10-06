@@ -27,6 +27,7 @@ queried from `src/query/`; nothing here touches the database.
 | `signals-copy.ts` | Pure, tested sentences for Signals and the notice: `washoutSentence(w, label)` ("4 of Nifty Bank's 14 members…" for another index), `signalsView(ix, cond)` (which cards and side an index gets), `washoutNote(label, total)`, `UNTESTED_LINE`, `firedLine`, `readingSentence`, `noticeText`, `noticeVisible`, `pctText`, `toneClass` |
 | `StockChecks.tsx`, `LightDot.tsx`, `RiskCalculator.tsx`, `StockEvents.tsx`, `StockList.tsx` | Stock Report Card: `checksOf(report)` builds the eight checks (Strength reads "11 of 13 other Nifty Bank members" when the peers aren't the NIFTY 50's), `peersLine` (the "only Strength uses these peers" sentence), `membershipLine`, `cardExtra(report, h)` (the `h`/`u` the card's date nav and arrows keep), `LightSummary`, traffic lights, the ₹ calculator, share-count events/renames/dividend count, the stock index (`StockList` takes `stockGroups` from `src/lib/report-card.ts`) |
 | `LearnList.tsx` | `/learn`: every glossary term grouped by topic, with a filter |
+| `SectorCell.tsx` | Table cell with a stock's short sector name (full name on hover), hidden on phones; used by `MemberTable`, `ScreenerTable` and the Screener's near-the-line cards |
 | `CountUp.tsx`, `SlidingPill.tsx`, `VolumeTrack.tsx` | Motion and small visuals: counting figures, the sliding thumb of a segmented switch, the volume-vs-normal track |
 
 ## Rules here

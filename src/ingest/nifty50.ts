@@ -13,15 +13,38 @@ export const INDEX_NAME = "NIFTY50";
  * Columns: Company Name, Industry, Symbol, Series, ISIN Code.
  */
 export async function fetchNifty50Symbols(): Promise<string[]> {
+  const { header, rows } = await fetchNifty50List();
+  const iSymbol = header.indexOf("Symbol");
+  if (iSymbol < 0) {
+    throw new Error(`Unrecognised NIFTY 50 list header: ${header.join(",").slice(0, 120)}`);
+  }
+  return rows.map((f) => (f[iSymbol] ?? "").trim()).filter(Boolean);
+}
+
+/**
+ * NSE's sector ("Industry") for each current member, keyed by symbol. Used by
+ * tests/sectors.test.ts to check the hand-kept map in src/lib/sectors.ts.
+ */
+export async function fetchNifty50Industries(): Promise<Map<string, string>> {
+  const { header, rows } = await fetchNifty50List();
+  const iSymbol = header.indexOf("Symbol");
+  const iIndustry = header.indexOf("Industry");
+  if (iSymbol < 0 || iIndustry < 0) {
+    throw new Error(`Unrecognised NIFTY 50 list header: ${header.join(",").slice(0, 120)}`);
+  }
+  return new Map(
+    rows
+      .map((f) => [(f[iSymbol] ?? "").trim(), (f[iIndustry] ?? "").trim()] as const)
+      .filter(([s, i]) => s && i),
+  );
+}
+
+async function fetchNifty50List(): Promise<{ header: string[]; rows: string[][] }> {
   const res = await fetch(NIFTY50_LIST_URL, { headers: { "User-Agent": USER_AGENT } });
   if (res.status !== 200) {
     throw new Error(`NIFTY 50 list fetch failed: HTTP ${res.status}`);
   }
   const lines = (await res.text()).split(/\r?\n/).filter((l) => l.trim() !== "");
   const header = (lines[0] ?? "").split(",").map((c) => c.trim());
-  const iSymbol = header.indexOf("Symbol");
-  if (iSymbol < 0) {
-    throw new Error(`Unrecognised NIFTY 50 list header: ${lines[0]?.slice(0, 120)}`);
-  }
-  return lines.slice(1).map((l) => (l.split(",")[iSymbol] ?? "").trim()).filter(Boolean);
+  return { header, rows: lines.slice(1).map((l) => l.split(",")) };
 }

@@ -13,7 +13,7 @@ const IDS = [
   "sma", "ema", "ma-50-200",
   "breadth", "percentile", "five-session-change", "washout", "episode", "forward-return",
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
-  "crossing", "whipsaw", "volume-ratio", "near-the-line",
+  "crossing", "whipsaw", "volume-ratio", "near-the-line", "sector",
   "unusual-activity", "big-keeping", "huge-volume", "big-price-jump", "delivery-pct", "delivery-jump", "delivery-collapse",
   "top-volume", "value-traded", "size-group", "nse-sector", "money-flow", "trading-vs-normal", "share-of-trading", "whole-market-breadth",
   "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
@@ -512,8 +512,17 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     mistakes: ["Expecting a company's sector to match its own description of itself: NSE's labels are broad."],
     related: ["size-group", "top-volume"],
   },
-
-
+  sector: {
+    id: "sector", term: "Sector", topic: "Stocks",
+    short: "The part of the economy a company earns its money in, such as Financial Services, IT or Healthcare. tradeSence uses NSE's own industry names.",
+    read: "When several stocks in the same sector move together, the sector is moving, not just one company.",
+    what: "Stocks in one sector tend to rise and fall together, because the same news (interest rates, oil prices, a rupee move) hits all of them. Knowing the sector tells you whether a stock's move is its own or part of a group's.",
+    calc: { plain: "Taken from NSE's published NIFTY 50 list, the \"Industry\" column. Long names are shortened in tables (FMCG, IT, Auto, Oil & Gas, Media); hover for the full name." },
+    example: "HDFCBANK, ICICIBANK and SBIN all crossing above their average on the same day on heavy volume says banks are moving as a group.",
+    mistakes: ["Reading one big stock as its whole sector. RELIANCE is Oil & Gas, but much of its business is retail and telecom."],
+    related: ["crossing", "volume-ratio"],
+    seeIt: { label: "Screener", href: "/screener" },
+  },
   "trend-check": {
     id: "trend-check", term: "Trend (Report Card)", topic: "Risk",
     short: "Whether the stock closes above its 50- and 200-day averages. Above both is green, above one is amber, below both is red.",

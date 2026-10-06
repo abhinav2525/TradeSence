@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import type { MemberRow } from "@/query/breadth";
 import Term from "@/components/Term";
 import { reportCardHref } from "@/lib/report-card-link";
+import SectorCell from "@/components/SectorCell";
+import { GLOSSARY } from "@/lib/glossary";
 
 type Props = {
   title: string;
@@ -56,6 +58,7 @@ export default function MemberTable({ title, rows, tone, maLabel, cards, classNa
           <TableHeader className="sticky top-0 z-10 bg-card">
             <TableRow className="hover:bg-transparent">
               <TableHead className={cn(head, "pl-card-x")}>Symbol</TableHead>
+              <TableHead className={cn(head, "hidden sm:table-cell")} title={GLOSSARY.sector.short}>Sector</TableHead>
               <TableHead className={cn(head, "text-right")}>Close</TableHead>
               <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Average</TableHead>
               <TableHead className={cn(head, "pr-card-x text-right")}>Distance</TableHead>
@@ -74,6 +77,7 @@ export default function MemberTable({ title, rows, tone, maLabel, cards, classNa
                       </Badge>
                     )}
                   </TableCell>
+                  <SectorCell symbol={r.symbol} />
                   <TableCell className="px-3 py-cell text-right text-body-sm text-foreground">
                     {formatPrice(r.close)}
                   </TableCell>
