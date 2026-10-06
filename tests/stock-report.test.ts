@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { stockReport, supportedStocks } from "../src/query/stock-report";
-import { checksOf } from "../src/components/StockChecks";
+import { checksOf, peersLine } from "../src/components/StockChecks";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
 
@@ -249,6 +249,113 @@ test("supportedStocks lists current members first", async () => {
     { indexName: "NIFTY50", symbol: "ZED", addedOn: "2020-01-01", removedOn: null },
     { indexName: "NIFTY50", symbol: "OLD", addedOn: "2020-01-01", removedOn: "2021-01-01" },
   ]);
-  expect(await supportedStocks()).toEqual([{ symbol: "ZED", current: true }, { symbol: "OLD", current: false }]);
+  expect(await supportedStocks()).toEqual([
+    { symbol: "ZED", current: true, currentIn: ["nifty50"] }, { symbol: "OLD", current: false, currentIn: [] },
+  ]);
 
+});
+
+// ── Step B (decision 0035): a Report Card for every registered index's member ──
+// AAA is in both indices; NFX, NFY only the NIFTY 50; BNK only Nifty Bank; BLEFT left Nifty Bank on d(200).
+// NIFTY 50 stocks dip under their 200-day line on d(100)–d(110) (a NIFTY 50 crash); the banks never do.
+// The NIFTY 50's close moves exactly like BNK, Nifty Bank's doesn't: so BNK's beta is 1 only if the
+// market line is the NIFTY 50.
+describe("Report Cards across registered indices (step B)", () => {
+  const N = 300;
+  const dip = (i: number) => (i >= 100 && i <= 110 ? 80 : 120);
+  const wiggle = (i: number, k: number) => 120 * (1 + 0.01 * Math.sin(i * k));
+  beforeEach(async () => {
+    await reset();
+    const m = (indexName: string, symbol: string, removedOn: string | null = null) => ({ indexName, symbol, addedOn: "2020-01-01", removedOn });
+    await db.insert(schema.indexMembers).values([
+      m("NIFTY50", "AAA"), m("NIFTY50", "NFX"), m("NIFTY50", "NFY"),
+      m("NIFTYBANK", "AAA"), m("NIFTYBANK", "BNK"), m("NIFTYBANK", "BLEFT", d(200)),
+    ]);
+    const series = (f: (i: number) => number) => Array.from({ length: N }, (_, i) => f(i));
+    await seedCloses("AAA", series((i) => dip(i) * (1 + 0.002 * i / N)));
+    await seedCloses("NFX", series((i) => dip(i) * (1 + 0.004 * i / N)));
+    await seedCloses("NFY", series((i) => dip(i) * (1 + 0.006 * i / N)));
+    await seedCloses("BNK", series((i) => wiggle(i, 1)));
+    await seedCloses("BLEFT", series((i) => wiggle(i, 0.7)));
+    await seedIndexCloses(series((i) => wiggle(i, 1) * 10)); // "Nifty 50" moves like BNK
+    await db.insert(schema.indexPrices).values(series((i) => 1000 + i).map((close, i) => ({ tradeDate: d(i), indexName: "Nifty Bank", open: null, high: null, low: null, close })));
+  });
+
+  test("a Bank-only stock gets a card, ranked among Nifty Bank's members on the date", async () => {
+    const r = await stockReport("BNK");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.peerIndex).toEqual({ key: "bank", label: "Nifty Bank" });
+    expect(r.report.indices).toEqual(["bank"]);
+    expect(r.report.strength.peers).toBe(1); // AAA; BLEFT left on d(200)
+    const before = await stockReport("BNK", d(150));
+    if (before.kind !== "ok") throw new Error(before.kind);
+    expect(before.report.strength.peers).toBe(2); // AAA and BLEFT, still a member then
+  });
+
+  test("a Bank-only stock's risk lights are measured against the NIFTY 50, not Nifty Bank", async () => {
+    const r = await stockReport("BNK");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.badDays.capture!.beta).toBeCloseTo(1, 6);
+    expect(r.report.badDays.capture!.down).toBeCloseTo(100, 6);
+    // the crash comes from NIFTY 50 breadth (banks never dipped, so Nifty Bank breadth has none)
+    expect(r.report.crashes.episodes.map((e) => e.start)).toEqual([d(100)]);
+  });
+
+  test("a stock in both: NIFTY 50 peers by default, Nifty Bank's with the bank key", async () => {
+    const def = await stockReport("AAA");
+    const bank = await stockReport("AAA", undefined, "bank");
+    if (def.kind !== "ok" || bank.kind !== "ok") throw new Error("no report");
+    expect(def.report.peerIndex.key).toBe("nifty50");
+    expect(def.report.indices).toEqual(["nifty50", "bank"]);
+    expect(def.report.strength.peers).toBe(2); // NFX, NFY
+    expect(bank.report.peerIndex.key).toBe("bank");
+    expect(bank.report.strength.peers).toBe(1); // BNK
+    // only the peer rank changes: the market comparisons are the same numbers
+    expect(bank.report.badDays.capture!.beta).toBeCloseTo(def.report.badDays.capture!.beta, 12);
+    expect(bank.report.crashes.episodes).toEqual(def.report.crashes.episodes);
+  });
+
+  test("a key the stock was never in, or junk, falls back to its default peers", async () => {
+    for (const k of ["bank", "junk", ""]) {
+      const r = await stockReport("NFX", undefined, k);
+      if (r.kind !== "ok") throw new Error(r.kind);
+      expect(r.report.peerIndex.key).toBe("nifty50");
+    }
+  });
+
+  test("supportedStocks lists every registered index's members once, with where each is now", async () => {
+    expect(await supportedStocks()).toEqual([
+      { symbol: "AAA", current: true, currentIn: ["nifty50", "bank"] },
+      { symbol: "BNK", current: true, currentIn: ["bank"] },
+      { symbol: "NFX", current: true, currentIn: ["nifty50"] },
+      { symbol: "NFY", current: true, currentIn: ["nifty50"] },
+      { symbol: "BLEFT", current: false, currentIn: [] },
+    ]);
+  });
+
+  test("Strength names the peer index and reads 'x of N' for Nifty Bank; NIFTY 50 wording unchanged", async () => {
+    const bank = await stockReport("AAA", undefined, "bank");
+    const def = await stockReport("AAA");
+    if (bank.kind !== "ok" || def.kind !== "ok") throw new Error("no report");
+    const sb = checksOf(bank.report).find((c) => c.label === "Strength")!;
+    expect(sb.sentence).toMatch(/stronger than [01] of the 1 other Nifty Bank member on this day\.$/);
+    expect(sb.figure).toMatch(/^[01] of 1$/);
+    expect(sb.sentence).not.toMatch(/%\s+of/);
+    const sd = checksOf(def.report).find((c) => c.label === "Strength")!;
+    expect(sd.sentence).toMatch(/stronger than \d+% of the other 2 members on this day\.$/);
+  });
+
+  test("the peer count below is the rank's own count", async () => {
+    const r = await stockReport("NFY");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.strength.below).toBe(2); // NFY rose most of the three NIFTY 50 stocks
+    expect(r.report.strength.percentile).toBe(100);
+  });
+
+  test("the card says plainly that only Strength uses the Bank peers", async () => {
+    const bank = await stockReport("BNK"), def = await stockReport("NFX");
+    if (bank.kind !== "ok" || def.kind !== "ok") throw new Error("no report");
+    expect(peersLine(bank.report)).toBe("Strength ranks it among Nifty Bank's members on that day. Every other check compares it with the NIFTY 50, the market.");
+    expect(peersLine(def.report)).toBeNull();
+  });
 });

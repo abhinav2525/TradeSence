@@ -1,6 +1,8 @@
 /**
- * The Stock Report Card's data: one NIFTY 50 member (current or past), read
- * on or before a session. Everything comes from the adjusted daily moves, so
+ * The Stock Report Card's data: one member (current or past) of any registered
+ * index (decision 0035), read on or before a session. The market line (beta, bad
+ * days, crashes, every "vs the NIFTY 50") is always the NIFTY 50; the stock's index
+ * chooses only the peers it is ranked against. Everything comes from the adjusted daily moves, so
  * splits, demergers and renames can't fake a fall. Spec:
  * docs/superpowers/specs/2026-10-02-stock-report-card-design.md.
  */
@@ -9,6 +11,8 @@ import { db } from "../db";
 import { symbolLineage } from "../ingest/symbol-changes";
 import { WEEK, crashEpisodes, ewmaVolatility, marketCapture, rangeHitRate, type Capture, type Crashes } from "../indicators/market-risk";
 import { breadthSeries } from "./breadth";
+import { CARD_INDEX_NAMES } from "./card-indices";
+import { INDICES, NIFTY50 } from "../ingest/indices";
 import {
   DRAWDOWN_MIN, HORIZONS, THRESHOLDS, VOL_WINDOW, downCaptureLight, nowVolLight, adjustedLine, closesToMoves, currentDrawdownPct, dailyVolatility,
   drawdownSeries, horizonStats, liquidityLight, periodReturn, rankAmongPeers, ratioLight,
@@ -16,7 +20,7 @@ import {
   type Drawdown, type HorizonKey, type HorizonStats, type Light,
 } from "../indicators/risk";
 
-const INDEX = "Nifty 50"; // NSE's name in index_prices
+const INDEX = NIFTY50.prices; // the market line, whatever the peer index (owner, 2026-10-05)
 const SHARE_COUNT_KINDS = ["split", "bonus", "bonus+split", "consolidation", "demerger"];
 
 export type HorizonPair = { stock: HorizonStats | null; nifty: HorizonStats | null };
@@ -30,10 +34,12 @@ export type StockReport = {
   next: string | null;
   firstDate: string; // first session in the stock's history
   lastDate: string; // latest session loaded, for the date picker's upper bound
-  membership: { addedOn: string; removedOn: string | null }[];
+  membership: { addedOn: string; removedOn: string | null }[]; // in the peer index
+  peerIndex: { key: string; label: string }; // whose members the Strength rank uses
+  indices: string[]; // registry keys of every index the stock was ever in, registry order
   close: number;
   trend: { light: Light | null; sma50: number | null; sma200: number | null; side200: "above" | "below" | null; sessions200: number };
-  strength: { light: Light | null; percentile: number | null; peers: number; ret3m: number | null; ret6m: number | null; ret12m: number | null; nifty6m: number | null };
+  strength: { light: Light | null; percentile: number | null; peers: number; below: number | null; ret3m: number | null; ret6m: number | null; ret12m: number | null; nifty6m: number | null };
   bumpiness: { light: Light | null; dailyVol: number | null; niftyVol: number | null; ratio: number | null };
   worstFall: { light: Light | null; stock: Drawdown | null; nifty: Drawdown | null; ratio: number | null; currentPct: number | null };
   liquidity: { light: Light | null; medianCrore: number | null };
@@ -52,21 +58,36 @@ export type StockReportResult =
   | { kind: "no-data"; symbol: string; firstDate: string | null } // no session on or before the date
   | { kind: "ok"; report: StockReport };
 
-export async function supportedStocks(indexName = "NIFTY50") {
-  const rows = await db.execute<{ symbol: string; current: boolean }>(sql`
-    select symbol, bool_or(removed_on is null) as current
-    from index_members where index_name = ${indexName}
+/** Every stock with a Report Card: members past and present of every registered index, each once. */
+export async function supportedStocks(): Promise<{ symbol: string; current: boolean; currentIn: string[] }[]> {
+  const rows = await db.execute<{ symbol: string; current: boolean; now: string[] | null }>(sql`
+    select symbol, bool_or(removed_on is null) as current,
+           array_agg(distinct index_name) filter (where removed_on is null) as now
+    from index_members where index_name in ${CARD_INDEX_NAMES}
     group by symbol
     order by bool_or(removed_on is null) desc, symbol`);
-  return rows.map((r) => ({ symbol: r.symbol, current: Boolean(r.current) }));
+  return rows.map((r) => ({
+    symbol: r.symbol,
+    current: Boolean(r.current),
+    currentIn: INDICES.filter((ix) => (r.now ?? []).includes(ix.members)).map((ix) => ix.key),
+  }));
 }
 
-export async function stockReport(symbol: string, dateIso?: string, indexName = "NIFTY50"): Promise<StockReportResult> {
-  const membership = (await db.execute<{ added_on: string; removed_on: string | null }>(sql`
-    select added_on::text, removed_on::text from index_members
-    where index_name = ${indexName} and symbol = ${symbol} order by added_on`))
-    .map((m) => ({ addedOn: m.added_on, removedOn: m.removed_on }));
-  if (membership.length === 0) return { kind: "unknown" };
+/**
+ * `peersKey`: the registry key whose members the stock is ranked against. Anything
+ * the stock was never in (or nothing) means its default: the first registered index
+ * it belongs to, so a NIFTY 50 stock's card is unchanged and a bank-only one ranks
+ * among Nifty Bank's members.
+ */
+export async function stockReport(symbol: string, dateIso?: string, peersKey?: string): Promise<StockReportResult> {
+  const spans = await db.execute<{ index_name: string; added_on: string; removed_on: string | null }>(sql`
+    select index_name, added_on::text, removed_on::text from index_members
+    where index_name in ${CARD_INDEX_NAMES} and symbol = ${symbol} order by added_on`);
+  const indices = INDICES.filter((ix) => spans.some((m) => m.index_name === ix.members));
+  if (indices.length === 0) return { kind: "unknown" };
+  const peerIx = indices.find((ix) => ix.key === peersKey) ?? indices[0]!;
+  const indexName = peerIx.members;
+  const membership = spans.filter((m) => m.index_name === indexName).map((m) => ({ addedOn: m.added_on, removedOn: m.removed_on }));
 
   const all = await db.execute<{ d: string; close: number; sma_50: number | null; sma_200: number | null; change_pct: number | null; turnover: number | null }>(sql`
     select trade_date::text d, close, sma_50, sma_200, change_pct, turnover
@@ -161,8 +182,9 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
   const capture = marketCapture(moves, niftyMoves);
   const badDays = { light: capture ? downCaptureLight(capture.down) : null, capture };
 
-  // In crashes: breadth up to this session only, so a crash under way isn't counted
-  const breadth = (await breadthSeries("sma200", indexName)).filter((b) => b.date <= date);
+  // In crashes: NIFTY 50 breadth (the market, whatever the peer index) up to this
+  // session only, so a crash under way isn't counted
+  const breadth = (await breadthSeries("sma200", NIFTY50.members)).filter((b) => b.date <= date);
   const crash = crashEpisodes(breadth, line, niftyLine);
   const crashes = {
     light: crash.ratio !== null && crash.episodes.length >= THRESHOLDS.crashMinEpisodes ? ratioLight(crash.ratio) : null,
@@ -202,9 +224,10 @@ export async function stockReport(symbol: string, dateIso?: string, indexName = 
     report: {
       symbol, date, requested: dateIso ?? null, snapped: Boolean(dateIso && dateIso !== date), prev, next,
       firstDate: firstDate!, lastDate: all.at(-1)!.d, membership, close,
+      peerIndex: { key: peerIx.key, label: peerIx.label }, indices: indices.map((ix) => ix.key),
       trend: { light: trendLight(close, sma50, sma200), sma50, sma200, side200, sessions200 },
       strength: {
-        light: percentile === null ? null : strengthLight(percentile), percentile, peers: rank?.of ?? 0,
+        light: percentile === null ? null : strengthLight(percentile), percentile, peers: rank?.of ?? 0, below: rank?.below ?? null,
         ret3m: periodReturn(line, 63), ret6m, ret12m: periodReturn(line, 250), nifty6m,
       },
       bumpiness: { light: volRatio === null ? null : ratioLight(volRatio), dailyVol, niftyVol, ratio: volRatio },

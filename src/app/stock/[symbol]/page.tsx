@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
 import DateNav from "@/components/DateNav";
-import StockChecks, { LightSummary, checksOf } from "@/components/StockChecks";
+import StockChecks, { LightSummary, checksOf, peersLine } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
 import RiskCalculator from "@/components/RiskCalculator";
 import UnusualDaysCard from "@/components/UnusualDaysCard";
@@ -16,6 +16,8 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { stockReport, type StockReport } from "@/query/stock-report";
 import type { HorizonKey } from "@/indicators/risk";
+import IndexTabs from "@/components/IndexTabs";
+import { NIFTY50, cleanIndex } from "@/ingest/indices";
 
 export const dynamic = "force-dynamic";
 
@@ -39,12 +41,13 @@ function cleanSymbol(raw: string): string | null {
 
 function membershipLine(r: StockReport): string {
   const last = r.membership.at(-1)!;
+  const ix = r.peerIndex.key === NIFTY50.key ? "the NIFTY 50" : r.peerIndex.label;
   if (last.removedOn === null) {
     return last.addedOn === "2020-01-01"
-      ? "In the NIFTY 50 since at least Jan 2020 (when the membership record starts)."
-      : `In the NIFTY 50 since ${formatDate(last.addedOn)}.`;
+      ? `In ${ix} since at least Jan 2020 (when the membership record starts).`
+      : `In ${ix} since ${formatDate(last.addedOn)}.`;
   }
-  return `Left the NIFTY 50 on ${formatDate(last.removedOn)}${last.addedOn === "2020-01-01" ? "" : ` (joined ${formatDate(last.addedOn)})`}.`;
+  return `Left ${ix} on ${formatDate(last.removedOn)}${last.addedOn === "2020-01-01" ? "" : ` (joined ${formatDate(last.addedOn)})`}.`;
 }
 
 export default async function Page({
@@ -52,7 +55,7 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ symbol: string }>;
-  searchParams: Promise<{ date?: string; h?: string }>;
+  searchParams: Promise<{ date?: string; h?: string; u?: string }>;
 }) {
   const symbol = cleanSymbol((await params).symbol);
   if (!symbol) notFound();
@@ -60,14 +63,15 @@ export default async function Page({
   const h: HorizonKey = isHorizon(sp.h) ? sp.h : "1m";
   const wanted = cleanDate(sp.date);
 
-  const res = await stockReport(symbol, wanted);
+  // `u` picks the peer index; stockReport accepts only an index this stock was in, else its default
+  const res = await stockReport(symbol, wanted, typeof sp.u === "string" ? sp.u : undefined);
   if (res.kind === "unknown") notFound();
   const base = `/stock/${encodeURIComponent(symbol)}`;
 
   if (res.kind === "no-data") {
     return (
       <AppShell current="stock" ma="sma200">
-        <PageHeader eyebrow="NIFTY 50 · Stock" title={symbol} />
+        <PageHeader eyebrow="Stock" title={symbol} />
         <Card className="px-6 py-12 text-center">
           <p className="text-heading text-foreground">Nothing loaded for that session</p>
           <p className="mt-2 text-body-sm text-foreground-2">
@@ -81,18 +85,34 @@ export default async function Page({
   const r = res.report;
   const unusual = await recentUnusual(symbol, r.date);
   const checks = checksOf(r);
+  // `u` only when it isn't the stock's default, so existing card URLs stay as they were
+  const uExtra = r.peerIndex.key === r.indices[0] ? "" : `&u=${r.peerIndex.key}`;
+  const extra = `&h=${h}${uExtra}`;
+  const peers = peersLine(r);
   return (
     <AppShell current="stock" ma="sma200" asOf={r.lastDate}>
       {/* arrows step this stock's sessions and keep the horizon; 1-3 do nothing here */}
-      <Hotkeys ma="sma200" page="stock" base={base} extra={`&h=${h}`} prev={r.prev} next={r.next} />
+      <Hotkeys ma="sma200" page="stock" base={base} extra={extra} prev={r.prev} next={r.next} />
       <PageHeader
-        eyebrow="NIFTY 50 · Stock"
+        eyebrow={`${r.peerIndex.label} · Stock`}
         title={symbol}
-        description={`${membershipLine(r)} Read on ${formatDate(r.date)}, with history since ${formatDate(r.firstDate)}.`}
+        description={`${membershipLine(r)} Read on ${formatDate(r.date)}, with history since ${formatDate(r.firstDate)}.${peers ? ` ${peers}` : ""}`}
         actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {r.indices.length > 1 && (
+              <IndexTabs
+                base={base as `/stock/${string}`}
+                current={cleanIndex(r.peerIndex.key)}
+                only={r.indices}
+                label="Rank among the members of"
+                ma="sma200"
+                date={r.requested ? r.date : undefined}
+                extra={`&h=${h}`}
+              />
+            )}
           <DateNav
             base={base}
-            extra={`&h=${h}`}
+            extra={extra}
             ma="sma200"
             date={r.date}
             requested={r.requested}
@@ -102,6 +122,7 @@ export default async function Page({
             min={r.firstDate}
             max={r.lastDate}
           />
+          </div>
         }
       />
       <div className="flex flex-col gap-cards">

@@ -123,15 +123,15 @@ describe("rankAmongPeers (decision 0013)", () => {
   test("ranks against the OTHER members, found by symbol, not by value", () => {
     // C's own entry carries rounding noise (a second code path): it must still be excluded
     const noisy = peers.map((p) => (p.symbol === "C" ? { ...p, value: 3 + 1e-13 } : p));
-    expect(rankAmongPeers("C", 3, noisy)).toEqual({ pct: 50, of: 4 });
+    expect(rankAmongPeers("C", 3, noisy)).toEqual({ pct: 50, of: 4, below: 2 });
   });
   test("the weakest is stronger than 0%, the strongest than 100% (of the others)", () => {
-    expect(rankAmongPeers("A", 1, peers)).toEqual({ pct: 0, of: 4 });
-    expect(rankAmongPeers("E", 5, peers)).toEqual({ pct: 100, of: 4 });
+    expect(rankAmongPeers("A", 1, peers)).toEqual({ pct: 0, of: 4, below: 0 });
+    expect(rankAmongPeers("E", 5, peers)).toEqual({ pct: 100, of: 4, below: 4 });
   });
   test("rounding noise between two different stocks never counts as 'stronger'", () => {
     const tie = [{ symbol: "X", value: 2 + 1e-12 }, { symbol: "Y", value: 1 }];
-    expect(rankAmongPeers("S", 2, tie)).toEqual({ pct: 50, of: 2 });
+    expect(rankAmongPeers("S", 2, tie)).toEqual({ pct: 50, of: 2, below: 1 });
   });
   test("no other members: no rank", () => {
     expect(rankAmongPeers("A", 1, [{ symbol: "A", value: 1 }])).toBeNull();

@@ -33,9 +33,10 @@ describe("topVolume", () => {
     expect(big).toMatchObject({ sector: "Financial Services", size: "large", hasCard: true });
     expect((await topVolume(base)).asOf).toBe("2026-10-01");
   });
-  test("a Nifty-Bank-only stock has no Report Card link yet (cards are NIFTY 50 members past and present)", async () => {
+  test("a Nifty-Bank-only stock links to its Report Card (step B: every registered index's members)", async () => {
     const mid = (await topVolume(base)).rows.find((r) => r.symbol === "MIDBANK")!;
-    expect(mid.hasCard).toBe(false);
+    expect(mid.hasCard).toBe(true);
+    expect((await topVolume(base)).rows.find((r) => r.symbol === "SMALLIT")!.hasCard).toBe(false);
   });
   test("sectors present in the universe", async () => {
     expect(await sectorsPresent()).toEqual(["Financial Services", "Information Technology"]);
@@ -50,4 +51,12 @@ test("the leaderboard pages through 100 rows at a time", () => {
   expect(pageOfRows(rows, 3)).toEqual({ rows: rows.slice(200), page: 3, pages: 3, first: 201 });
   expect(pageOfRows(rows, 9).page).toBe(3); // past the end: the last page
   expect(pageOfRows([], 1)).toEqual({ rows: [], page: 1, pages: 1, first: 1 });
+});
+
+import { withReportCard } from "../src/query/money-flow";
+
+describe("withReportCard (Money flow drill-down)", () => {
+  test("a member of any registered index has a card; other stocks don't", async () => {
+    expect(await withReportCard(["BIGBANK", "MIDBANK", "SMALLIT"])).toEqual(new Set(["BIGBANK", "MIDBANK"]));
+  });
 });

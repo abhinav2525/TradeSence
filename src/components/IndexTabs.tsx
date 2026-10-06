@@ -4,23 +4,28 @@ import SlidingPill from "@/components/SlidingPill";
 import { INDICES, uParam, type IndexEntry } from "@/ingest/indices";
 
 type Props = {
-  base: "/advance-decline" | "/crossings" | "/screener";
+  base: "/advance-decline" | "/crossings" | "/screener" | "/signals" | `/stock/${string}`;
   current: IndexEntry;
   ma: string;
   date?: string;
   /** Other already-validated params to keep when switching index, e.g. "&view=below". */
   extra?: string;
+  /** Only these registry keys (a Report Card offers the indices its stock was in); default all. */
+  only?: readonly string[];
+  /** The accessible name; default "Index". */
+  label?: string;
 };
 
 /**
  * Which index the page counts (decision 0034): NIFTY 50 or Nifty Bank, each on its
  * real membership day by day. Same look as MaTabs; the choice lives in `u`.
  */
-export default function IndexTabs({ base, current, ma, date, extra = "" }: Props) {
+export default function IndexTabs({ base, current, ma, date, extra = "", only, label = "Index" }: Props) {
+  const shown = only ? INDICES.filter((ix) => only.includes(ix.key)) : INDICES;
   return (
-    <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Index">
+    <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label={label}>
       <SlidingPill active={current.key} />
-      {INDICES.map((ix) => {
+      {shown.map((ix) => {
         const active = ix.key === current.key;
         return (
           <Link

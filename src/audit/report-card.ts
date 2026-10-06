@@ -1,6 +1,8 @@
 /**
  * `bun run audit:report-card [YYYY-MM-DD]`: an INDEPENDENT recalculation of every
- * Report Card number, for every member, compared with stockReport() (decision 0013).
+ * Report Card number, for every member of every registered index on the session, each
+ * card with its own peers (decisions 0013, 0035), compared with stockReport(). The
+ * market line (NIFTY 50 close, NIFTY 50 breadth for crashes) is the same for every card.
  *
  * It deliberately shares no code with the app: it reads raw bhavcopy rows
  * (daily_prices), follows renames and applies splits, bonuses and demergers itself,
@@ -12,6 +14,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { stockReport } from "../query/stock-report";
+import { INDICES } from "../ingest/indices"; // names only: which cards exist, never any maths
 
 const MAX_GAP = 21, SHARE = ["split", "bonus", "bonus+split", "consolidation"];
 type Pt = { d: string; level: number; seg: number; close: number; turnover: number };
@@ -141,9 +144,15 @@ function crashes(l: Pt[], nifty: { d: string; c: number }[], upto: string) {
 
 const [{ d: latest }] = await db.execute<{ d: string }>(sql`select max(trade_date)::text d from daily_prices`);
 const today = process.argv[2] ?? latest;
-const members = (await db.execute<{ s: string }>(sql`select symbol s from index_members where index_name='NIFTY50' and added_on <= ${today} and (removed_on is null or removed_on > ${today}) order by symbol`)).map((r) => r.s);
+const started = performance.now();
+// every card: (index, member on the session); a stock in two indices has two cards
+const cards: { key: string; label: string; members: string[] }[] = [];
+for (const ix of INDICES) {
+  const ms = (await db.execute<{ s: string }>(sql`select symbol s from index_members where index_name = ${ix.members} and added_on <= ${today} and (removed_on is null or removed_on > ${today}) order by symbol`)).map((r) => r.s);
+  cards.push({ key: ix.key, label: ix.label, members: ms });
+}
 const lines = new Map<string, Pt[]>();
-for (const m of members) lines.set(m, await line(m, today));
+for (const c of cards) for (const m of c.members) if (!lines.has(m)) lines.set(m, await line(m, today));
 
 // Breadth rebuilt from raw prices: a member is "above" when its adjusted level is above
 // the mean of its last 200 levels in the same segment (= close > stored SMA 200).
@@ -166,7 +175,6 @@ for (const s of everSyms) {
   });
 }
 const breadthAll = [...counts.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([d, c]) => ({ d, pct: (c.above / c.total) * 100 }));
-const peer6m = members.map((m) => ({ m, r: ret(lines.get(m)!, 126) })).filter((x): x is { m: string; r: number } => x.r !== null);
 
 const mism: string[] = []; let checked = 0;
 const cmp = (sym: string, what: string, mine: number | null, app: number | null | undefined, tol = 0.001) => {
@@ -177,10 +185,16 @@ const cmp = (sym: string, what: string, mine: number | null, app: number | null 
   if (!ok) mism.push(`${sym} ${what}: mine=${mine.toFixed(4)} app=${app.toFixed(4)}`);
 };
 
-for (const m of members) {
-  const res = await stockReport(m, today);
+let cardCount = 0;
+for (const card of cards) {
+const peer6m = card.members.map((m) => ({ m, r: ret(lines.get(m)!, 126) })).filter((x): x is { m: string; r: number } => x.r !== null);
+for (const sym of card.members) {
+  cardCount++;
+  const m = card.key === INDICES[0]!.key ? sym : `${sym} [${card.label}]`; // the label in mismatch lines
+  const res = await stockReport(sym, today, card.key);
   if (res.kind !== "ok") { mism.push(`${m}: app says ${res.kind}`); continue; }
-  const r = res.report, l = lines.get(m)!;
+  const r = res.report, l = lines.get(sym)!;
+  if (r.peerIndex.key !== card.key) mism.push(`${m}: peers mine=${card.key} app=${r.peerIndex.key}`);
   if (l.at(-1)!.d !== r.date) mism.push(`${m}: date mine=${l.at(-1)!.d} app=${r.date}`);
   if (l[0]!.d !== r.firstDate) mism.push(`${m}: firstDate mine=${l[0]!.d} app=${r.firstDate}`);
   const niftyRows = (await db.execute<{ d: string; c: number }>(sql`select trade_date::text d, close c from index_prices where index_name='Nifty 50' and trade_date between ${l[0]!.d} and ${r.date} order by 1`)).map((x) => ({ d: x.d, c: Number(x.c) }));
@@ -194,8 +208,11 @@ for (const m of members) {
   const my6 = ret(l, 126);
   // "stronger than X% of the OTHER members": self removed by name, and a gap smaller
   // than 1e-9 points is the same number computed twice, not a real difference
-  const others = peer6m.filter((x) => x.m !== m);
-  cmp(m, "percentile", my6 === null || !others.length ? null : (others.filter((x) => x.r < my6 - 1e-9).length / others.length) * 100, r.strength.percentile);
+  const others = peer6m.filter((x) => x.m !== sym);
+  const beaten = my6 === null || !others.length ? null : others.filter((x) => x.r < my6 - 1e-9).length;
+  cmp(m, "percentile", beaten === null ? null : (beaten / others.length) * 100, r.strength.percentile);
+  cmp(m, "peers beaten", beaten, r.strength.below);
+  cmp(m, "peers", beaten === null ? null : others.length, beaten === null ? null : r.strength.peers);
   cmp(m, "dailyVol", vol(moves(l)), r.bumpiness.dailyVol);
   cmp(m, "niftyVol", vol(nm), r.bumpiness.niftyVol);
   cmp(m, "worstFall", l.length >= 250 ? dd(l) : null, r.worstFall.stock?.depthPct ?? null);
@@ -230,7 +247,8 @@ for (const m of members) {
     if (e.hiD !== x?.peakDate || e.loD !== x?.lowDate) mism.push(`${m} crash ${e.start} dates: mine=${e.hiD}→${e.loD} app=${x?.peakDate}→${x?.lowDate}`);
   });
 }
-console.log(`session ${today} · ${members.length} members · ${checked} numbers compared · ${mism.length} mismatches`);
+}
+console.log(`session ${today} · ${cardCount} cards (${cards.map((c) => `${c.label} ${c.members.length}`).join(", ")}) · ${checked} numbers compared · ${mism.length} mismatches · ${((performance.now() - started) / 1000).toFixed(1)} s`);
 for (const x of mism) console.log("  ✗", x);
 if (mism.length === 0) console.log("✓ every number matches the independent recalculation");
 process.exit(mism.length ? 1 : 0);

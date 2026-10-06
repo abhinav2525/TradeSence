@@ -8,6 +8,7 @@ import { LIGHTS_DISCLAIMER } from "@/lib/report-card";
 import Term from "@/components/Term";
 import type { TermId } from "@/lib/glossary";
 import CountUp from "@/components/CountUp";
+import { NIFTY50 } from "@/ingest/indices";
 
 const pct = (v: number, digits = 1) => `${signed(v, digits)}%`;
 const abs0 = (v: number) => Math.abs(v).toFixed(0);
@@ -32,7 +33,10 @@ export function checksOf(r: StockReport): Check[] {
   const strengthSentence =
     s.percentile === null || s.ret6m === null || s.nifty6m === null
       ? "Not enough history for a 6-month comparison yet."
-      : `6-month return ${pct(s.ret6m)} vs the NIFTY 50's ${pct(s.nifty6m)}: stronger than ${s.percentile.toFixed(0)}% of the other ${s.peers} members on this day.`;
+      : r.peerIndex.key === NIFTY50.key
+        ? `6-month return ${pct(s.ret6m)} vs the NIFTY 50's ${pct(s.nifty6m)}: stronger than ${s.percentile.toFixed(0)}% of the other ${s.peers} members on this day.`
+        : // a small index: the count, not a percentage (decision 0035)
+          `6-month return ${pct(s.ret6m)} vs the NIFTY 50's ${pct(s.nifty6m)}: stronger than ${s.below} of the ${s.peers} other ${r.peerIndex.label} member${s.peers === 1 ? "" : "s"} on this day.`;
 
   const b = r.bumpiness;
   const bumpSentence =
@@ -84,7 +88,7 @@ export function checksOf(r: StockReport): Check[] {
 
   return [
     { label: "Trend", term: "trend-check", light: t.light, figure: t.sma200 === null ? "—" : pct((r.close / t.sma200 - 1) * 100), sentence: trendSentence },
-    { label: "Strength", term: "relative-strength", light: s.light, figure: s.percentile === null ? "—" : ordinal(s.percentile), sentence: strengthSentence },
+    { label: "Strength", term: "relative-strength", light: s.light, figure: s.percentile === null ? "—" : r.peerIndex.key === NIFTY50.key ? ordinal(s.percentile) : `${s.below} of ${s.peers}`, sentence: strengthSentence },
     { label: "Bumpiness", term: "volatility", light: b.light, figure: b.ratio === null ? "—" : `${b.ratio.toFixed(1)}×`, sentence: bumpSentence },
     { label: "Worst fall", term: "drawdown", light: w.light, figure: ws ? `${signed(ws.depthPct, 0)}%` : "—", sentence: fallSentence },
     { label: "Liquidity", term: "liquidity", light: l.light, figure: crore === null ? "—" : `₹${formatInt(crore)} cr`, sentence: liqSentence },
@@ -92,6 +96,12 @@ export function checksOf(r: StockReport): Check[] {
     { label: "Bad days", term: "bad-days", light: r.badDays.light, figure: c ? `${c.down.toFixed(0)}%` : "—", sentence: badSentence },
     { label: "In crashes", term: "crash-episodes", light: k.light, figure: k.light === null || k.ratio === null ? "—" : `${k.ratio.toFixed(1)}×`, sentence: crashSentence },
   ];
+}
+
+/** Said plainly whenever the peers aren't the NIFTY 50's (owner, 2026-10-05; decision 0035). */
+export function peersLine(r: StockReport): string | null {
+  if (r.peerIndex.key === NIFTY50.key) return null;
+  return `Strength ranks it among ${r.peerIndex.label}'s members on that day. Every other check compares it with the NIFTY 50, the market.`;
 }
 
 /** Counts of each light, never a score. */

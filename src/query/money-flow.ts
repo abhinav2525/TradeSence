@@ -1,7 +1,7 @@
 /** The Money flow page reads money_flow (rebuilt nightly; spec 2026-10-05) and sums per sector with sectorFlows. */
 import { sql } from "drizzle-orm";
 import { db } from "../db";
-import { INDEX_NAME } from "../ingest/nifty50";
+import { CARD_INDEX_NAMES } from "./card-indices";
 import type { FlowPeriod, FlowRow } from "../indicators/money-flow";
 
 export async function moneyFlowRows(period: FlowPeriod): Promise<{ asOf: string | null; rows: FlowRow[] }> {
@@ -19,11 +19,11 @@ export async function moneyFlowRows(period: FlowPeriod): Promise<{ asOf: string 
   };
 }
 
-/** Of these symbols, the ones with a Report Card (ever in the NIFTY 50), so the drill-down can link to them. */
+/** Of these symbols, the ones with a Report Card (ever in a registered index, decision 0035), so the drill-down can link to them. */
 export async function withReportCard(symbols: string[]): Promise<Set<string>> {
   if (symbols.length === 0) return new Set();
   const r = await db.execute<{ symbol: string }>(sql`
-    select distinct symbol from index_members where index_name = ${INDEX_NAME}
+    select distinct symbol from index_members where index_name in ${CARD_INDEX_NAMES}
     and symbol in (${sql.join(symbols.map((s) => sql`${s}`), sql`, `)})`);
   return new Set(r.map((x) => x.symbol));
 }

@@ -184,11 +184,11 @@ export function rankAmongPeers(
   symbol: string,
   value: number,
   peers: { symbol: string; value: number }[],
-): { pct: number; of: number } | null {
+): { pct: number; of: number; below: number } | null {
   const others = peers.filter((p) => p.symbol !== symbol);
   if (others.length === 0) return null;
   const below = others.filter((p) => p.value < value - NOISE_PCT).length;
-  return { pct: (below / others.length) * 100, of: others.length };
+  return { pct: (below / others.length) * 100, of: others.length, below };
 }
 
 export type Light = "green" | "amber" | "red";

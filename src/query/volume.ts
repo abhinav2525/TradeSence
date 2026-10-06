@@ -2,7 +2,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import type { Period } from "../indicators/volume-leaders";
-import { INDEX_NAME } from "../ingest/nifty50";
+import { CARD_INDEX_NAMES } from "./card-indices";
 import { SIZE_KEYS, UNIVERSE_KEY } from "../ingest/index-constituents";
 
 export type SizeGroup = keyof typeof SIZE_KEYS;
@@ -23,7 +23,7 @@ export async function topVolume(o: { period: Period; rank: RankBy; size: SizeGro
                 when exists (select 1 from index_constituents s where s.index_key = ${SIZE_KEYS.small} and s.symbol = v.symbol) then 'small'
                 when exists (select 1 from index_constituents s where s.index_key = ${SIZE_KEYS.micro} and s.symbol = v.symbol) then 'micro' end as size,
            v.turnover, v.shares, v.change_pct, v.sessions, v.unusual_days, v.as_of::text as as_of,
-           exists (select 1 from index_members m where m.index_name = ${INDEX_NAME} and m.symbol = v.symbol) as has_card
+           exists (select 1 from index_members m where m.index_name in ${CARD_INDEX_NAMES} and m.symbol = v.symbol) as has_card
     from volume_leaders v
     join index_constituents u on u.index_key = ${UNIVERSE_KEY} and u.symbol = v.symbol
     where v.period = ${o.period}

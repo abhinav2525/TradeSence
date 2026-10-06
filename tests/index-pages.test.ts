@@ -106,7 +106,7 @@ describe("the other pages on Nifty Bank", () => {
     expect((await activityOn(D[2], "all")).map((r) => r.symbol).sort()).toEqual(["LEFT", "NEWB"]);
   });
 
-  test("on the Nifty Bank switch, only stocks ever in the NIFTY 50 link to a Report Card", async () => {
+  test("on the Nifty Bank switch, every member of a registered index links to a Report Card (step B)", async () => {
     const u = (symbol: string) => ({
       tradeDate: D[2], symbol, kept: false, volume: true, jump: false, collapse: false,
       keptRatio: 1, volumeRatio: 6, deliveryPct: 40, usualDeliveryPct: 40, changePct: 1, turnover: 2e7,
@@ -114,7 +114,7 @@ describe("the other pages on Nifty Bank", () => {
     await db.insert(schema.unusualDays).values([u("AAA"), u("NEWB")]); // AAA in both indices, NEWB Bank only
     const rows = await activityOn(D[2], "bank");
     expect(rows.find((r) => r.symbol === "AAA")).toMatchObject({ hasCard: true });
-    expect(rows.find((r) => r.symbol === "NEWB")).toMatchObject({ hasCard: false });
+    expect(rows.find((r) => r.symbol === "NEWB")).toMatchObject({ hasCard: true });
   });
 });
 

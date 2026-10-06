@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 
-type Stock = { symbol: string; current: boolean };
+type Stock = { symbol: string };
+export type StockGroup = { title: string; stocks: Stock[] };
 
-/** Every supported stock as a link, current members first, with a filter box. */
-export default function StockList({ stocks }: { stocks: Stock[] }) {
+/** Every supported stock as a link, in the groups the page gives (current members first), with a filter box. */
+export default function StockList({ groups }: { groups: StockGroup[] }) {
   const [q, setQ] = useState("");
-  const shown = q ? stocks.filter((s) => s.symbol.includes(q.trim().toUpperCase())) : stocks;
+  const match = (list: Stock[]) => (q ? list.filter((s) => s.symbol.includes(q.trim().toUpperCase())) : list);
+  const shownCount = groups.reduce((n, g) => n + match(g.stocks).length, 0);
   const group = (title: string, list: Stock[]) =>
     list.length > 0 && (
       <Card className="px-card-x py-card">
@@ -43,9 +45,8 @@ export default function StockList({ stocks }: { stocks: Stock[] }) {
           className="h-9 w-56 rounded-[8px] border border-input bg-transparent px-3 font-mono text-body-sm uppercase text-foreground placeholder:normal-case placeholder:text-muted-foreground"
         />
       </div>
-      {shown.length === 0 && <p className="text-body-sm text-muted-foreground">No symbol matches “{q}”.</p>}
-      {group("In the NIFTY 50", shown.filter((s) => s.current))}
-      {group("Former members since 2020", shown.filter((s) => !s.current))}
+      {shownCount === 0 && <p className="text-body-sm text-muted-foreground">No symbol matches “{q}”.</p>}
+      {groups.map((g) => <div key={g.title} className="contents">{group(g.title, match(g.stocks))}</div>)}
     </div>
   );
 }
