@@ -69,3 +69,11 @@ test("todayLine drops placeholders so the popover never says 'Today: —'", () =
     expect(todayLine(p)).toBeNull();
   }
 });
+
+// Nifty Bank's size changes (12 until 30 Dec 2025, 14 since): a member count is "today's" (review fix, 0035)
+test("Nifty Bank counts in the glossary say they are today's", () => {
+  for (const e of Object.values(GLOSSARY)) {
+    const text = [e.short, e.read, e.what, e.calc.plain, e.example, ...e.mistakes].join(" ");
+    for (const m of text.matchAll(/[^.]*(13 other|about 7 (percentage )?points)[^.]*\./g)) expect(m[0]).toMatch(/today|14 banks/);
+  }
+});

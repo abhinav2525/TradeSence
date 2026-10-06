@@ -36,6 +36,7 @@ export type StockReport = {
   lastDate: string; // latest session loaded, for the date picker's upper bound
   membership: { addedOn: string; removedOn: string | null }[]; // in the peer index
   peerIndex: { key: string; label: string }; // whose members the Strength rank uses
+  defaultKey: string; // the card served without `u` on this date: the first registered index it is in then
   indices: string[]; // registry keys of every index the stock was ever in, registry order
   close: number;
   trend: { light: Light | null; sma50: number | null; sma200: number | null; side200: "above" | "below" | null; sessions200: number };
@@ -75,9 +76,10 @@ export async function supportedStocks(): Promise<{ symbol: string; current: bool
 
 /**
  * `peersKey`: the registry key whose members the stock is ranked against. Anything
- * the stock was never in (or nothing) means its default: the first registered index
- * it belongs to, so a NIFTY 50 stock's card is unchanged and a bank-only one ranks
- * among Nifty Bank's members.
+ * the stock was never in (or nothing) means its default ON THE SHOWN DATE: the first
+ * registered index it is a member of that day, else (a member of none then) the first
+ * it was ever in. A NIFTY 50 stock's card is unchanged; one that left the NIFTY 50
+ * and is in Nifty Bank today opens on its Nifty Bank card (decision 0035).
  */
 export async function stockReport(symbol: string, dateIso?: string, peersKey?: string): Promise<StockReportResult> {
   const spans = await db.execute<{ index_name: string; added_on: string; removed_on: string | null }>(sql`
@@ -85,9 +87,6 @@ export async function stockReport(symbol: string, dateIso?: string, peersKey?: s
     where index_name in ${CARD_INDEX_NAMES} and symbol = ${symbol} order by added_on`);
   const indices = INDICES.filter((ix) => spans.some((m) => m.index_name === ix.members));
   if (indices.length === 0) return { kind: "unknown" };
-  const peerIx = indices.find((ix) => ix.key === peersKey) ?? indices[0]!;
-  const indexName = peerIx.members;
-  const membership = spans.filter((m) => m.index_name === indexName).map((m) => ({ addedOn: m.added_on, removedOn: m.removed_on }));
 
   const all = await db.execute<{ d: string; close: number; sma_50: number | null; sma_200: number | null; change_pct: number | null; turnover: number | null }>(sql`
     select trade_date::text d, close, sma_50, sma_200, change_pct, turnover
@@ -101,6 +100,13 @@ export async function stockReport(symbol: string, dateIso?: string, peersKey?: s
   const idx = all.findIndex((r) => r.d === date);
   const prev = idx > 0 ? all[idx - 1]!.d : null;
   const next = idx < all.length - 1 ? all[idx + 1]!.d : null;
+
+  const inOn = (ix: (typeof indices)[number]) =>
+    spans.some((m) => m.index_name === ix.members && m.added_on <= date && (m.removed_on === null || date < m.removed_on));
+  const defaultIx = indices.find(inOn) ?? indices[0]!;
+  const peerIx = indices.find((ix) => ix.key === peersKey) ?? defaultIx;
+  const indexName = peerIx.members;
+  const membership = spans.filter((m) => m.index_name === indexName).map((m) => ({ addedOn: m.added_on, removedOn: m.removed_on }));
 
   const num = (v: number | null) => (v === null ? null : Number(v));
   const moves = upto.map((r) => ({ date: r.d, changePct: num(r.change_pct) }));
@@ -224,7 +230,7 @@ export async function stockReport(symbol: string, dateIso?: string, peersKey?: s
     report: {
       symbol, date, requested: dateIso ?? null, snapped: Boolean(dateIso && dateIso !== date), prev, next,
       firstDate: firstDate!, lastDate: all.at(-1)!.d, membership, close,
-      peerIndex: { key: peerIx.key, label: peerIx.label }, indices: indices.map((ix) => ix.key),
+      peerIndex: { key: peerIx.key, label: peerIx.label }, defaultKey: defaultIx.key, indices: indices.map((ix) => ix.key),
       trend: { light: trendLight(close, sma50, sma200), sma50, sma200, side200, sessions200 },
       strength: {
         light: percentile === null ? null : strengthLight(percentile), percentile, peers: rank?.of ?? 0, below: rank?.below ?? null,

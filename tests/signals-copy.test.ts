@@ -1,8 +1,9 @@
 import { test, expect, describe } from "bun:test";
 import {
-  UNTESTED_LINE, firedLine, noticeText, noticeVisible, pctText, readingSentence, toneClass, washoutSentence,
+  UNTESTED_LINE, signalsView, washoutNote, firedLine, noticeText, noticeVisible, pctText, readingSentence, toneClass, washoutSentence,
 } from "../src/components/signals-copy";
 import type { Episode, HorizonSummary, Washout } from "../src/indicators/signals";
+import { NIFTY50, NIFTY_BANK } from "../src/ingest/indices";
 
 const w = (over: Partial<Washout>): Washout =>
   ({ status: "active", pct: 16, date: "2026-10-01", since: "2026-10-01", lastStart: "2026-10-01", fired: 6, ...over });
@@ -103,5 +104,24 @@ describe("Nifty Bank wording (decision 0035)", () => {
   test("no rare or percentile wording", () => {
     const all = [washoutSentence(w({ above: 2, total: 14 }), "Nifty Bank"), UNTESTED_LINE].join(" ");
     expect(all).not.toMatch(/rare|percentile|median/i);
+  });
+});
+
+describe("Signals review fixes (decision 0035)", () => {
+  test("the NIFTY 50 keeps the share wording even when the day carries counts", () => {
+    expect(washoutSentence(w({ pct: 16, above: 8, total: 50 }), "NIFTY 50")).toBe(
+      "16% of NIFTY 50 stocks are above their 200-day SMA, under the 20% line. This washout began on 1 Oct 2026.",
+    );
+  });
+  test("signalsView: Nifty Bank shows washout rows only; the NIFTY 50 keeps summaries and the chosen side", () => {
+    expect(signalsView(NIFTY_BANK, "over")).toEqual({ summaries: false, tableCond: "under" });
+    expect(signalsView(NIFTY_BANK, "under")).toEqual({ summaries: false, tableCond: "under" });
+    expect(signalsView(NIFTY50, "over")).toEqual({ summaries: true, tableCond: "over" });
+    expect(signalsView(NIFTY50, "under")).toEqual({ summaries: true, tableCond: "under" });
+  });
+  test("washoutNote: one member's weight in points, from the day's own count", () => {
+    expect(washoutNote("Nifty Bank", 14)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm. With 14 members, one moves Nifty Bank's share by about 7 points.");
+    expect(washoutNote("Nifty Bank", 12)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm. With 12 members, one moves Nifty Bank's share by about 8 points.");
+    expect(washoutNote("Nifty Bank", undefined)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm.");
   });
 });

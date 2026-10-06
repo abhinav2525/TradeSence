@@ -17,7 +17,7 @@ ticks and trimmed chart data, motion settings and small Report Card wording help
 | `prepaint.ts` | `PREPAINT_SCRIPT`, inlined in `<head>` by `layout.tsx`: applies a stored light theme, a stored density (`data-density`) and sets `data-motion` before first paint. |
 | `ticks.ts` | `dateTicks`: unique year or month x-axis ticks, at most 8. |
 | `tile-today.ts` | `tileToday`: the "Today:" line a tile's ⓘ shows (`today: null` hides it). |
-| `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`. |
+| `report-card.ts` | Report Card wording and input: `HORIZON_LABELS` ("stretches", not "months"), `parseAmount`, `LIGHTS_DISCLAIMER`, `stockGroups` (the `/stock` index's groups). |
 | `ma.ts` | `MaKind` and `MA_LABELS` ("200-day SMA"…), with no imports so browser code (MaTabs, the Claude Design bundle) can use them; `src/query/breadth.ts` re-exports them and maps each to its column. |
 | `report-card-link.ts` | `reportCardHref(symbol, cards?)`: the Report Card link, or null when a `cards` list is given and lacks the symbol (lists like `/?u=private-bank` hold stocks without a card; decision 0034). Import-free |
 | `utils.ts` | `cn()`: clsx + tailwind-merge, extended with the custom type sizes (incl. `body`, `body-sm`) and the density spacing tokens. |

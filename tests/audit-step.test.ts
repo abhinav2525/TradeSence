@@ -51,3 +51,35 @@ describe("the audit's own summary line (decision 0035)", () => {
     );
   });
 });
+
+import { auditCards } from "../src/audit/cards";
+import { INDICES } from "../src/ingest/indices";
+
+describe("the audit's summary line, exactly (review fix)", () => {
+  test("word for word, and the timing line on its own raises nothing", () => {
+    const line = auditSummary("2026-10-06", [{ label: "NIFTY 50", n: 50 }, { label: "Nifty Bank", n: 14 }], 2168, 0);
+    expect(line).toBe("session 2026-10-06 · 64 cards (NIFTY 50 50, Nifty Bank 14) · 2168 numbers compared · 0 mismatches");
+    expect(auditWarnings(0, `${line}\ntook 5.9 s\n✓ every number matches the independent recalculation`)).toEqual([]);
+  });
+});
+
+describe("auditCards: which cards the audit checks", () => {
+  const rows = [
+    { index_name: "NIFTY50", symbol: "AAA" }, { index_name: "NIFTYBANK", symbol: "AAA" },
+    { index_name: "NIFTYBANK", symbol: "BNK" }, { index_name: "NIFTY50", symbol: "NFX" },
+  ];
+  test("one card per (index, member); a second index's card is labelled with it", () => {
+    expect(auditCards(rows, INDICES).map((c) => [c.label, c.key])).toEqual([
+      ["AAA", "nifty50"], ["NFX", "nifty50"], ["AAA [Nifty Bank]", "bank"], ["BNK [Nifty Bank]", "bank"],
+    ]);
+  });
+  test("each card's peers are its index's members on the session", () => {
+    const cards = auditCards(rows, INDICES);
+    expect(cards.find((c) => c.label === "AAA")!.peers).toEqual(["AAA", "NFX"]);
+    expect(cards.find((c) => c.label === "AAA [Nifty Bank]")!.peers).toEqual(["AAA", "BNK"]);
+  });
+  test("the served default card is the first registered index the stock is in that day", () => {
+    const def = auditCards(rows, INDICES).filter((c) => c.isDefault).map((c) => c.label);
+    expect(def).toEqual(["AAA", "NFX", "BNK [Nifty Bank]"]); // AAA's Bank card is reached with u=bank
+  });
+});

@@ -3,6 +3,7 @@
  * apart from the components so it can be tested (decision 0011).
  */
 import type { HorizonKey } from "@/indicators/risk";
+import { INDICES, NIFTY50 } from "@/ingest/indices";
 
 /**
  * The calculator counts every overlapping stretch, so ten years hold ~2,460
@@ -24,3 +25,20 @@ export function parseAmount(raw: string): number | null {
 
 export const LIGHTS_DISCLAIMER =
   "Lights compare this stock's past behaviour with the NIFTY 50. They are not advice to buy or sell.";
+
+export type StockGroup = { title: string; stocks: { symbol: string }[] };
+
+/**
+ * The /stock index's groups (decision 0035): NIFTY 50 members (once, even when also in
+ * another index), then each other index's members not in the NIFTY 50, then former members.
+ */
+export function stockGroups<S extends { symbol: string; current: boolean; currentIn: string[] }>(stocks: S[]): { title: string; stocks: S[] }[] {
+  return [
+    { title: `In the ${NIFTY50.label}`, stocks: stocks.filter((s) => s.currentIn.includes(NIFTY50.key)) },
+    ...INDICES.filter((ix) => ix.key !== NIFTY50.key).map((ix) => ({
+      title: `In ${ix.label}, not the ${NIFTY50.label}`,
+      stocks: stocks.filter((s) => s.currentIn.includes(ix.key) && !s.currentIn.includes(NIFTY50.key)),
+    })),
+    { title: "Former members since 2020", stocks: stocks.filter((s) => !s.current) },
+  ];
+}

@@ -1,7 +1,11 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { stockReport, supportedStocks } from "../src/query/stock-report";
-import { checksOf, peersLine } from "../src/components/StockChecks";
+import { checksOf, peersLine, cardExtra } from "../src/components/StockChecks";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
+import IndexTabs from "../src/components/IndexTabs";
+import { NIFTY_BANK } from "../src/ingest/indices";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
 
@@ -337,12 +341,36 @@ describe("Report Cards across registered indices (step B)", () => {
     const bank = await stockReport("AAA", undefined, "bank");
     const def = await stockReport("AAA");
     if (bank.kind !== "ok" || def.kind !== "ok") throw new Error("no report");
+    // 6-month returns on d(299): AAA +0.084%, BNK −0.311% (BLEFT left on d(200)); NFX +0.168%, NFY +0.251%
+    expect(bank.report.strength.ret6m!).toBeCloseTo(0.0839032, 6);
+    expect(bank.report.strength).toMatchObject({ below: 1, peers: 1, percentile: 100 });
+    expect(def.report.strength).toMatchObject({ below: 0, peers: 2, percentile: 0 });
     const sb = checksOf(bank.report).find((c) => c.label === "Strength")!;
-    expect(sb.sentence).toMatch(/stronger than [01] of the 1 other Nifty Bank member on this day\.$/);
-    expect(sb.figure).toMatch(/^[01] of 1$/);
-    expect(sb.sentence).not.toMatch(/%\s+of/);
+    expect(sb.sentence).toBe("6-month return +0.1% vs the NIFTY 50's −0.3%: stronger than 1 of the 1 other Nifty Bank member on this day.");
+    expect(sb.figure).toBe("1 of 1");
     const sd = checksOf(def.report).find((c) => c.label === "Strength")!;
-    expect(sd.sentence).toMatch(/stronger than \d+% of the other 2 members on this day\.$/);
+    expect(sd.sentence).toBe("6-month return +0.1% vs the NIFTY 50's −0.3%: stronger than 0% of the other 2 members on this day.");
+    expect(sd.figure).toBe("0th");
+  });
+
+  test("Strength on d(150), two Bank peers: the plural wording and exact counts", async () => {
+    // d(150): AAA +0.084%, BNK +0.192%, BLEFT −0.084% (still a member)
+    const aaa = await stockReport("AAA", d(150), "bank"), bnk = await stockReport("BNK", d(150));
+    if (aaa.kind !== "ok" || bnk.kind !== "ok") throw new Error("no report");
+    expect(aaa.report.strength).toMatchObject({ below: 1, peers: 2, percentile: 50 });
+    expect(bnk.report.strength).toMatchObject({ below: 2, peers: 2, percentile: 100 });
+    const sa = checksOf(aaa.report).find((c) => c.label === "Strength")!;
+    expect(sa.sentence).toBe("6-month return +0.1% vs the NIFTY 50's +0.2%: stronger than 1 of the 2 other Nifty Bank members on this day.");
+    expect(sa.figure).toBe("1 of 2");
+  });
+
+  test("a Bank joiner (added d(200)) is not a peer before it joined, and is one after", async () => {
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTYBANK", symbol: "JOIN", addedOn: d(200), removedOn: null });
+    await seedCloses("JOIN", Array.from({ length: N }, (_, i) => wiggle(i, 0.3)));
+    const before = await stockReport("BNK", d(150)), after = await stockReport("BNK");
+    if (before.kind !== "ok" || after.kind !== "ok") throw new Error("no report");
+    expect(before.report.strength.peers).toBe(2); // AAA, BLEFT: not JOIN
+    expect(after.report.strength.peers).toBe(2); // AAA, JOIN: not BLEFT
   });
 
   test("the peer count below is the rank's own count", async () => {
@@ -350,6 +378,55 @@ describe("Report Cards across registered indices (step B)", () => {
     if (r.kind !== "ok") throw new Error(r.kind);
     expect(r.report.strength.below).toBe(2); // NFY rose most of the three NIFTY 50 stocks
     expect(r.report.strength.percentile).toBe(100);
+  });
+
+  test("default peers = the first registered index the stock is in ON THE SHOWN DATE (left the NIFTY 50, in Nifty Bank today)", async () => {
+    await db.insert(schema.indexMembers).values([
+      { indexName: "NIFTY50", symbol: "MOVED", addedOn: "2020-01-01", removedOn: d(100) },
+      { indexName: "NIFTYBANK", symbol: "MOVED", addedOn: "2020-01-01", removedOn: null },
+    ]);
+    await seedCloses("MOVED", Array.from({ length: N }, (_, i) => wiggle(i, 0.4)));
+    const latest = await stockReport("MOVED");
+    const past = await stockReport("MOVED", d(50));
+    if (latest.kind !== "ok" || past.kind !== "ok") throw new Error("no report");
+    expect(latest.report.peerIndex.key).toBe("bank");
+    expect(latest.report.defaultKey).toBe("bank");
+    expect(past.report.peerIndex.key).toBe("nifty50");
+    expect(past.report.defaultKey).toBe("nifty50");
+    // the other index stays reachable with its key, and the default is still that date's
+    const asNifty = await stockReport("MOVED", undefined, "nifty50");
+    if (asNifty.kind !== "ok") throw new Error(asNifty.kind);
+    expect(asNifty.report.peerIndex.key).toBe("nifty50");
+    expect(asNifty.report.defaultKey).toBe("bank");
+  });
+
+  test("a stock in none of its indices on the date falls back to the first it was ever in", async () => {
+    const r = await stockReport("BLEFT"); // left Nifty Bank on d(200), never in the NIFTY 50
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.defaultKey).toBe("bank");
+    await db.insert(schema.indexMembers).values({ indexName: "NIFTY50", symbol: "BLEFT", addedOn: d(10), removedOn: d(20) });
+    const both = await stockReport("BLEFT"); // in neither on the latest date: NIFTY 50 is first by registry
+    if (both.kind !== "ok") throw new Error(both.kind);
+    expect(both.report.defaultKey).toBe("nifty50");
+  });
+
+  test("cardExtra: the arrows and date picker keep `u` only when the peers aren't that date's default", async () => {
+    const def = await stockReport("AAA"), bank = await stockReport("AAA", undefined, "bank"), bnk = await stockReport("BNK");
+    if (def.kind !== "ok" || bank.kind !== "ok" || bnk.kind !== "ok") throw new Error("no report");
+    expect(cardExtra(def.report, "1m")).toBe("&h=1m");
+    expect(cardExtra(bank.report, "1m")).toBe("&h=1m&u=bank");
+    expect(cardExtra(bnk.report, "1m")).toBe("&h=1m"); // Nifty Bank is BNK's default
+    expect(cardExtra(bank.report, "1y")).toBe("&h=1y&u=bank");
+  });
+
+  test("the card's index tabs name `u` for every index but that date's default", () => {
+    const html = (defaultKey?: string) => renderToString(createElement(IndexTabs, { base: "/stock/MOVED", current: NIFTY_BANK, ma: "sma200", only: ["nifty50", "bank"], defaultKey }));
+    // a stock whose default is Nifty Bank: the NIFTY 50 tab must say so, the Bank tab needn't
+    expect(html("bank")).toContain('href="/stock/MOVED?ma=sma200&amp;u=nifty50"');
+    expect(html("bank")).toContain('href="/stock/MOVED?ma=sma200"');
+    // every other page: the NIFTY 50 is the default, unchanged
+    expect(html()).toContain('href="/stock/MOVED?ma=sma200&amp;u=bank"');
+    expect(html()).not.toContain("u=nifty50");
   });
 
   test("the card says plainly that only Strength uses the Bank peers", async () => {

@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 
+import type { StockGroup } from "@/lib/report-card";
+
 type Stock = { symbol: string };
-export type StockGroup = { title: string; stocks: Stock[] };
 
 /** Every supported stock as a link, in the groups the page gives (current members first), with a filter box. */
 export default function StockList({ groups }: { groups: StockGroup[] }) {

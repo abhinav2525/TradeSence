@@ -1,8 +1,10 @@
 /**
  * `bun run audit:report-card [YYYY-MM-DD]`: an INDEPENDENT recalculation of every
  * Report Card number, for every member of every registered index on the session, each
- * card with its own peers (decisions 0013, 0035), compared with stockReport(). The
- * market line (NIFTY 50 close, NIFTY 50 breadth for crashes) is the same for every card.
+ * card with its own peers (decisions 0013, 0035), compared with stockReport(). The card a
+ * stock's page serves without `u` is fetched exactly that way, so the default-peers rule
+ * is checked too. The market line (NIFTY 50 close, NIFTY 50 breadth for crashes) is the
+ * same for every card. One session per run (the latest by default): history rests on unit tests.
  *
  * It deliberately shares no code with the app: it reads raw bhavcopy rows
  * (daily_prices), follows renames and applies splits, bonuses and demergers itself,
@@ -16,6 +18,7 @@ import { db } from "../db";
 import { stockReport } from "../query/stock-report";
 import { INDICES } from "../ingest/indices"; // names only: which cards exist, never any maths
 import { auditSummary } from "./nightly";
+import { auditCards } from "./cards";
 
 const MAX_GAP = 21, SHARE = ["split", "bonus", "bonus+split", "consolidation"];
 type Pt = { d: string; level: number; seg: number; close: number; turnover: number };
@@ -147,13 +150,13 @@ const [{ d: latest }] = await db.execute<{ d: string }>(sql`select max(trade_dat
 const today = process.argv[2] ?? latest;
 const started = performance.now();
 // every card: (index, member on the session); a stock in two indices has two cards
-const cards: { key: string; label: string; members: string[] }[] = [];
-for (const ix of INDICES) {
-  const ms = (await db.execute<{ s: string }>(sql`select symbol s from index_members where index_name = ${ix.members} and added_on <= ${today} and (removed_on is null or removed_on > ${today}) order by symbol`)).map((r) => r.s);
-  cards.push({ key: ix.key, label: ix.label, members: ms });
-}
+const memberRows = await db.execute<{ index_name: string; symbol: string }>(sql`
+  select index_name, symbol from index_members
+  where index_name in (${sql.join(INDICES.map((ix) => sql`${ix.members}`), sql`, `)})
+    and added_on <= ${today} and (removed_on is null or removed_on > ${today})`);
+const cards = auditCards([...memberRows], INDICES);
 const lines = new Map<string, Pt[]>();
-for (const c of cards) for (const m of c.members) if (!lines.has(m)) lines.set(m, await line(m, today));
+for (const c of cards) if (!lines.has(c.sym)) lines.set(c.sym, await line(c.sym, today));
 
 // Breadth rebuilt from raw prices: a member is "above" when its adjusted level is above
 // the mean of its last 200 levels in the same segment (= close > stored SMA 200).
@@ -187,13 +190,14 @@ const cmp = (sym: string, what: string, mine: number | null, app: number | null 
 };
 
 for (const card of cards) {
-const peer6m = card.members.map((m) => ({ m, r: ret(lines.get(m)!, 126) })).filter((x): x is { m: string; r: number } => x.r !== null);
-for (const sym of card.members) {
-  const m = card.key === INDICES[0]!.key ? sym : `${sym} [${card.label}]`; // the label in mismatch lines
-  const res = await stockReport(sym, today, card.key);
+  const sym = card.sym, m = card.label;
+  const peer6m = card.peers.map((p) => ({ m: p, r: ret(lines.get(p)!, 126) })).filter((x): x is { m: string; r: number } => x.r !== null);
+  // the default card is fetched as the page serves it (no `u`), so a wrong default shows up as "peers"
+  const res = await stockReport(sym, today, card.isDefault ? undefined : card.key);
   if (res.kind !== "ok") { mism.push(`${m}: app says ${res.kind}`); continue; }
   const r = res.report, l = lines.get(sym)!;
   if (r.peerIndex.key !== card.key) mism.push(`${m}: peers mine=${card.key} app=${r.peerIndex.key}`);
+  if (card.isDefault && r.defaultKey !== card.key) mism.push(`${m}: default mine=${card.key} app=${r.defaultKey}`);
   if (l.at(-1)!.d !== r.date) mism.push(`${m}: date mine=${l.at(-1)!.d} app=${r.date}`);
   if (l[0]!.d !== r.firstDate) mism.push(`${m}: firstDate mine=${l[0]!.d} app=${r.firstDate}`);
   const niftyRows = (await db.execute<{ d: string; c: number }>(sql`select trade_date::text d, close c from index_prices where index_name='Nifty 50' and trade_date between ${l[0]!.d} and ${r.date} order by 1`)).map((x) => ({ d: x.d, c: Number(x.c) }));
@@ -246,8 +250,7 @@ for (const sym of card.members) {
     if (e.hiD !== x?.peakDate || e.loD !== x?.lowDate) mism.push(`${m} crash ${e.start} dates: mine=${e.hiD}→${e.loD} app=${x?.peakDate}→${x?.lowDate}`);
   });
 }
-}
-console.log(auditSummary(today, cards.map((c) => ({ label: c.label, n: c.members.length })), checked, mism.length));
+console.log(auditSummary(today, INDICES.map((ix) => ({ label: ix.label, n: cards.filter((c) => c.key === ix.key).length })), checked, mism.length));
 console.log(`took ${((performance.now() - started) / 1000).toFixed(1)} s`);
 for (const x of mism) console.log("  ✗", x);
 if (mism.length === 0) console.log("✓ every number matches the independent recalculation");

@@ -10,8 +10,8 @@ import { isCondition, type Condition } from "@/indicators/signals";
 import { signalsData } from "@/query/signals";
 import type { MaKind } from "@/query/breadth";
 import IndexTabs from "@/components/IndexTabs";
-import { UNTESTED_LINE } from "@/components/signals-copy";
-import { NIFTY50, cleanIndex } from "@/ingest/indices";
+import { UNTESTED_LINE, signalsView } from "@/components/signals-copy";
+import { cleanIndex } from "@/ingest/indices";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +31,9 @@ export default async function Page({
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
   const cond: Condition = isCondition(sp.cond) ? sp.cond : "under";
   const ix = cleanIndex(sp.u);
-  // Only the NIFTY 50's alarm was tested (research 0001). Any other index shows its
-  // washout episodes one by one: no medians, no "higher in x of y" (decision 0035).
-  const tested = ix.key === NIFTY50.key;
+  // Only the NIFTY 50's alarm was tested (research 0001): any other index shows its
+  // washout episodes one by one, no medians, no "higher in x of y" (decision 0035).
+  const { summaries: tested, tableCond } = signalsView(ix, cond);
   const s = await signalsData(ix);
 
   return (
@@ -76,7 +76,7 @@ export default async function Page({
               </span>
             )}
           </div>
-          <WashoutCard className="lg:col-span-12" washout={s.washout} recent={s.recent} first={s.first} indexLabel={ix.label} />
+          <WashoutCard className="lg:col-span-12" washout={s.washout} recent={s.recent} first={s.first} indexLabel={ix.label} tested={tested} />
           {tested && <ForwardReturns
             className="lg:col-span-12"
             ma={ma}
@@ -88,10 +88,11 @@ export default async function Page({
           {/* another index: washout rows only (the over-80% side and every summary need the study it never had) */}
           <EpisodeTable
             className="lg:col-span-12"
-            cond={tested ? cond : "under"}
-            episodes={s.episodes[tested ? cond : "under"]}
+            cond={tableCond}
+            episodes={s.episodes[tableCond]}
             first={s.first}
             indexLabel={ix.label}
+            tested={tested}
           />
         </div>
       )}

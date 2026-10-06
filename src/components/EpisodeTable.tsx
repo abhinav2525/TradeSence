@@ -6,13 +6,17 @@ import { HORIZONS } from "@/research/forward-returns";
 import type { Condition, Episode } from "@/indicators/signals";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { NIFTY50 } from "@/ingest/indices";
 
 const head = "h-row-head px-3 text-right text-[11px] font-medium uppercase tracking-[0.06em]";
 
-/** Every episode of the selected condition, newest first, with the index's returns from its first day. */
+/**
+ * Every episode of the selected condition, newest first, with the index's returns from its
+ * first day. `tested` false (an index whose alarm was never studied) reads each low as a count.
+ */
 export default function EpisodeTable({
-  cond, episodes, first, indexLabel = "NIFTY 50", className,
-}: { cond: Condition; episodes: Episode[]; first: string; indexLabel?: string; className?: string }) {
+  cond, episodes, first, indexLabel = NIFTY50.label, tested = true, className,
+}: { cond: Condition; episodes: Episode[]; first: string; indexLabel?: string; tested?: boolean; className?: string }) {
   const rows = [...episodes].reverse();
   const under = cond === "under";
   const name = under ? "under 20%" : "over 80%";
@@ -33,7 +37,7 @@ export default function EpisodeTable({
             <thead className="sticky top-0 z-10 bg-card">
               <tr className="border-b text-muted-foreground">
                 <th className={cn(head, "pl-card-x text-left")}>Started</th>
-                <th className={head}>{under ? (indexLabel === "NIFTY 50" ? "Lowest share above" : "Fewest above") : "Highest share above"}</th>
+                <th className={head}>{under ? (tested ? "Lowest share above" : "Fewest above") : "Highest share above"}</th>
                 <th className={head}>{under ? "Sessions under 20%" : "Sessions over 80%"}</th>
                 {HORIZONS.map((h) => (
                   <th key={h.key} className={cn(head, "last:pr-card-x")}>Index after {h.label}</th>
@@ -46,7 +50,7 @@ export default function EpisodeTable({
                   <td className="py-cell pl-card-x pr-3 text-foreground">{formatDate(e.start)}</td>
                   <td className="px-3 py-cell text-right text-foreground-2">
                     {/* a small index reads as a count: "1 of 12" (decision 0035) */}
-                    {indexLabel !== "NIFTY 50" && e.extremeAbove !== undefined ? `${e.extremeAbove} of ${e.extremeTotal}` : `${e.extreme.toFixed(0)}%`}
+                    {!tested && e.extremeAbove !== undefined ? `${e.extremeAbove} of ${e.extremeTotal}` : `${e.extreme.toFixed(0)}%`}
                   </td>
                   <td className="px-3 py-cell text-right text-foreground-2">{e.sessions}</td>
                   {HORIZONS.map((h) => {

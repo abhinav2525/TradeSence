@@ -40,10 +40,15 @@ Two traps:
 - **The market line is always the NIFTY 50**: bumpiness, worst fall, the risk calculator's
   comparison, beta and down capture ("Bad days"), and the crashes ("In crashes" uses NIFTY 50
   breadth to find crashes and the NIFTY 50's fall in each).
-- **The stock's index chooses only the peers** for Strength. A stock in both indices (HDFC
-  Bank, ICICI Bank, Axis Bank, Kotak, SBI) is ranked against the NIFTY 50 by default, exactly as
-  before, so its URL and numbers are unchanged; a switch on the card (`?u=bank`) ranks it among
-  Nifty Bank's members instead. A `u` for an index the stock was never in is ignored.
+- **The stock's index chooses only the peers** for Strength. **The default card** (no `u` in
+  the link) ranks the stock within the first registered index it belongs to **on the date
+  shown**; only if it is in none of them that day does it fall back to the first index it was
+  ever in. So a stock in both indices (HDFC Bank, ICICI Bank, Axis Bank, Kotak, SBI) is ranked
+  against the NIFTY 50 by default, exactly as before, URL and numbers unchanged; a stock that
+  left the NIFTY 50 and is in Nifty Bank today (IndusInd Bank, YES BANK) opens on its Nifty
+  Bank card, and on a 2024 date (IndusInd still in the NIFTY 50) on its NIFTY 50 card. The
+  switch on the card (`?u=bank`, `?u=nifty50`) picks the other index; the link keeps `u` only
+  when it differs from that date's default. A `u` for an index the stock was never in is ignored.
 - Whenever the peers aren't the NIFTY 50's, the header says: "Strength ranks it among Nifty
   Bank's members on that day. Every other check compares it with the NIFTY 50, the market."
 - **"x of N", not a percentile**, for Nifty Bank peers: "stronger than 11 of the 13 other Nifty
@@ -79,7 +84,10 @@ summary would turn three sell-offs into what looks like a track record.
 
 - **Audit** (`bun run audit:report-card`, independent recalculation from raw prices): now 64
   cards (50 NIFTY 50 + 14 Nifty Bank, each with its own peers), 2,168 numbers, **0 mismatches**,
-  5.9 s. Before: 50 cards, 1,592 numbers, 0 mismatches, 5.0 s. It now also checks the peer count
+  5.9 s. Each stock's **default card is fetched the way the page serves it** (no `u`), so a
+  wrong default rule fails the audit: putting back the old "first index ever" rule gives 10
+  mismatches, all on IndusInd Bank and YES BANK. The audit checks **one session** (the latest,
+  unless given a date); the rules on past dates rest on the unit tests. Before: 50 cards, 1,592 numbers, 0 mismatches, 5.0 s. It now also checks the peer count
   and how many peers the stock beat. Forcing the wrong peers on purpose gives 28 mismatches, so
   the audit can fail.
 - **By hand (SQL)**: Federal Bank's 6-month return 20.50%, 3rd of the 14 banks, so it beat 11
@@ -108,6 +116,31 @@ summary would turn three sell-offs into what looks like a track record.
   finish" every night, because it looks for a line ending in "N mismatches". The summary line
   now comes from one shared function (`auditSummary`) with a test that the nightly parses it;
   the time is printed on its own line.
+
+## Found by the independent review (fixed)
+
+- **The default card follows the date shown.** The first build opened every stock on the first
+  index it was *ever* in, so IndusInd Bank and YES BANK (out of the NIFTY 50, in Nifty Bank
+  today) opened ranked among NIFTY 50 members they no longer belong to. Now the default is the
+  index the stock is in on the date shown (see Decision). The card's NIFTY 50 tab for such a
+  stock carries `u=nifty50`, since without it the link would open the Bank card again.
+- The audit covers the served default card (see Checks).
+- Tests that would have missed a real break were tightened: exact Strength values (including
+  "1 of the 2 other Nifty Bank members"), a bank that joined later not counted before it
+  joined, what the Signals table and card actually print for Nifty Bank vs the NIFTY 50, the
+  audit's summary line word for word, and which cards the audit checks. The Signals page's
+  "which cards does this index get" rule and the "one member moves the share by N points"
+  note moved into tested functions; components take a `tested` flag instead of comparing the
+  label "NIFTY 50".
+- Glossary: "13 other banks" and "about 7 points" now say they are today's (14 banks since
+  31 Dec 2025; 12 before, when one bank was about 8 points).
+
+**Left for later (small, recorded on purpose):**
+- On a date when the stock was not in the index whose peers it is ranked against (IndusInd
+  Bank today with `?u=nifty50`), Strength still says "the other N members", though it isn't one.
+- The Strength light keeps top/bottom thirds on 11–13 peers: one place decides the colour.
+- "1 pts above the 20% line" should read "1 pt".
+- Stepping the date across a membership change can move the default card to the other index.
 
 ## Limits
 

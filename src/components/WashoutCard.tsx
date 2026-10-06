@@ -2,17 +2,17 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Term from "@/components/Term";
 import WashoutSpark, { type SparkPoint } from "@/components/WashoutSpark";
-import { STATUS_LABEL, firedLine, washoutSentence } from "@/components/signals-copy";
+import { STATUS_LABEL, firedLine, washoutNote, washoutSentence } from "@/components/signals-copy";
 import { WASHOUT_LINE, type Washout } from "@/indicators/signals";
 import { cn } from "@/lib/utils";
+import { NIFTY50 } from "@/ingest/indices";
 
 const TONE = { active: "down", watching: "neutral", quiet: "outline" } as const;
 
-/** The washout alarm: status, one sentence, recent breadth against the line. */
+/** The washout alarm: status, one sentence, recent breadth against the line. `tested`: the NIFTY 50's studied alarm. */
 export default function WashoutCard({
-  washout, recent, first, indexLabel = "NIFTY 50", className,
-}: { washout: Washout; recent: SparkPoint[]; first: string; indexLabel?: string; className?: string }) {
-  const nifty = indexLabel === "NIFTY 50";
+  washout, recent, first, indexLabel = NIFTY50.label, tested = true, className,
+}: { washout: Washout; recent: SparkPoint[]; first: string; indexLabel?: string; tested?: boolean; className?: string }) {
   return (
     <Card className={cn("flex flex-col", className)}>
       <div className="grid gap-4 px-card-x pb-4 pt-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
@@ -23,9 +23,9 @@ export default function WashoutCard({
           </div>
           <p className="text-body-sm leading-5 text-foreground-2">{washoutSentence(washout, indexLabel)}</p>
           <p className="text-[12px] leading-4 text-muted-foreground">
-            {nifty
+            {tested
               ? "Only the 200-day SMA: it is the only average our study of past washouts found a pattern for, from a handful of cases."
-              : `Only the 200-day SMA, as in the NIFTY 50 alarm. One member moves the share by about ${Math.round(100 / (washout.total ?? 14))} points.`}
+              : washoutNote(indexLabel, washout.total)}
           </p>
         </div>
         <div className="min-w-0">

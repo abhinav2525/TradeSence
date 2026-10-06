@@ -26,3 +26,38 @@ describe("parseAmount", () => {
 test("the lights carry a 'not advice' line", () => {
   expect(LIGHTS_DISCLAIMER.toLowerCase()).toContain("not advice");
 });
+
+import { stockGroups } from "../src/lib/report-card";
+import { membershipLine } from "../src/components/StockChecks";
+import type { StockReport } from "../src/query/stock-report";
+
+describe("stockGroups: the /stock index (decision 0035)", () => {
+  const s = (symbol: string, currentIn: string[]) => ({ symbol, current: currentIn.length > 0, currentIn });
+  test("NIFTY 50 members once (even if also in Nifty Bank), bank-only members, then former members", () => {
+    const groups = stockGroups([s("AAA", ["nifty50", "bank"]), s("BNK", ["bank"]), s("NFX", ["nifty50"]), s("GONE", [])]);
+    expect(groups.map((g) => [g.title, g.stocks.map((x) => x.symbol)])).toEqual([
+      ["In the NIFTY 50", ["AAA", "NFX"]],
+      ["In Nifty Bank, not the NIFTY 50", ["BNK"]],
+      ["Former members since 2020", ["GONE"]],
+    ]);
+  });
+  test("a stock that left the NIFTY 50 but is in Nifty Bank today is a Bank member, not a former one", () => {
+    const groups = stockGroups([{ symbol: "MOVED", current: true, currentIn: ["bank"] }]);
+    expect(groups.find((g) => g.stocks.some((x) => x.symbol === "MOVED"))!.title).toBe("In Nifty Bank, not the NIFTY 50");
+  });
+});
+
+describe("membershipLine: the card's first sentence", () => {
+  const r = (key: string, label: string, membership: StockReport["membership"]) =>
+    ({ peerIndex: { key, label }, membership }) as unknown as StockReport;
+  test("open since the record starts, open since a date, left (with and without a join date)", () => {
+    expect(membershipLine(r("nifty50", "NIFTY 50", [{ addedOn: "2020-01-01", removedOn: null }]))).toBe(
+      "In the NIFTY 50 since at least Jan 2020 (when the membership record starts).",
+    );
+    expect(membershipLine(r("bank", "Nifty Bank", [{ addedOn: "2025-12-31", removedOn: null }]))).toBe("In Nifty Bank since 31 Dec 2025.");
+    expect(membershipLine(r("nifty50", "NIFTY 50", [{ addedOn: "2020-01-01", removedOn: "2025-03-28" }]))).toBe("Left the NIFTY 50 on 28 Mar 2025.");
+    expect(membershipLine(r("bank", "Nifty Bank", [{ addedOn: "2020-01-01", removedOn: "2021-09-30" }, { addedOn: "2022-03-31", removedOn: "2023-03-31" }]))).toBe(
+      "Left Nifty Bank on 31 Mar 2023 (joined 31 Mar 2022).",
+    );
+  });
+});

@@ -55,7 +55,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "nifty-bank", term: "Nifty Bank", topic: "Basics",
     short: "NSE's index of the largest, most traded bank shares: 12 banks until 30 Dec 2025, 14 since. Pick it on a page to see that page for the banks instead of the NIFTY 50.",
     read: "\"5 of Nifty Bank's 14 members\" means 5 of the banks that were in the index that day.",
-    what: "Banks are a large slice of the NIFTY 50, so their health matters for the whole market. tradeSence uses Nifty Bank's real membership on each day since 2020, rebuilt from NSE Indices' press releases, working back from today's list, so a bank counts only while it was in the index. Because there are so few members, one bank moves a share by about 7 percentage points; read the count, not the decimals.",
+    what: "Banks are a large slice of the NIFTY 50, so their health matters for the whole market. tradeSence uses Nifty Bank's real membership on each day since 2020, rebuilt from NSE Indices' press releases, working back from today's list, so a bank counts only while it was in the index. Because there are so few members, one bank moves a share by about 7 percentage points with today's 14 banks (8 with the 12 before 31 Dec 2025); read the count, not the decimals.",
     calc: { plain: "Same rules as for the NIFTY 50, counted over Nifty Bank's members on each day. A bank without enough history for an average yet is left out of that count and the page says \"x of N counted\"." },
     example: "YES BANK left Nifty Bank on 27 Mar 2020 and came back on 31 Dec 2025, when the index grew from 12 to 14 banks. It counts before the first date and after the second, not in between.",
     mistakes: [
@@ -166,7 +166,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     id: "washout", term: "Washout (breadth under 20%)", topic: "Breadth",
     short: "When fewer than 20% of NIFTY 50 stocks close above their 200-day average: nearly the whole index is in a downtrend. Rare, and historically followed by better-than-usual returns.",
     read: "Active: under 20% now. Watching: 20–25%, close to the line or just recovered. Quiet: above 25%. It says the selling has been broad, not that the bottom is in.",
-    what: "Research 0001 tested what the NIFTY 50 did after each breadth level since 2020. Only this one stood out: when it was written (Oct 2026), every past washout had been followed by a higher index six months later. There have been only a handful, and the first month can still hurt: in March 2020 the index fell another 14% first. The Signals page shows the up-to-date count. tradeSence uses the 200-day SMA only, because the 50-day version was noisy. Signals can also run the same 20% line on Nifty Bank's members, as a plain list of episodes: that version was never tested, one bank moves the share by about 7 points, and several of its episodes are the same sell-off.",
+    what: "Research 0001 tested what the NIFTY 50 did after each breadth level since 2020. Only this one stood out: when it was written (Oct 2026), every past washout had been followed by a higher index six months later. There have been only a handful, and the first month can still hurt: in March 2020 the index fell another 14% first. The Signals page shows the up-to-date count. tradeSence uses the 200-day SMA only, because the 50-day version was noisy. Signals can also run the same 20% line on Nifty Bank's members, as a plain list of episodes: that version was never tested, one bank moves the share by about 7 points with today's 14 banks (8 with the earlier 12), and several of its episodes are the same sell-off.",
     calc: { plain: "Each session: the share of that day's NIFTY 50 members whose close is above their 200-day SMA. Under 20% is a washout. Weak days within 10 sessions of each other are one washout (see Episode)." },
     example: "8 of 50 stocks above their 200-day SMA is 16%: a washout. 11 of 50 is 22%: Watching.",
     mistakes: [
@@ -514,10 +514,10 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   "relative-strength": {
     id: "relative-strength", term: "Relative strength", topic: "Risk",
     short: "How a stock's 6-month return ranks against the other members of its index on that day: the NIFTY 50, or Nifty Bank for a bank outside the NIFTY 50.",
-    read: "Top third: green. Bottom third: red. Strong stocks often stay strong for a while, but not always. Against Nifty Bank's 13 other banks the card gives the count (\"stronger than 9 of the 13\"), because one bank is a big step.",
+    read: "Top third: green. Bottom third: red. Strong stocks often stay strong for a while, but not always. Against Nifty Bank's other banks (13 today) the card gives the count (\"stronger than 9 of the 13\"), because one bank is a big step.",
     what: "Strength relative to the market is one of the most studied patterns in investing: winners have tended to keep winning for some months. It's a tendency, not a rule.",
-    calc: { plain: "The stock's 6-month return (126 sessions), ranked against the other members' 6-month returns: the share of them it beat. A stock in both indices is ranked against the NIFTY 50 unless you switch it to Nifty Bank. Only this check changes with the index: every other check compares the stock with the NIFTY 50, the market." },
-    example: "A 6-month return of +18% when the NIFTY 50 rose 0.4% may rank around the 90th percentile. A bank that beat 9 of the 13 other Nifty Bank members reads \"9 of 13\".",
+    calc: { plain: "The stock's 6-month return (126 sessions), ranked against the other members' 6-month returns: the share of them it beat. By default it is ranked within the index it belongs to on that day (the NIFTY 50 if it is in both); the card's switch picks the other. Only this check changes with the index: every other check compares the stock with the NIFTY 50, the market." },
+    example: "A 6-month return of +18% when the NIFTY 50 rose 0.4% may rank around the 90th percentile. With today's 14 banks, one that beat 9 of the 13 other Nifty Bank members reads \"9 of 13\".",
     mistakes: [
       "Picking the weakest stock because it \"looks cheap\". Falling stocks often keep falling.",
       "Comparing a rank among 13 banks with a rank among 49 NIFTY 50 stocks. Beating most banks says nothing about the rest of the market.",

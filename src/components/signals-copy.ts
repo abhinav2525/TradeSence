@@ -4,6 +4,7 @@
  */
 import { formatDate, signed } from "../lib/format";
 import { NOISE_PCT } from "../indicators/risk";
+import { NIFTY50, type IndexEntry } from "../ingest/indices";
 import {
   WASHOUT_LINE, type Condition, type Episode, type HorizonSummary, type Status, type Washout,
 } from "../indicators/signals";
@@ -26,9 +27,24 @@ const times = (n: number) => (n === 1 ? "once" : `${n} times`);
 /** Shown wherever Signals runs on an index other than the NIFTY 50 (quant review; decision 0035). */
 export const UNTESTED_LINE = "Same 20% line as the NIFTY 50 alarm; never tested on this index; several episodes are the same sell-off.";
 
+/**
+ * What the Signals page shows for an index (decision 0035). Only the NIFTY 50's alarm
+ * was tested (research 0001): any other index gets its washout rows only, no medians or
+ * "higher in x of y", and `cond` is ignored there.
+ */
+export function signalsView(ix: IndexEntry, cond: Condition): { summaries: boolean; tableCond: Condition } {
+  return ix.key === NIFTY50.key ? { summaries: true, tableCond: cond } : { summaries: false, tableCond: "under" };
+}
+
+/** The washout card's note for an untested index: how far one member moves the share that day. */
+export function washoutNote(label: string, total: number | undefined): string {
+  const lead = `Only the 200-day SMA, as in the ${NIFTY50.label} alarm.`;
+  return total ? `${lead} With ${total} members, one moves ${label}'s share by about ${Math.round(100 / total)} points.` : lead;
+}
+
 /** The NIFTY 50 reads as a share; a smaller index as a count ("2 of Nifty Bank's 14 members"). */
-export function washoutSentence(w: Washout, label = "NIFTY 50"): string {
-  const lead = label === "NIFTY 50" || w.above === undefined || w.total === undefined
+export function washoutSentence(w: Washout, label: string = NIFTY50.label): string {
+  const lead = label === NIFTY50.label || w.above === undefined || w.total === undefined
     ? `${Math.round(w.pct)}% of ${label} stocks are above their 200-day SMA`
     : `${w.above} of ${label}'s ${w.total} members are above their 200-day SMA (${Math.round(w.pct)}%)`;
   if (w.status === "active") return `${lead}, under the ${WASHOUT_LINE}% line. This washout began on ${formatDate(w.since)}.`;

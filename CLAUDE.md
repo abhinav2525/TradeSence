@@ -288,10 +288,10 @@ goes into `src/audit/report-card.ts` in the same change.
 
 **The Report Card's market is always the NIFTY 50** ([0035](docs/decisions/0035-nifty-bank-report-cards-and-signals.md),
 owner): beta, Bad days, In crashes (NIFTY 50 breadth finds the crashes), bumpiness and worst
-fall compare with the NIFTY 50 for every stock, banks included. The stock's index (`u`, the
-first registered index it was in by default) picks only the Strength peers; a non-NIFTY-50
+fall compare with the NIFTY 50 for every stock, banks included. The stock's index (`u`; by default the
+first registered index it is in on the shown date) picks only the Strength peers; a non-NIFTY-50
 peer set reads "11 of 13", never a percentile. Never make Nifty Bank a bank's market line:
-HDFC Bank is a quarter to a third of it. The audit checks every (stock, index) card.
+HDFC Bank is a quarter to a third of it. The audit checks every (stock, index) card, the default one as served.
 Signals for any index but the NIFTY 50 shows episode rows only (its 20% line was never
 tested there); don't add medians or "higher in x of y" for it, and don't retune the line.
 

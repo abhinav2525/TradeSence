@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
 import DateNav from "@/components/DateNav";
-import StockChecks, { LightSummary, checksOf, peersLine } from "@/components/StockChecks";
+import StockChecks, { LightSummary, cardExtra, checksOf, membershipLine, peersLine } from "@/components/StockChecks";
 import Hotkeys from "@/components/Hotkeys";
 import RiskCalculator from "@/components/RiskCalculator";
 import UnusualDaysCard from "@/components/UnusualDaysCard";
@@ -17,7 +17,7 @@ import { formatDate } from "@/lib/format";
 import { stockReport, type StockReport } from "@/query/stock-report";
 import type { HorizonKey } from "@/indicators/risk";
 import IndexTabs from "@/components/IndexTabs";
-import { NIFTY50, cleanIndex } from "@/ingest/indices";
+import { cleanIndex } from "@/ingest/indices";
 
 export const dynamic = "force-dynamic";
 
@@ -37,17 +37,6 @@ function cleanSymbol(raw: string): string | null {
   }
   s = s.toUpperCase();
   return /^[A-Z0-9&-]{1,20}$/.test(s) ? s : null;
-}
-
-function membershipLine(r: StockReport): string {
-  const last = r.membership.at(-1)!;
-  const ix = r.peerIndex.key === NIFTY50.key ? "the NIFTY 50" : r.peerIndex.label;
-  if (last.removedOn === null) {
-    return last.addedOn === "2020-01-01"
-      ? `In ${ix} since at least Jan 2020 (when the membership record starts).`
-      : `In ${ix} since ${formatDate(last.addedOn)}.`;
-  }
-  return `Left ${ix} on ${formatDate(last.removedOn)}${last.addedOn === "2020-01-01" ? "" : ` (joined ${formatDate(last.addedOn)})`}.`;
 }
 
 export default async function Page({
@@ -85,9 +74,8 @@ export default async function Page({
   const r = res.report;
   const unusual = await recentUnusual(symbol, r.date);
   const checks = checksOf(r);
-  // `u` only when it isn't the stock's default, so existing card URLs stay as they were
-  const uExtra = r.peerIndex.key === r.indices[0] ? "" : `&u=${r.peerIndex.key}`;
-  const extra = `&h=${h}${uExtra}`;
+  // `u` only when the peers aren't this date's default, so existing card URLs stay as they were
+  const extra = cardExtra(r, h);
   const peers = peersLine(r);
   return (
     <AppShell current="stock" ma="sma200" asOf={r.lastDate}>
@@ -104,6 +92,7 @@ export default async function Page({
                 base={base as `/stock/${string}`}
                 current={cleanIndex(r.peerIndex.key)}
                 only={r.indices}
+                defaultKey={r.defaultKey}
                 label="Rank among the members of"
                 ma="sma200"
                 date={r.requested ? r.date : undefined}

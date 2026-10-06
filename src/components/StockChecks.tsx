@@ -98,6 +98,26 @@ export function checksOf(r: StockReport): Check[] {
   ];
 }
 
+/** The card's first sentence: when the stock joined or left the index its peers come from. */
+export function membershipLine(r: StockReport): string {
+  const last = r.membership.at(-1)!;
+  const ix = r.peerIndex.key === NIFTY50.key ? "the NIFTY 50" : r.peerIndex.label;
+  if (last.removedOn === null) {
+    return last.addedOn === "2020-01-01"
+      ? `In ${ix} since at least Jan 2020 (when the membership record starts).`
+      : `In ${ix} since ${formatDate(last.addedOn)}.`;
+  }
+  return `Left ${ix} on ${formatDate(last.removedOn)}${last.addedOn === "2020-01-01" ? "" : ` (joined ${formatDate(last.addedOn)})`}.`;
+}
+
+/**
+ * The params the card's arrows and date picker keep: the horizon, and `u` only when the
+ * peers aren't the shown date's default, so existing card URLs stay as they were.
+ */
+export function cardExtra(r: StockReport, h: string): string {
+  return `&h=${h}${r.peerIndex.key === r.defaultKey ? "" : `&u=${r.peerIndex.key}`}`;
+}
+
 /** Said plainly whenever the peers aren't the NIFTY 50's (owner, 2026-10-05; decision 0035). */
 export function peersLine(r: StockReport): string | null {
   if (r.peerIndex.key === NIFTY50.key) return null;
