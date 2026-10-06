@@ -21,7 +21,7 @@ import { GLOSSARY } from "@/lib/glossary";
 import Term from "@/components/Term";
 import SlidingPill from "@/components/SlidingPill";
 import IndexTabs from "@/components/IndexTabs";
-import { NIFTY50, cleanIndex, membersPhrase, uParam } from "@/ingest/indices";
+import { NIFTY50, cleanIndex, membersPhrase, possessive, uParam } from "@/ingest/indices";
 import { supportedStocks } from "@/query/stock-report";
 import { reportCardHref } from "@/lib/report-card-link";
 
@@ -80,7 +80,7 @@ export default async function Page({
   const nav = date ? await adjacentSessions(ma, date, ix.members) : { prev: null, next: null };
   const { rows } = date ? await screenerOn(ma, date, ix.members) : { rows: [] as ScreenerRow[] };
   const latest = await resolveSession(ma, undefined, ix.members);
-  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  // Report Cards exist for every registered index's members (decision 0035); others show unlinked.
   const cards = isNifty ? undefined : (await supportedStocks()).map((s) => s.symbol);
 
   const byVol = (a: ScreenerRow, b: ScreenerRow) => (b.volRatio ?? 0) - (a.volRatio ?? 0);
@@ -156,7 +156,7 @@ export default async function Page({
         title="Screener"
         description={isNifty
           ? "Stocks that crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock's own last 20 sessions."
-          : `Which of ${date ? membersPhrase(ix, date) : `${ix.label}'s members`} crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock's own last 20 sessions.`}
+          : `Which of ${date ? membersPhrase(ix, date) : `${possessive(ix.label)} members`} crossed their average on the session, and the ones about to. Volume shows how busy trading was against each stock's own last 20 sessions.`}
         actions={
           <>
             <IndexTabs base="/screener" current={ix} ma={ma} date={wanted && date ? date : undefined} extra={`&view=${view}&vol=${vol}`} />

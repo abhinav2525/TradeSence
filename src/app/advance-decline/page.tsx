@@ -8,7 +8,7 @@ import McClellanBars from "@/components/McClellanBars";
 import AdRecentTable from "@/components/AdRecentTable";
 import Hotkeys from "@/components/Hotkeys";
 import IndexTabs from "@/components/IndexTabs";
-import { NIFTY50, cleanIndex, membersPhrase, sizeOn, uParam } from "@/ingest/indices";
+import { NIFTY50, cleanIndex, membersPhrase, possessive, sizeOn, uParam } from "@/ingest/indices";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, signed } from "@/lib/format";
 import { advanceDeclineSeries, type AdPoint } from "@/query/advance-decline";
@@ -110,7 +110,7 @@ export default async function Page({
           value: p.adv10 === null ? "—" : p.adv10.toFixed(1),
           unit: p.adv10 === null ? undefined : "%",
           fill: p.adv10 === null ? undefined : p.adv10 / 100,
-          sub: isNifty ? "A thrust needs under 40%, then over 61.5% within 10 sessions" : "Risers among the banks that moved, smoothed over 10 sessions",
+          sub: isNifty ? "A thrust needs under 40%, then over 61.5% within 10 sessions" : "Risers among the members that moved, smoothed over 10 sessions",
         },
         {
           label: "Advancing sessions",
@@ -132,7 +132,7 @@ export default async function Page({
         title="Advance/Decline"
         description={isNifty
           ? "How many constituents rose against how many fell, every session. The line adds it up; the McClellan oscillator measures its momentum."
-          : `How many of ${ix.label}'s members rose against how many fell, every session, counting each bank only while it was in the index. The line adds it up; the McClellan oscillator measures its momentum.`}
+          : `How many of ${possessive(ix.label)} members rose against how many fell, every session, counting each stock only while it was in the index. The line adds it up; the McClellan oscillator measures its momentum.`}
         actions={
           <>
           <IndexTabs base="/advance-decline" current={ix} ma={ma} date={wanted} />

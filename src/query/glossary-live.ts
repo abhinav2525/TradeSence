@@ -11,7 +11,7 @@ import { stockReport } from "./stock-report";
 import { signalsData } from "./signals";
 import { pctText } from "../components/signals-copy";
 import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
-import { NIFTY_BANK } from "../ingest/indices";
+import { NIFTY_BANK, NIFTY_FIN_SERVICE, type IndexEntry } from "../ingest/indices";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { BIG_JUMP_PCT } from "../indicators/activity";
@@ -25,6 +25,16 @@ const SHOWCASE = "KOTAKBANK";
 const WHIPSAW_MIN_SESSIONS = 250;
 const pct = (v: number, d = 1) => `${signed(v, d)}%`;
 
+/** "Nifty Bank has 14 members today; it closed at … on …" from the file and NSE's index close. */
+async function indexToday(ix: IndexEntry): Promise<string | null> {
+  const today = new Date().toISOString().slice(0, 10);
+  const n = membersOn(readMembershipHistory(ix), today).length;
+  const [row] = await db.execute<{ d: string; close: number }>(sql`
+    select trade_date::text d, close from index_prices where index_name = ${ix.prices}
+    order by trade_date desc limit 1`);
+  return row ? `${ix.label} has ${n} members today; it closed at ${formatPrice(Number(row.close))} on ${formatDate(row.d)}.` : null;
+}
+
 async function build(id: TermId): Promise<string | null> {
   switch (id) {
     case "membership": {
@@ -33,13 +43,11 @@ async function build(id: TermId): Promise<string | null> {
       const last = rows.flatMap((r) => [r.addedOn, r.removedOn ?? ""]).filter((d) => d && d <= today).sort().at(-1);
       return last ? `${membersOn(rows, today).length} members today; the latest change was on ${formatDate(last)}.` : null;
     }
-    case "nifty-bank": {
-      const today = new Date().toISOString().slice(0, 10);
-      const n = membersOn(readMembershipHistory(NIFTY_BANK), today).length;
-      const [row] = await db.execute<{ d: string; close: number }>(sql`
-        select trade_date::text d, close from index_prices where index_name = ${NIFTY_BANK.prices}
-        order by trade_date desc limit 1`);
-      return row ? `Nifty Bank has ${n} members today; it closed at ${formatPrice(Number(row.close))} on ${formatDate(row.d)}.` : null;
+    case "nifty-bank": return indexToday(NIFTY_BANK);
+    case "nifty-financial-services": {
+      const base = await indexToday(NIFTY_FIN_SERVICE);
+      const p = (await breadthSeries("sma200", NIFTY_FIN_SERVICE.members)).at(-1);
+      return base && p ? `${base} On ${formatDate(p.date)}, ${p.above} of the ${p.total} counted closed above their 200-day SMA.` : base;
     }
     case "session": {
       const d = await resolveSession("sma200");

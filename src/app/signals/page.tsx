@@ -11,7 +11,7 @@ import { signalsData } from "@/query/signals";
 import type { MaKind } from "@/query/breadth";
 import IndexTabs from "@/components/IndexTabs";
 import { UNTESTED_LINE, signalsView } from "@/components/signals-copy";
-import { cleanIndex } from "@/ingest/indices";
+import { cleanIndex, possessive } from "@/ingest/indices";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +45,7 @@ export default async function Page({
         title="Signals"
         description={tested
           ? "What happened next. Index returns after breadth extremes, and the alarm that history supports."
-          : `What happened next. Each time ${ix.label}'s breadth fell under 20%, and what the index did after.`}
+          : `What happened next. Each time ${possessive(ix.label)} breadth fell under 20%, and what the index did after.`}
         actions={<IndexTabs base="/signals" current={ix} ma={ma} extra={cond === "under" ? "" : `&cond=${cond}`} />}
       />
 
@@ -71,7 +71,7 @@ export default async function Page({
             ) : (
               <span>
                 <strong className="font-medium text-foreground">{UNTESTED_LINE}</strong> History starts in{" "}
-                {s.first.slice(0, 4)}, on {ix.label}&apos;s real membership each day. Breadth counts every member once,
+                {s.first.slice(0, 4)}, on {possessive(ix.label)} real membership each day. Breadth counts every member once,
                 but the index&apos;s close is driven by its two or three biggest members, so the two can disagree for weeks.
               </span>
             )}

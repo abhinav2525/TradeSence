@@ -37,7 +37,7 @@ export default async function CrossingsPage({
   const [rows, asOf, withCards] = await Promise.all([
     crossingStats(ma, ix.members), resolveSession(ma, undefined, ix.members), isNifty ? null : supportedStocks(),
   ]);
-  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  // Report Cards exist for every registered index's members (decision 0035); others show unlinked.
   const cards = withCards?.map((s) => s.symbol);
 
   const total = rows.reduce((n, r) => n + r.crossings, 0);
@@ -56,7 +56,7 @@ export default async function CrossingsPage({
         title="Crossings"
         description={isNifty
           ? "How often each stock has crossed its average since 2020. Whipsaw means flipping back and forth: a stock with many crossings has changed sides often; one with few has stayed on one side for long stretches."
-          : `How often each bank that has been in ${ix.label} since 2020 crossed its average while it was a member. Whipsaw means flipping back and forth: many crossings means it changed sides often; few means long stretches on one side.`}
+          : `How often each stock that has been in ${ix.label} since 2020 crossed its average while it was a member. Whipsaw means flipping back and forth: many crossings means it changed sides often; few means long stretches on one side.`}
         actions={
           <>
             <IndexTabs base="/crossings" current={ix} ma={ma} />

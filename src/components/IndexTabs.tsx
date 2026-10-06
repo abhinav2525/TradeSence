@@ -19,7 +19,7 @@ type Props = {
 };
 
 /**
- * Which index the page counts (decision 0034): NIFTY 50 or Nifty Bank, each on its
+ * Which index the page counts (decisions 0034, 0037): any registered index, each on its
  * real membership day by day. Same look as MaTabs; the choice lives in `u`.
  */
 export default function IndexTabs({ base, current, ma, date, extra = "", only, label = "Index", defaultKey = NIFTY50.key }: Props) {

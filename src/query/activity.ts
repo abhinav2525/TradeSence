@@ -5,12 +5,16 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { KINDS, isBigJump, unusualScore, type Kind, type UnusualRow } from "../indicators/activity";
-import { NIFTY50, NIFTY_BANK } from "../ingest/indices";
+import { NIFTY50, indexByKey, isIndexKey, type IndexKey } from "../ingest/indices";
 import { CARD_INDEX_NAMES } from "./card-indices";
 
-/** `all`, or a registered index's key (its members on that date; decision 0034). */
-export type ActivitySet = "all" | typeof NIFTY50.key | typeof NIFTY_BANK.key;
-const SET_INDEX = { nifty50: NIFTY50.members, bank: NIFTY_BANK.members } as const;
+/** `all`, or a registered index's key (its members on that date; decisions 0034, 0037). */
+export type ActivitySet = "all" | IndexKey;
+
+/** The page's `set` parameter: `all` or exactly a registered key, else `all`. */
+export function cleanActivitySet(v: string | undefined): ActivitySet {
+  return v === "all" || !isIndexKey(v) ? "all" : v;
+}
 // member: in the set's index on that date (the switch; the NIFTY 50 for "all" and the
 // Report Card). hasCard: ever in a registered index, so its Report Card exists and the
 // row can link to it (decision 0035).
@@ -60,7 +64,7 @@ export async function activityFirst(): Promise<string | null> {
 }
 
 export async function activityOn(dateIso: string, set: ActivitySet): Promise<ActivityRow[]> {
-  const memberOf = set === "all" ? NIFTY50.members : SET_INDEX[set];
+  const memberOf = set === "all" ? NIFTY50.members : (indexByKey(set) ?? NIFTY50).members;
   const rows = (await db.execute<Raw>(sql`${selectFor(memberOf)} where u.trade_date = ${dateIso}`)).map(toRow);
   return rows
     .filter((r) => set === "all" || r.member)

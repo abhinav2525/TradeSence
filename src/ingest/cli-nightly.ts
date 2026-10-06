@@ -76,7 +76,7 @@ for (const u of unparsed) {
 }
 
 // Averages and daily moves for every member of every registered index (NIFTY 50,
-// Nifty Bank; decision 0034), each stock once. A >30% overnight move with no
+// Nifty Bank, Nifty Financial Services; decisions 0034, 0037), each stock once. A >30% overnight move with no
 // action behind it means a split we do not know about. A failure here must not
 // skip the later steps or the backup.
 try {

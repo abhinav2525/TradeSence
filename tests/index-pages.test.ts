@@ -3,12 +3,12 @@
 // only before it left, one that joined only after, and NIFTY-50-only stocks never.
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
-import { NIFTY50, NIFTY_BANK } from "../src/ingest/indices";
+import { NIFTY50, NIFTY_BANK, NIFTY_FIN_SERVICE } from "../src/ingest/indices";
 import { breadthSeries, breakdownOn, adjacentSessions, resolveSession } from "../src/query/breadth";
 import { advanceDeclineCounts } from "../src/query/advance-decline";
 import { crossingStats } from "../src/query/crossings";
 import { screenerOn } from "../src/query/screener";
-import { activityOn } from "../src/query/activity";
+import { activityOn, cleanActivitySet } from "../src/query/activity";
 import { pointInTime, cleanUniverse } from "../src/indicators/breadth-universes";
 import { hotkeyTarget } from "../src/components/hotkey-target";
 
@@ -106,6 +106,22 @@ describe("the other pages on Nifty Bank", () => {
     expect((await activityOn(D[2], "all")).map((r) => r.symbol).sort()).toEqual(["LEFT", "NEWB"]);
   });
 
+  test("Unusual activity's Nifty Financial Services switch uses that index's membership on the date", async () => {
+    const FS = NIFTY_FIN_SERVICE.members;
+    await db.insert(schema.indexMembers).values([
+      { indexName: FS, symbol: "FINLEFT", addedOn: "2020-01-01", removedOn: D[2] },
+      { indexName: FS, symbol: "AAA", addedOn: "2020-01-01", removedOn: null },
+    ]);
+    const u = (tradeDate: string, symbol: string) => ({
+      tradeDate, symbol, kept: false, volume: true, jump: false, collapse: false,
+      keptRatio: 1, volumeRatio: 6, deliveryPct: 40, usualDeliveryPct: 40, changePct: 1, turnover: 2e7,
+    });
+    await db.insert(schema.unusualDays).values([u(D[1], "FINLEFT"), u(D[1], "LEFT"), u(D[2], "FINLEFT"), u(D[2], "AAA")]);
+    expect((await activityOn(D[1], "financial-services")).map((r) => r.symbol)).toEqual(["FINLEFT"]); // LEFT is Bank only
+    expect((await activityOn(D[2], "financial-services")).map((r) => r.symbol)).toEqual(["AAA"]); // FINLEFT gone
+    expect((await activityOn(D[2], "financial-services")).every((r) => r.hasCard)).toBe(true);
+  });
+
   test("on the Nifty Bank switch, every member of a registered index links to a Report Card (step B)", async () => {
     const u = (symbol: string) => ({
       tradeDate: D[2], symbol, kept: false, volume: true, jump: false, collapse: false,
@@ -118,13 +134,21 @@ describe("the other pages on Nifty Bank", () => {
   });
 });
 
+describe("Unusual activity's set parameter", () => {
+  test("all, or exactly a registered key; anything else is all", () => {
+    for (const k of ["all", "nifty50", "bank", "financial-services"]) expect<string>(cleanActivitySet(k)).toBe(k);
+    for (const v of [undefined, "", "finservice", "NIFTYBANK", "private-bank", "Bank", "__proto__"]) expect(cleanActivitySet(v)).toBe("all");
+  });
+});
+
 describe("which Breadth views use true membership", () => {
-  test("bank and the NIFTY 50 do; a list with no membership file keeps today's list", () => {
+  test("bank, financial-services and the NIFTY 50 do; a list with no membership file keeps today's list", () => {
     expect(pointInTime(cleanUniverse("bank"))).toBe(NIFTY_BANK);
+    expect(pointInTime(cleanUniverse("financial-services"))).toBe(NIFTY_FIN_SERVICE);
     expect(pointInTime(cleanUniverse("nifty50"))).toBe(NIFTY50);
     expect(pointInTime(cleanUniverse(undefined))).toBe(NIFTY50);
     expect(pointInTime(cleanUniverse("private-bank"))).toBeNull();
-    expect(pointInTime(cleanUniverse("financial-services"))).toBeNull();
+    expect(pointInTime(cleanUniverse("fin-ex-bank"))).toBeNull();
     expect(pointInTime(cleanUniverse("market"))).toBeNull();
   });
 });

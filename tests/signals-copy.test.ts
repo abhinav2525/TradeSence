@@ -3,7 +3,7 @@ import {
   UNTESTED_LINE, signalsView, washoutNote, firedLine, noticeText, noticeVisible, pctText, readingSentence, toneClass, washoutSentence,
 } from "../src/components/signals-copy";
 import type { Episode, HorizonSummary, Washout } from "../src/indicators/signals";
-import { NIFTY50, NIFTY_BANK } from "../src/ingest/indices";
+import { NIFTY50, NIFTY_BANK, NIFTY_FIN_SERVICE } from "../src/ingest/indices";
 
 const w = (over: Partial<Washout>): Washout =>
   ({ status: "active", pct: 16, date: "2026-10-01", since: "2026-10-01", lastStart: "2026-10-01", fired: 6, ...over });
@@ -116,6 +116,7 @@ describe("Signals review fixes (decision 0035)", () => {
   test("signalsView: Nifty Bank shows washout rows only; the NIFTY 50 keeps summaries and the chosen side", () => {
     expect(signalsView(NIFTY_BANK, "over")).toEqual({ summaries: false, tableCond: "under" });
     expect(signalsView(NIFTY_BANK, "under")).toEqual({ summaries: false, tableCond: "under" });
+    expect(signalsView(NIFTY_FIN_SERVICE, "over")).toEqual({ summaries: false, tableCond: "under" });
     expect(signalsView(NIFTY50, "over")).toEqual({ summaries: true, tableCond: "over" });
     expect(signalsView(NIFTY50, "under")).toEqual({ summaries: true, tableCond: "under" });
   });
@@ -123,5 +124,9 @@ describe("Signals review fixes (decision 0035)", () => {
     expect(washoutNote("Nifty Bank", 14)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm. With 14 members, one moves Nifty Bank's share by about 7 points.");
     expect(washoutNote("Nifty Bank", 12)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm. With 12 members, one moves Nifty Bank's share by about 8 points.");
     expect(washoutNote("Nifty Bank", undefined)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm.");
+    expect(washoutNote("Nifty Financial Services", 20)).toBe("Only the 200-day SMA, as in the NIFTY 50 alarm. With 20 members, one moves Nifty Financial Services' share by about 5 points.");
+  });
+  test("washoutSentence for Nifty Financial Services: 'x of its 20 members', possessive without a stray s (decision 0037)", () => {
+    expect(washoutSentence(w({ pct: 5, above: 1, total: 20 }), "Nifty Financial Services")).toMatch(/^1 of Nifty Financial Services' 20 members are above their 200-day SMA \(5%\)/);
   });
 });

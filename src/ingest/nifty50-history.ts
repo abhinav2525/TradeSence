@@ -1,7 +1,7 @@
 /**
  * Point-in-time index membership since 2020, from small hand-checked files.
  *
- * Each registered index (`indices.ts`: the NIFTY 50, Nifty Bank) has a file next
+ * Each registered index (`indices.ts`: NIFTY 50, Nifty Bank, Nifty Financial Services) has a file next
  * to this module that is the source of truth: one row per period a stock was in
  * the index, each traced to an NSE Indices press release. NSE publishes no
  * machine-readable history, and the changes are few, so a reviewed file beats a

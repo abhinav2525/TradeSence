@@ -29,15 +29,17 @@ export const LIGHTS_DISCLAIMER =
 export type StockGroup = { title: string; stocks: { symbol: string }[] };
 
 /**
- * The /stock index's groups (decision 0035): NIFTY 50 members (once, even when also in
- * another index), then each other index's members not in the NIFTY 50, then former members.
+ * The /stock index's groups (decisions 0035, 0037): each current stock once, under the
+ * earliest registered index it is in today (NIFTY 50, then Nifty Bank, then Nifty Financial
+ * Services: the same order that picks its default card), then former members.
  */
 export function stockGroups<S extends { symbol: string; current: boolean; currentIn: string[] }>(stocks: S[]): { title: string; stocks: S[] }[] {
+  const name = (ix: { key: string; label: string }) => (ix.key === NIFTY50.key ? `the ${ix.label}` : ix.label);
+  const earlier = (i: number) => INDICES.slice(0, i).map(name);
   return [
-    { title: `In the ${NIFTY50.label}`, stocks: stocks.filter((s) => s.currentIn.includes(NIFTY50.key)) },
-    ...INDICES.filter((ix) => ix.key !== NIFTY50.key).map((ix) => ({
-      title: `In ${ix.label}, not the ${NIFTY50.label}`,
-      stocks: stocks.filter((s) => s.currentIn.includes(ix.key) && !s.currentIn.includes(NIFTY50.key)),
+    ...INDICES.map((ix, i) => ({
+      title: i === 0 ? `In ${name(ix)}` : `In ${ix.label}, not ${earlier(i).join(" or ")}`,
+      stocks: stocks.filter((s) => s.currentIn.includes(ix.key) && !INDICES.slice(0, i).some((e) => s.currentIn.includes(e.key))),
     })),
     { title: "Former members since 2020", stocks: stocks.filter((s) => !s.current) },
   ];

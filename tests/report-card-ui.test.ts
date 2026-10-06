@@ -38,6 +38,16 @@ describe("stockGroups: the /stock index (decision 0035)", () => {
     expect(groups.map((g) => [g.title, g.stocks.map((x) => x.symbol)])).toEqual([
       ["In the NIFTY 50", ["AAA", "NFX"]],
       ["In Nifty Bank, not the NIFTY 50", ["BNK"]],
+      ["In Nifty Financial Services, not the NIFTY 50 or Nifty Bank", []], // StockList hides an empty group
+      ["Former members since 2020", ["GONE"]],
+    ]);
+  });
+  test("three indices: each current stock once, under the earliest registered index it is in (decision 0037)", () => {
+    const groups = stockGroups([s("AAA", ["nifty50", "bank", "financial-services"]), s("BNK", ["bank", "financial-services"]), s("FIN", ["financial-services"]), s("GONE", [])]);
+    expect(groups.map((g) => [g.title, g.stocks.map((x) => x.symbol)])).toEqual([
+      ["In the NIFTY 50", ["AAA"]],
+      ["In Nifty Bank, not the NIFTY 50", ["BNK"]],
+      ["In Nifty Financial Services, not the NIFTY 50 or Nifty Bank", ["FIN"]],
       ["Former members since 2020", ["GONE"]],
     ]);
   });

@@ -16,7 +16,7 @@ import {
   breadthSeries, breakdownOn, adjacentSessions, universeSeries, MA_LABELS, type BreadthPoint, type MaKind,
 } from "@/query/breadth";
 import { LIST_UNIVERSES, cleanUniverse, pickSession, pointInTime, type Universe } from "@/indicators/breadth-universes";
-import { sizeOn } from "@/ingest/indices";
+import { possessive, sizeOn } from "@/ingest/indices";
 import { supportedStocks } from "@/query/stock-report";
 import { signalsData } from "@/query/signals";
 
@@ -57,7 +57,8 @@ export default async function Page({
   const { ma: rawMa, date: rawDate, u: rawU } = await searchParams;
   const u = cleanUniverse(rawU);
   const isNifty = u === "nifty50";
-  // NIFTY 50 and Nifty Bank: true day-by-day membership (decision 0034). Other lists:
+  // The registered indices (NIFTY 50, Nifty Bank, Nifty Financial Services): true day-by-day
+  // membership (decisions 0034, 0037). Other lists:
   // today's members, from breadth_daily (decision 0030).
   const pit = pointInTime(u);
   const small = pit !== null && !isNifty; // few members: "x of N", no percentile or "rare" wording
@@ -72,7 +73,7 @@ export default async function Page({
     signalsData(),
     small ? supportedStocks() : null,
   ]);
-  // Report Cards exist for NIFTY 50 stocks only until step B; others show unlinked.
+  // Report Cards exist for every registered index's members (decision 0035); others show unlinked.
   const cards = withCards?.map((s) => s.symbol);
   const view = niftyView ?? { ...pickSession(series, wanted), above: [], below: [] };
   const idx = view.date ? series.findIndex((p) => p.date === view.date) : series.length - 1;
@@ -113,19 +114,19 @@ export default async function Page({
 
   const size = pit && point ? sizeOn(pit.sizes, point.date) : 0;
   const counted = point && small
-    ? (point.total === size ? `${pit!.label}'s ${size} members` : `the ${point.total} of ${pit!.label}'s ${size} members that have a ${label}`)
+    ? (point.total === size ? `${possessive(pit!.label)} ${size} members` : `the ${point.total} of ${possessive(pit!.label)} ${size} members that have a ${label}`)
     : null;
 
   const tiles: Tile[] = point
     ? [
         small ? {
           label: "Members counted",
-          term: "nifty-bank",
+          term: pit!.term,
           value: String(point.total),
           unit: `of ${size}`,
           sub: point.total < size
             ? `${size - point.total} without enough history for the ${label} yet`
-            : `One bank moves the share by about ${Math.round(100 / point.total)} points`,
+            : `One member moves the share by about ${Math.round(100 / point.total)} points`,
         } : building ? {
           label: "Percentile",
           term: "percentile",
@@ -190,7 +191,7 @@ export default async function Page({
         title="Breadth"
         description={
           isNifty ? "How many of the fifty constituents close above their moving average, and how rare that is against every session since 2020."
-          : small ? `How many of ${pit!.label}'s members close above their moving average, on the index's real membership each day since 2020. With so few members, read the count, not the decimals.`
+          : small ? `How many of ${possessive(pit!.label)} members close above their moving average, on the index's real membership each day since 2020. With so few members, read the count, not the decimals.`
           : u === "market" ? `How many liquid NSE companies close above their moving average, and how rare that is against every session since ${since || "2016"}.`
           : `How many ${universeName(u)} members close above their moving average, using today's members. Saved every night from October 2026.`
         }
@@ -268,9 +269,9 @@ export default async function Page({
             <BreadthArea data={chart} selectedDate={view.date} />
             <CardFooter>
               Under the halfway line, most of the index closed below its own {label}.{" "}
-              {/* With 14 banks, 20% is three banks: not an extreme. */}
+              {/* With 14 or 20 members, 20% is three or four stocks: not an extreme. */}
               {small ? "The shaded bands mark under 20% and over 80%." : "The shaded bands mark the extremes: under 20% and over 80%."}
-              {small && ` With ${size} members, one bank is about ${Math.round(100 / size)} points, so the line moves in steps.`}
+              {small && ` With ${size} members, one member is about ${Math.round(100 / size)} points, so the line moves in steps.`}
             </CardFooter>
           </Card>
 

@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test";
 import { GLOSSARY, TOPICS, isTermId, termHref, type TermId } from "../src/lib/glossary";
 import { todayLine } from "../src/lib/glossary";
+import { INDICES } from "../src/ingest/indices";
 
 const entries = Object.values(GLOSSARY);
 
@@ -46,6 +47,17 @@ describe("the glossary", () => {
     for (const id of ["money-flow", "trading-vs-normal", "share-of-trading"]) expect(isTermId(id)).toBe(true);
     expect(isTermId("whole-market-breadth")).toBe(true);
     expect(isTermId("nifty-bank")).toBe(true); // the index selector (decision 0034)
+    expect(isTermId("nifty-financial-services")).toBe(true); // decision 0037
+  });
+
+  test("every registered index names a glossary entry for itself, linked from membership", () => {
+    for (const ix of INDICES) {
+      expect(isTermId(ix.term)).toBe(true);
+      expect(GLOSSARY[ix.term].term).toBe(ix.label);
+      if (ix.term !== "nifty50") expect(GLOSSARY[ix.term].seeIt?.href).toBe(`/?u=${ix.key}`);
+    }
+    expect(GLOSSARY.membership.related).toEqual(expect.arrayContaining(INDICES.map((ix) => ix.term)));
+    for (const ix of INDICES) expect(GLOSSARY.membership.short + GLOSSARY.membership.calc.plain).toContain(ix.label);
   });
 
   test("text uses a true minus, never a hyphen before a digit", () => {

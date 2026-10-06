@@ -33,8 +33,8 @@ const CHUNK = 1000;
  *
  * Loading and adjustment live in history.ts, shared with the research scripts.
  *
- * Indices: by default every registered index (`ingest/indices.ts`: the NIFTY 50
- * and Nifty Bank), members past and present, each stock once however many
+ * Indices: by default every registered index (`ingest/indices.ts`: the NIFTY 50,
+ * Nifty Bank and Nifty Financial Services), members past and present, each stock once however many
  * indices list it. A stock's numbers depend only on its own prices, so adding an
  * index never changes another index's rows (decision 0034).
  */

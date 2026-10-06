@@ -9,7 +9,7 @@ export type Topic = "Basics" | "Moving averages" | "Breadth" | "Advance/Decline"
 export const TOPICS: Topic[] = ["Basics", "Moving averages", "Breadth", "Advance/Decline", "Stocks", "Risk"];
 
 const IDS = [
-  "nifty50", "nifty-bank", "session", "membership",
+  "nifty50", "nifty-bank", "nifty-financial-services", "session", "membership",
   "sma", "ema", "ma-50-200",
   "breadth", "percentile", "five-session-change", "washout", "episode", "forward-return",
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
@@ -57,13 +57,27 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     read: "\"5 of Nifty Bank's 14 members\" means 5 of the banks that were in the index that day.",
     what: "Banks are a large slice of the NIFTY 50, so their health matters for the whole market. tradeSence uses Nifty Bank's real membership on each day since 2020, rebuilt from NSE Indices' press releases, working back from today's list, so a bank counts only while it was in the index. Because there are so few members, one bank moves a share by about 7 percentage points with today's 14 banks (8 with the 12 before 31 Dec 2025); read the count, not the decimals.",
     calc: { plain: "Same rules as for the NIFTY 50, counted over Nifty Bank's members on each day. A bank without enough history for an average yet is left out of that count and the page says \"x of N counted\"." },
-    example: "YES BANK left Nifty Bank on 27 Mar 2020 and came back on 31 Dec 2025, when the index grew from 12 to 14 banks. It counts before the first date and after the second, not in between.",
+    example: "YES BANK left Nifty Bank on 19 Mar 2020 and came back on 31 Dec 2025, when the index grew from 12 to 14 banks. It counts before the first date and after the second, not in between.",
     mistakes: [
       "Reading Nifty Bank's breadth like the NIFTY 50's. With 12 to 14 banks it moves in big steps, so a jump from 36% to 50% can be just two banks.",
       "Expecting the index's own price to agree with the count. Two or three big banks drive the index; the count gives every bank one vote.",
     ],
     related: ["nifty50", "membership", "breadth"],
     seeIt: { label: "Breadth for Nifty Bank", href: "/?u=bank" },
+  },
+  "nifty-financial-services": {
+    id: "nifty-financial-services", term: "Nifty Financial Services", topic: "Basics",
+    short: "NSE's index of 20 large finance companies: banks, lenders, insurers, exchanges and asset managers. Pick it on a page to see that page for these 20 instead of the NIFTY 50.",
+    read: "\"6 of Nifty Financial Services' 20 members\" means 6 of the 20 companies that were in the index that day.",
+    what: "It is wider than Nifty Bank: besides the big banks it holds non-bank lenders (Bajaj Finance, Cholamandalam, Shriram Finance), insurers (HDFC Life, SBI Life, ICICI Lombard), PFC and REC, and BSE. tradeSence uses its real membership on each day since 2020, rebuilt from NSE Indices' press releases, working back from today's list, so a company counts only while it was in the index. With 20 members, one company moves a share by 5 percentage points; read the count, not the decimals.",
+    calc: { plain: "Same rules as for the NIFTY 50, counted over the index's 20 members on each day. A company without enough history for an average yet is left out of that count and the page says \"x of 20 counted\"." },
+    example: "Piramal Enterprises joined on 26 Jun 2020 and left on 8 Aug 2022, when IEX took its place. It counts between those two dates, not before or after.",
+    mistakes: [
+      "Reading its breadth like the NIFTY 50's. With 20 members it moves in steps of 5 points.",
+      "Expecting the index's own price to agree with the count. HDFC Bank and ICICI Bank drive the index; the count gives every company one vote.",
+    ],
+    related: ["nifty-bank", "membership", "breadth"],
+    seeIt: { label: "Breadth for Nifty Financial Services", href: "/?u=financial-services" },
   },
   session: {
     id: "session", term: "Trading session", topic: "Basics",
@@ -78,13 +92,13 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
   },
   membership: {
     id: "membership", term: "Index membership", topic: "Basics",
-    short: "Which companies were in an index (the NIFTY 50 or Nifty Bank) on a given day. Indices change a few times a year, so tradeSence uses the real list for every day since 2020, not today's list.",
+    short: "Which companies were in an index (the NIFTY 50, Nifty Bank or Nifty Financial Services) on a given day. Indices change a few times a year, so tradeSence uses the real list for every day since 2020, not today's list.",
     read: "A company counts towards breadth only on the days it was actually in the index.",
     what: "Using today's members for every past day would quietly leave out the companies that collapsed and were removed, so history would look better than it was. This is called survivorship bias. tradeSence avoids it by recording who joined and left, and when.",
-    calc: { plain: "Built from NSE Indices' press releases: each addition and removal with its effective date, checked to give exactly the index's size on every day (NIFTY 50: 50; Nifty Bank: 12, then 14 from 31 Dec 2025)." },
-    example: "YES BANK left the NIFTY 50 on 27 Mar 2020. Its collapse counts in breadth before that date, and not after.",
+    calc: { plain: "Built from NSE Indices' press releases: each addition and removal with its effective date, checked to give exactly the index's size on every day (NIFTY 50: 50; Nifty Bank: 12, then 14 from 31 Dec 2025; Nifty Financial Services: 20)." },
+    example: "YES BANK left the NIFTY 50 on 19 Mar 2020. Its collapse counts in breadth before that date, and not after.",
     mistakes: ["Judging history with today's members. It leaves out the losers, so the past looks rosier than it was."],
-    related: ["nifty50", "nifty-bank", "breadth"],
+    related: ["nifty50", "nifty-bank", "nifty-financial-services", "breadth"],
     seeIt: { label: "Report card list", href: "/stock" },
   },
   sma: {

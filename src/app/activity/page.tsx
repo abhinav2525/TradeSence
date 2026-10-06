@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 import { KINDS, type Kind } from "@/indicators/activity";
 import type { MaKind } from "@/query/breadth";
 import {
-  activityFirst, activityNeighbours, activityOn, activitySession, filterBigJumps, filterKinds, kindCounts, type ActivitySet,
+  activityFirst, activityNeighbours, activityOn, activitySession, cleanActivitySet, filterBigJumps, filterKinds, kindCounts, type ActivitySet,
 } from "@/query/activity";
+import { INDICES, NIFTY50, indexByKey, indexLabels } from "@/ingest/indices";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +23,6 @@ export const dynamic = "force-dynamic";
 // default (CLAUDE.md): nothing from the URL reaches SQL except a checked date.
 function isMaKind(v: string | undefined): v is MaKind {
   return v === "sma200" || v === "ema200" || v === "sma50";
-}
-function isSet(v: string | undefined): v is ActivitySet {
-  return v === "all" || v === "nifty50" || v === "bank";
 }
 function isKind(v: string): v is Kind {
   return v === "kept" || v === "volume" || v === "jump" || v === "collapse";
@@ -53,7 +51,7 @@ export default async function Page({
 }) {
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
-  const set: ActivitySet = isSet(sp.set) ? sp.set : "all";
+  const set: ActivitySet = cleanActivitySet(sp.set);
   const kinds = cleanKinds(sp.kinds);
   const move: Move = isMove(sp.move) ? sp.move : "all";
   const wanted = cleanDate(sp.date);
@@ -76,9 +74,10 @@ export default async function Page({
     const next = kinds.includes(k) ? kinds.filter((x) => x !== k) : [...kinds, k];
     return href({ kinds: next.length ? KINDS.filter((x) => next.includes(x)) : [...KINDS] });
   };
-  // "bank": Nifty Bank's members on that date (decision 0034), like the NIFTY 50 switch.
-  const scope = set === "nifty50" ? "NIFTY 50 members" : set === "bank" ? "Nifty Bank members" : "active stocks";
-  const scopeOf = (n: number) => (n !== 1 ? scope : set === "nifty50" ? "NIFTY 50 member" : set === "bank" ? "Nifty Bank member" : "active stock");
+  // A registered index: its members on that date (decisions 0034, 0037), like the NIFTY 50 switch.
+  const ix = set === "all" ? undefined : indexByKey(set);
+  const scope = ix ? `${ix.label} members` : "active stocks";
+  const scopeOf = (n: number) => (n !== 1 ? scope : ix ? `${ix.label} member` : "active stock");
 
   return (
     <AppShell current="activity" ma={ma} asOf={latest}>
@@ -127,7 +126,7 @@ export default async function Page({
           <div className="flex flex-wrap items-center justify-between gap-3 border-b px-card-x py-3">
             <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="tablist" aria-label="Stocks">
               <SlidingPill active={set} />
-              {([["all", "All active stocks"], ["nifty50", "NIFTY 50"], ["bank", "Nifty Bank"]] as const).map(([k, text]) => (
+              {([["all", "All active stocks"], ...INDICES.map((x) => [x.key, x.label] as const)] as const).map(([k, text]) => (
                 <Link key={k} href={href({ set: k })} role="tab" aria-selected={set === k} className={seg(set === k)}>{text}</Link>
               ))}
             </div>
@@ -168,8 +167,8 @@ export default async function Page({
           />
           <CardFooter>
             Each stock against its own last 20 sessions; stocks trading under ₹1 crore a day and ETFs are left out.
-            Report Cards cover stocks that have been in the NIFTY 50 since 2020; those link to theirs.
-            {set === "bank" && " Nifty Bank counts each bank only on the days it was in the index."}
+            Report Cards cover stocks that have been in the {indexLabels()} since 2020; those link to theirs.
+            {ix && ix !== NIFTY50 && ` ${ix.label} counts each stock only on the days it was in the index.`}
           </CardFooter>
         </Card>
       )}

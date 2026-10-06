@@ -8,7 +8,7 @@ import { LIGHTS_DISCLAIMER } from "@/lib/report-card";
 import Term from "@/components/Term";
 import type { TermId } from "@/lib/glossary";
 import CountUp from "@/components/CountUp";
-import { NIFTY50 } from "@/ingest/indices";
+import { NIFTY50, possessive } from "@/ingest/indices";
 
 const pct = (v: number, digits = 1) => `${signed(v, digits)}%`;
 const abs0 = (v: number) => Math.abs(v).toFixed(0);
@@ -121,7 +121,7 @@ export function cardExtra(r: StockReport, h: string): string {
 /** Said plainly whenever the peers aren't the NIFTY 50's (owner, 2026-10-05; decision 0035). */
 export function peersLine(r: StockReport): string | null {
   if (r.peerIndex.key === NIFTY50.key) return null;
-  return `Strength ranks it among ${r.peerIndex.label}'s members on that day. Every other check compares it with the NIFTY 50, the market.`;
+  return `Strength ranks it among ${possessive(r.peerIndex.label)} members on that day. Every other check compares it with the NIFTY 50, the market.`;
 }
 
 /** Counts of each light, never a score. */

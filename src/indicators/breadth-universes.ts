@@ -5,7 +5,7 @@
  */
 import { INDEX_LISTS } from "../ingest/index-constituents";
 import type { MaKind } from "../lib/ma";
-import { INDICES, type IndexEntry } from "../ingest/indices";
+import { indexByKey, type IndexEntry } from "../ingest/indices";
 
 export const MA_KINDS: readonly MaKind[] = ["sma50", "sma200", "ema200"];
 export type DayCounts = Record<MaKind, { above: number; total: number }>;
@@ -49,13 +49,13 @@ export function cleanUniverse(v: string | undefined): Universe {
 }
 
 /**
- * The registered index (true day-by-day membership, decision 0034) behind a
- * universe, or null when it has only today's list: `nifty50` and `bank` are drawn
- * from `index_members`; `private-bank`, `financial-services` etc. stay on
- * breadth_daily's today's-list counts.
+ * The registered index (true day-by-day membership, decisions 0034, 0037) behind a
+ * universe, or null when it has only today's list: `nifty50`, `bank` and
+ * `financial-services` are drawn from `index_members`; `private-bank`, `fin-ex-bank`
+ * etc. stay on breadth_daily's today's-list counts.
  */
 export function pointInTime(u: Universe): IndexEntry | null {
-  return INDICES.find((x) => x.key === u) ?? null;
+  return indexByKey(u) ?? null;
 }
 
 /**

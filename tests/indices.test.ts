@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach } from "bun:test";
 import { db, schema } from "../src/db";
 import { eq } from "drizzle-orm";
-import { INDICES, NIFTY50, NIFTY_BANK, indexByKey, cleanIndex, sizeOn, uParam, membersPhrase, parseMembersArgs } from "../src/ingest/indices";
+import { INDICES, NIFTY50, NIFTY_BANK, NIFTY_FIN_SERVICE, indexByKey, cleanIndex, sizeOn, uParam, membersPhrase, parseMembersArgs, possessive, indexLabels } from "../src/ingest/indices";
 import { INDEX_LISTS } from "../src/ingest/index-constituents";
 import { fetchIndexDay } from "../src/ingest/index-prices";
 import { loadMembership, readMembershipHistory, validateMembershipHistory } from "../src/ingest/nifty50-history";
@@ -24,6 +24,23 @@ describe("the index registry", () => {
     expect(NIFTY50).toMatchObject({ key: "nifty50", members: "NIFTY50", prices: "Nifty 50" });
   });
 
+  // Order matters: a stock in several indices opens on the earliest one's card (decision 0035).
+  test("three indices, in the order NIFTY 50, Nifty Bank, Nifty Financial Services", () => {
+    expect(INDICES).toEqual([NIFTY50, NIFTY_BANK, NIFTY_FIN_SERVICE]);
+  });
+
+  test("Nifty Financial Services binds its five names, its file and 20 members throughout (decision 0037)", () => {
+    expect(NIFTY_FIN_SERVICE).toMatchObject({
+      key: "financial-services", members: "NIFTYFINSERVICE", prices: "Nifty Financial Services",
+      list: "financial-services", label: "Nifty Financial Services", sizes: [{ from: "2020-01-01", n: 20 }],
+    });
+    expect(NIFTY_FIN_SERVICE.file.pathname.endsWith("/src/ingest/niftyfinservice-history.csv")).toBe(true);
+  });
+
+  test("each index names its own glossary entry", () => {
+    expect(INDICES.map((x) => x.term)).toEqual(["nifty50", "nifty-bank", "nifty-financial-services"]);
+  });
+
   test("every list key is one of NSE's index lists", () => {
     const keys = new Set<string>(INDEX_LISTS.map((x) => x.key));
     for (const ix of INDICES) expect(keys.has(ix.list)).toBe(true);
@@ -43,6 +60,8 @@ describe("the index registry", () => {
     expect(sizeOn(bank.sizes, "2025-12-30")).toBe(12);
     expect(sizeOn(bank.sizes, "2025-12-31")).toBe(14);
     expect(sizeOn(NIFTY50.sizes, "2026-10-05")).toBe(50);
+    expect(sizeOn(NIFTY_FIN_SERVICE.sizes, "2020-01-01")).toBe(20);
+    expect(sizeOn(NIFTY_FIN_SERVICE.sizes, "2026-10-05")).toBe(20);
   });
 
   // Live: NSE's daily index-close file names each index exactly as index_prices stores it.
@@ -61,10 +80,11 @@ describe("cleanIndex (the pages' u parameter)", () => {
   test("a registered key is kept", () => {
     expect(cleanIndex("bank").key).toBe("bank");
     expect(cleanIndex("nifty50").key).toBe("nifty50");
+    expect(cleanIndex("financial-services")).toBe(NIFTY_FIN_SERVICE);
   });
 
   test("anything else is the NIFTY 50", () => {
-    for (const v of [undefined, "", "BANK", "bank ", "private-bank", "market", "NIFTYBANK", "bank'--", "__proto__", "constructor"]) {
+    for (const v of [undefined, "", "BANK", "bank ", "private-bank", "market", "NIFTYBANK", "bank'--", "__proto__", "constructor", "Financial-Services", "finservice", "NIFTYFINSERVICE", "fin-ex-bank"]) {
       expect(cleanIndex(v)).toBe(NIFTY50);
     }
   });
@@ -74,9 +94,10 @@ describe("parseMembersArgs (bun run ingest:members <key> [--force])", () => {
   test("a registered key, with or without --force", () => {
     expect(parseMembersArgs(["bank"])).toEqual({ entry: NIFTY_BANK, force: false });
     expect(parseMembersArgs(["bank", "--force"])).toEqual({ entry: NIFTY_BANK, force: true });
+    expect(parseMembersArgs(["financial-services"])).toEqual({ entry: NIFTY_FIN_SERVICE, force: false });
   });
   test("anything else is refused (null), so nothing loads", () => {
-    for (const argv of [["NIFTYBANK"], ["Bank"], [], ["bank", "--forse"]]) expect(parseMembersArgs(argv)).toBeNull();
+    for (const argv of [["NIFTYBANK"], ["Bank"], [], ["bank", "--forse"], ["NIFTYFINSERVICE"], ["finservice"]]) expect(parseMembersArgs(argv)).toBeNull();
   });
 });
 
@@ -86,10 +107,20 @@ describe("uParam (links that keep the chosen index)", () => {
   });
   test("another index adds its key", () => {
     expect(uParam(indexByKey("bank")!)).toBe("&u=bank");
+    expect(uParam(NIFTY_FIN_SERVICE)).toBe("&u=financial-services");
   });
   test("membersPhrase names the index's size on that date", () => {
     expect(membersPhrase(indexByKey("bank")!, "2025-12-30")).toBe("Nifty Bank's 12 members");
     expect(membersPhrase(indexByKey("bank")!, "2026-10-05")).toBe("Nifty Bank's 14 members");
+    expect(membersPhrase(NIFTY_FIN_SERVICE, "2022-08-08")).toBe("Nifty Financial Services' 20 members");
+  });
+  test("indexLabels names every registered index for a sentence", () => {
+    expect(indexLabels()).toBe("NIFTY 50, Nifty Bank or Nifty Financial Services");
+  });
+  test("possessive: a name ending in s takes an apostrophe only", () => {
+    expect(possessive("Nifty Bank")).toBe("Nifty Bank's");
+    expect(possessive("NIFTY 50")).toBe("NIFTY 50's");
+    expect(possessive("Nifty Financial Services")).toBe("Nifty Financial Services'");
   });
 });
 

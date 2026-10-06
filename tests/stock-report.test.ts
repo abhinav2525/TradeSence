@@ -5,7 +5,7 @@ import { checksOf, peersLine, cardExtra } from "../src/components/StockChecks";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import IndexTabs from "../src/components/IndexTabs";
-import { NIFTY_BANK } from "../src/ingest/indices";
+import { NIFTY_BANK, NIFTY_FIN_SERVICE } from "../src/ingest/indices";
 
 const d = (i: number) => new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
 
@@ -434,5 +434,77 @@ describe("Report Cards across registered indices (step B)", () => {
     if (bank.kind !== "ok" || def.kind !== "ok") throw new Error("no report");
     expect(peersLine(bank.report)).toBe("Strength ranks it among Nifty Bank's members on that day. Every other check compares it with the NIFTY 50, the market.");
     expect(peersLine(def.report)).toBeNull();
+  });
+});
+
+// ── Nifty Financial Services, the third registered index (decision 0037) ──
+// AAA: all three; BNK: Nifty Bank and Financial Services; FIN, FIN2: Financial Services only;
+// NFX: NIFTY 50 only. Registry order decides the default card: NIFTY 50, then Bank, then FS.
+describe("Report Cards with three registered indices", () => {
+  const N = 300;
+  const up = (k: number) => Array.from({ length: N }, (_, i) => 120 * (1 + (k * i) / N));
+  beforeEach(async () => {
+    await reset();
+    const m = (indexName: string, symbol: string) => ({ indexName, symbol, addedOn: "2020-01-01", removedOn: null });
+    await db.insert(schema.indexMembers).values([
+      m("NIFTY50", "AAA"), m("NIFTY50", "NFX"),
+      m("NIFTYBANK", "AAA"), m("NIFTYBANK", "BNK"),
+      m("NIFTYFINSERVICE", "AAA"), m("NIFTYFINSERVICE", "BNK"), m("NIFTYFINSERVICE", "FIN"), m("NIFTYFINSERVICE", "FIN2"),
+    ]);
+    await seedCloses("AAA", up(0.002));
+    await seedCloses("NFX", up(0.004));
+    await seedCloses("BNK", up(0.006));
+    await seedCloses("FIN", up(0.008)); // the strongest of the four FS members
+    await seedCloses("FIN2", up(0.001));
+    await seedIndexCloses(up(0.003).map((c) => c * 10));
+  });
+
+  test("supportedStocks lists every stock once, with each index it is in now, in registry order", async () => {
+    expect(await supportedStocks()).toEqual([
+      { symbol: "AAA", current: true, currentIn: ["nifty50", "bank", "financial-services"] },
+      { symbol: "BNK", current: true, currentIn: ["bank", "financial-services"] },
+      { symbol: "FIN", current: true, currentIn: ["financial-services"] },
+      { symbol: "FIN2", current: true, currentIn: ["financial-services"] },
+      { symbol: "NFX", current: true, currentIn: ["nifty50"] },
+    ]);
+  });
+
+  test("the default card is the earliest registered index the stock is in; u picks another", async () => {
+    const fin = await stockReport("FIN"), bnk = await stockReport("BNK"), aaa = await stockReport("AAA");
+    if (fin.kind !== "ok" || bnk.kind !== "ok" || aaa.kind !== "ok") throw new Error("no report");
+    expect(fin.report.peerIndex).toEqual({ key: "financial-services", label: "Nifty Financial Services" });
+    expect(fin.report.indices).toEqual(["financial-services"]);
+    expect(bnk.report.defaultKey).toBe("bank");
+    expect(bnk.report.indices).toEqual(["bank", "financial-services"]);
+    expect(aaa.report.defaultKey).toBe("nifty50");
+    expect(aaa.report.indices).toEqual(["nifty50", "bank", "financial-services"]);
+    const aaaFs = await stockReport("AAA", undefined, "financial-services");
+    if (aaaFs.kind !== "ok") throw new Error(aaaFs.kind);
+    expect(aaaFs.report.peerIndex.key).toBe("financial-services");
+    expect(aaaFs.report.strength.peers).toBe(3); // BNK, FIN, FIN2
+    expect(cardExtra(aaaFs.report, "1m")).toBe("&h=1m&u=financial-services");
+    // a key the stock was never in falls back to its default
+    const nfx = await stockReport("NFX", undefined, "financial-services");
+    if (nfx.kind !== "ok") throw new Error(nfx.kind);
+    expect(nfx.report.peerIndex.key).toBe("nifty50");
+  });
+
+  test("an FS-only stock reads 'x of N' among Nifty Financial Services' members; its market line is the NIFTY 50", async () => {
+    const r = await stockReport("FIN");
+    if (r.kind !== "ok") throw new Error(r.kind);
+    expect(r.report.strength).toMatchObject({ below: 3, peers: 3, percentile: 100 });
+    const s = checksOf(r.report).find((c) => c.label === "Strength")!;
+    expect(s.figure).toBe("3 of 3");
+    expect(s.sentence).toContain("vs the NIFTY 50's");
+    expect(s.sentence).toContain("stronger than 3 of the 3 other Nifty Financial Services members on this day.");
+    expect(peersLine(r.report)).toBe("Strength ranks it among Nifty Financial Services' members on that day. Every other check compares it with the NIFTY 50, the market.");
+  });
+
+  test("the card's index tabs offer the indices the stock was in, in registry order", () => {
+    const html = renderToString(createElement(IndexTabs, { base: "/stock/AAA", current: NIFTY_FIN_SERVICE, ma: "sma200", only: ["nifty50", "bank", "financial-services"] }));
+    expect(html.indexOf("NIFTY 50")).toBeLessThan(html.indexOf("Nifty Bank"));
+    expect(html.indexOf("Nifty Bank")).toBeLessThan(html.indexOf("Nifty Financial Services"));
+    expect(html).toContain('href="/stock/AAA?ma=sma200&amp;u=financial-services"');
+    expect(html).toContain('href="/stock/AAA?ma=sma200"');
   });
 });

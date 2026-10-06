@@ -63,23 +63,37 @@ describe("the audit's summary line, exactly (review fix)", () => {
   });
 });
 
+describe("the audit's summary line with three indices (decision 0037)", () => {
+  test("names each index's card count and still parses", () => {
+    const line = auditSummary("2026-10-06", [{ label: "NIFTY 50", n: 50 }, { label: "Nifty Bank", n: 14 }, { label: "Nifty Financial Services", n: 20 }], 2900, 0);
+    expect(line).toBe("session 2026-10-06 · 84 cards (NIFTY 50 50, Nifty Bank 14, Nifty Financial Services 20) · 2900 numbers compared · 0 mismatches");
+    expect(auditWarnings(0, line)).toEqual([]);
+  });
+});
+
 describe("auditCards: which cards the audit checks", () => {
   const rows = [
     { index_name: "NIFTY50", symbol: "AAA" }, { index_name: "NIFTYBANK", symbol: "AAA" },
     { index_name: "NIFTYBANK", symbol: "BNK" }, { index_name: "NIFTY50", symbol: "NFX" },
+    { index_name: "NIFTYFINSERVICE", symbol: "AAA" }, { index_name: "NIFTYFINSERVICE", symbol: "BNK" },
+    { index_name: "NIFTYFINSERVICE", symbol: "FIN" },
   ];
-  test("one card per (index, member); a second index's card is labelled with it", () => {
+  test("one card per (index, member); a later index's card is labelled with it", () => {
     expect(auditCards(rows, INDICES).map((c) => [c.label, c.key])).toEqual([
       ["AAA", "nifty50"], ["NFX", "nifty50"], ["AAA [Nifty Bank]", "bank"], ["BNK [Nifty Bank]", "bank"],
+      ["AAA [Nifty Financial Services]", "financial-services"], ["BNK [Nifty Financial Services]", "financial-services"],
+      ["FIN [Nifty Financial Services]", "financial-services"],
     ]);
   });
   test("each card's peers are its index's members on the session", () => {
     const cards = auditCards(rows, INDICES);
     expect(cards.find((c) => c.label === "AAA")!.peers).toEqual(["AAA", "NFX"]);
     expect(cards.find((c) => c.label === "AAA [Nifty Bank]")!.peers).toEqual(["AAA", "BNK"]);
+    expect(cards.find((c) => c.label === "FIN [Nifty Financial Services]")!.peers).toEqual(["AAA", "BNK", "FIN"]);
   });
   test("the served default card is the first registered index the stock is in that day", () => {
     const def = auditCards(rows, INDICES).filter((c) => c.isDefault).map((c) => c.label);
-    expect(def).toEqual(["AAA", "NFX", "BNK [Nifty Bank]"]); // AAA's Bank card is reached with u=bank
+    // AAA's Bank and FS cards are reached with u=; BNK (Bank and FS) opens on Bank
+    expect(def).toEqual(["AAA", "NFX", "BNK [Nifty Bank]", "FIN [Nifty Financial Services]"]);
   });
 });

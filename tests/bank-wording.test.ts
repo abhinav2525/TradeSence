@@ -14,6 +14,12 @@ describe("Nifty Bank wording", () => {
     expect(breadth).toMatch(/small\s*\?\s*"The shaded bands mark under 20% and over 80%\."/);
   });
 
+  // decision 0037: the small-index wording now serves Nifty Financial Services too
+  test("no page calls the members of a small index 'banks'", () => {
+    const crossings = readFileSync("src/app/crossings/page.tsx", "utf8");
+    for (const src of [breadth, ad, crossings]) expect(src).not.toMatch(/\b(one|each) bank\b|among the banks/i);
+  });
+
   test("the glossary says the 2020 Nifty Bank list was worked back from today's", () => {
     expect(GLOSSARY["nifty-bank"]!.what).toContain("rebuilt from NSE Indices' press releases, working back from today's list");
   });
