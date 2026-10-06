@@ -167,6 +167,7 @@ export default async function Page({
           />
           <CardFooter>
             Each stock against its own last 20 sessions; stocks trading under ₹1 crore a day and ETFs are left out.
+            Sectors are NSE&apos;s, for Nifty Total Market stocks (about 750); smaller companies show a dash.
             Report Cards cover stocks that have been in the {indexLabels()} since 2020; those link to theirs.
             {ix && ix !== NIFTY50 && ` ${ix.label} counts each stock only on the days it was in the index.`}
           </CardFooter>

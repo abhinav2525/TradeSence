@@ -7,6 +7,7 @@ import { db } from "../db";
 import { KINDS, isBigJump, unusualScore, type Kind, type UnusualRow } from "../indicators/activity";
 import { NIFTY50, indexByKey, isIndexKey, type IndexKey } from "../ingest/indices";
 import { CARD_INDEX_NAMES } from "./card-indices";
+import { UNIVERSE_KEY } from "../ingest/index-constituents";
 
 /** `all`, or a registered index's key (its members on that date; decisions 0034, 0037). */
 export type ActivitySet = "all" | IndexKey;
@@ -17,18 +18,19 @@ export function cleanActivitySet(v: string | undefined): ActivitySet {
 }
 // member: in the set's index on that date (the switch; the NIFTY 50 for "all" and the
 // Report Card). hasCard: ever in a registered index, so its Report Card exists and the
-// row can link to it (decision 0035).
-export type ActivityRow = UnusualRow & { symbol: string; member: boolean; hasCard: boolean; score: number };
+// row can link to it (decision 0035). sector: NSE's, from today's Nifty Total Market
+// list (the same source as Top volume and Money flow); null for a stock outside it.
+export type ActivityRow = UnusualRow & { symbol: string; sector: string | null; member: boolean; hasCard: boolean; score: number };
 
 type Raw = {
   trade_date: string; symbol: string; kept: boolean; volume: boolean; jump: boolean; collapse: boolean;
   kept_ratio: number | null; volume_ratio: number | null; delivery_pct: number | null; usual_delivery_pct: number | null;
-  change_pct: number | null; turnover: number; member: boolean; has_card: boolean;
+  change_pct: number | null; turnover: number; member: boolean; has_card: boolean; sector: string | null;
 };
 const num = (v: number | null) => (v === null ? null : Number(v));
 function toRow(r: Raw): ActivityRow {
   const base = {
-    tradeDate: r.trade_date, symbol: r.symbol, kept: r.kept, volume: r.volume, jump: r.jump, collapse: r.collapse,
+    tradeDate: r.trade_date, symbol: r.symbol, sector: r.sector || null, kept: r.kept, volume: r.volume, jump: r.jump, collapse: r.collapse,
     keptRatio: num(r.kept_ratio), volumeRatio: num(r.volume_ratio), deliveryPct: num(r.delivery_pct),
     usualDeliveryPct: num(r.usual_delivery_pct), changePct: num(r.change_pct), turnover: Number(r.turnover), member: r.member,
     hasCard: r.has_card,
@@ -41,8 +43,10 @@ const selectFor = (memberOf: string) => sql`
          u.delivery_pct, u.usual_delivery_pct, u.change_pct, u.turnover,
          exists (select 1 from index_members m where m.index_name = ${memberOf} and m.symbol = u.symbol
                  and u.trade_date >= m.added_on and (m.removed_on is null or u.trade_date < m.removed_on)) as member,
-         exists (select 1 from index_members m where m.index_name in ${CARD_INDEX_NAMES} and m.symbol = u.symbol) as has_card
-  from unusual_days u`;
+         exists (select 1 from index_members m where m.index_name in ${CARD_INDEX_NAMES} and m.symbol = u.symbol) as has_card,
+         c.industry as sector
+  from unusual_days u
+  left join index_constituents c on c.index_key = ${UNIVERSE_KEY} and c.symbol = u.symbol`;
 const select = selectFor(NIFTY50.members);
 
 export async function activitySession(dateIso?: string): Promise<string | null> {

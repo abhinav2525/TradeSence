@@ -8,7 +8,7 @@ const row = (tradeDate: string, symbol: string, p: Partial<typeof schema.unusual
 });
 
 beforeEach(async () => {
-  for (const t of [schema.unusualDays, schema.indexMembers]) await db.delete(t);
+  for (const t of [schema.unusualDays, schema.indexMembers, schema.indexConstituents]) await db.delete(t);
   await db.insert(schema.unusualDays).values([
     row("2026-09-29", "AAA", { volumeRatio: 10 }),
     row("2026-09-29", "BBB", { kept: true, keptRatio: 20, volume: false, volumeRatio: 2 }),
@@ -17,6 +17,11 @@ beforeEach(async () => {
   ]);
   await db.insert(schema.indexMembers).values([
     { indexName: "NIFTY50", symbol: "AAA", addedOn: "2020-01-01", removedOn: "2026-09-30" },
+  ]);
+  await db.insert(schema.indexConstituents).values([
+    { indexKey: "total-market", symbol: "AAA", industry: "Financial Services", fetchedOn: "2026-10-01" },
+    // Another list's industry is not the source: only Nifty Total Market's (same as Top volume, Money flow).
+    { indexKey: "it", symbol: "BBB", industry: "Information Technology", fetchedOn: "2026-10-01" },
   ]);
 });
 
@@ -44,6 +49,15 @@ describe("activityOn", () => {
     const rows = await activityOn("2026-09-29", "all");
     expect(kindCounts(rows)).toEqual({ kept: 1, volume: 1, jump: 0, collapse: 0 });
     expect(filterKinds(rows, ["kept"]).map((r) => r.symbol)).toEqual(["BBB"]);
+  });
+});
+
+describe("sector", () => {
+  test("NSE's sector from the Nifty Total Market list; null for a stock outside it", async () => {
+    const rows = await activityOn("2026-09-29", "all");
+    expect(rows.find((r) => r.symbol === "AAA")?.sector).toBe("Financial Services");
+    expect(rows.find((r) => r.symbol === "BBB")?.sector).toBeNull();
+    expect((await recentUnusual("AAA", "2026-10-01"))[0]?.sector).toBe("Financial Services");
   });
 });
 

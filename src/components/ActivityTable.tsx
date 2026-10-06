@@ -21,7 +21,7 @@ export default function ActivityTable({ rows, empty }: { rows: ActivityRow[]; em
       <Table className="tabular-nums">
         <TableHeader className="sticky top-0 z-10 bg-card">
           <TableRow className="hover:bg-transparent">
-            <TableHead className={cn(head, "pl-card-x")}>Stock</TableHead>
+            <TableHead className={cn(head, "pl-card-x")}>Stock · <Term id="nse-sector">sector</Term></TableHead>
             <TableHead className={head}>What was unusual</TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="big-keeping">Kept vs normal</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}><Term id="huge-volume">Volume vs normal</Term></TableHead>
@@ -37,6 +37,7 @@ export default function ActivityTable({ rows, empty }: { rows: ActivityRow[]; em
                 {r.hasCard ? (
                   <Link href={`/stock/${encodeURIComponent(r.symbol)}`} prefetch={false} className="hover:underline">{r.symbol}</Link>
                 ) : r.symbol}
+                <div className="text-[11px] font-normal text-muted-foreground">{r.sector ?? "—"}</div>
               </TableCell>
               <TableCell className="px-3 py-cell">
                 <div className="flex flex-wrap gap-1">
