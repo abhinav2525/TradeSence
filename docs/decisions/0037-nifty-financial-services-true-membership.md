@@ -48,7 +48,7 @@ Finance, Edelweiss in 2020) would be missing from the years they belonged to.
 | Effective | Out | In | Press release |
 |---|---|---|---|
 | 1 Jan 2020 (start) | | AXISBANK, BAJAJFINSV, BAJAJHLDNG, BAJFINANCE, CHOLAFIN, EDELWEISS, HDFC, HDFCBANK, HDFCLIFE, IBULHSGFIN, ICICIBANK, ICICIGI, ICICIPRULI, KOTAKBANK, M&MFIN, PFC, RECLTD, SBILIFE, SBIN, SRTRANSFIN | reconstructed backwards from today's list through the changes below |
-| 26 Jun 2020 | EDELWEISS, IBULHSGFIN | HDFCAMC, PEL | ind_prs10062020 (the March review, announced for 27 Mar in ind_prs18022020, deferred by COVID) |
+| 26 Jun 2020 | EDELWEISS, IBULHSGFIN | HDFCAMC, PEL | ind_prs10062020 (the March review, announced for 27 Mar in ind_prs18022020, deferred by COVID) | (NSE Indices' notices ind_prs23032020 and ind_prs25032020, \"Deferment of Index Rebalancing\", and ind_prs13052020: the changes \"scheduled to come into effect from March 27, 2020 would be deferred until further notice\")
 | 31 Mar 2021 | BAJAJHLDNG | MUTHOOTFIN | ind_prs23022021 |
 | 31 Mar 2022 | M&MFIN | SBICARD | ind_prs24022022_1 |
 | 8 Aug 2022 | PEL | IEX | ind_prs11072022 (Piramal's scheme of arrangement) |
@@ -116,6 +116,8 @@ one entry: every page, the nightly, the audit and the drift check picked it up o
   activity, Signals, CHOLAFIN's card, the picker and the Learn page; no page scrolls sideways.
 
 ## Limits
+
+- The 2021–2026 changes rest on the sweep of NSE Indices' announcements (every release since 2020 was downloaded and searched; five scanned ones were OCR'd). A missing swap would pass the 20-per-day and live-list checks, so a change that never made it into a release text would not be caught.
 
 - 20 members: one company moves the share by 5 points; read the count.
 - Equal weight vs index weight: HDFC Bank and ICICI Bank drive the index's close, breadth gives
