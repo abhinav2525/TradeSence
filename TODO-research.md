@@ -35,11 +35,11 @@ Full reasoning and the queries behind the numbers: `docs/proposals/`.
 
 ## Money flow and Top volume additions (from `docs/proposals/2026-10-07-money-flow-and-top-volume-next.md`)
 
-- [ ] **MF-1. "One stock or the whole sector?"** (tracking, ~½ day). This is the advisor's
+- [x] → picked and built (decision 0040, 7 Oct). **MF-1. "One stock or the whole sector?"** (tracking, ~½ day). This is the advisor's
   pick for these pages. Next to each sector's × normal: "busier than usual: x of y stocks" and
   "without its biggest mover: z×". Week to 6 Oct 2026: Media 1.78×, but 2 of 8 stocks were
   busier, and it is 0.74× without SUNTV. Data: `money_flow`. Trap: same exclusions as the ratio.
-- [ ] **MF-2. "× its own normal" column + "Unusually busy" sort on Top volume** (tracking,
+- [x] → picked and built (decision 0040, 7 Oct). **MF-2. "× its own normal" column + "Unusually busy" sort on Top volume** (tracking,
   ~1 day). SUNTV is 22.9× its normal but #24 by ₹; HDFCBANK is #2 by ₹ at 1.36×. Data:
   `money_flow`, plus a stored normal in `volume_leaders` for 3/6 months. Trap: illiquid tail
   (₹5 crore/day floor), new listings, short sessions.
@@ -51,7 +51,7 @@ Full reasoning and the queries behind the numbers: `docs/proposals/`.
   (new listings inflate 2026), so state it under the chart.
 - [ ] **MF-5. Optional study: do busy weeks stay jumpy?** (predictive, ~2 days, prior high
   ~3 in 4). It would only allow one caution line. Rules are in the proposal.
-- Fix: one line under Top volume's Shares switch. Over the last month YESBANK is #5 by shares
+- Fix (→ built with MF-2, decision 0040): one line under Top volume's Shares switch. Over the last month YESBANK is #5 by shares
   but #136 by ₹.
 
 ## Parked (needs data we don't hold)

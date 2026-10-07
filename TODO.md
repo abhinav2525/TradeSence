@@ -109,6 +109,9 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
   own 3-month normal, share of trading, the stocks driving it.
 - [x] **Money flow history** (decision 0029, 5 Oct): 52-week chart per sector, plus database
   tidy-up (fresh statistics nightly, keys matching reads, no per-view aggregation).
+- [x] **One loud stock vs the whole sector; Unusually busy** (decision 0040, 7 Oct; branch
+  `feat/loudest-stock-busy-sort`): "b of n busier" and "Hide the loudest stock" on Money flow;
+  × normal column and an Unusually busy ranking on Top volume.
 - [ ] **Heavy vs light breakouts on the bigger stocks** (follow-up to 0005): among today's
   ~750 Nifty Total Market stocks heavy-volume breakouts lagged light ones by ~1 pt a month in
   both periods (an after-the-fact side row). Fix the rules first: size measured on each day

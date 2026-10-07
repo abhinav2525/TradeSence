@@ -220,13 +220,13 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 
 | | |
 |---|---|
-| **What** | Per Nifty Total Market stock and window (last 1/5/21/63/126 market sessions): ₹ traded, split-adjusted shares, price move, Unusual activity days |
+| **What** | Per Nifty Total Market stock and window (last 1/5/21/63/126 market sessions): ₹ traded, split-adjusted shares, price move, Unusual activity days, and `normal_daily` (₹ a day over the 63 sessions before the window, Money flow's rule; reads 189 sessions) |
 | **Writes** | `volume_leaders`, replaced in one transaction (~3,700 rows) |
 | **Nightly** | ✅ After Unusual activity, ~5 s |
 | **By hand** | `bun run volume-leaders` |
 | **Used by** | `/volume` |
 | **Code** | `src/indicators/volume-leaders.ts`, `compute-volume-leaders.ts`; `src/query/volume.ts` |
-| **Why** | [0025](decisions/0025-top-volume.md) |
+| **Why** | [0025](decisions/0025-top-volume.md), [0040](decisions/0040-loudest-stock-and-unusually-busy.md) |
 
 ## 15. Money flow
 
