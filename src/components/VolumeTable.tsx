@@ -13,6 +13,7 @@ const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em
 const PERIOD_WORDS: Record<number, string> = { 1: "1 day", 5: "1 week", 21: "1 month", 63: "3 months", 126: "6 months" };
 
 export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }: { rows: LeaderRow[]; firstRank?: number; rank: RankBy; period: number; empty: string }) {
+  const busy = rank === "busy"; // phones: the ranked measure only, ₹ or × normal
   if (rows.length === 0) return <p className="px-card-x py-8 text-body-sm text-muted-foreground">{empty}</p>;
   return (
     <div className="max-h-[560px] overflow-auto">
@@ -23,9 +24,9 @@ export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }
             <TableHead className={head}>Stock</TableHead>
             <TableHead className={cn(head, "hidden md:table-cell")}><Term id="nse-sector">Sector</Term></TableHead>
             <TableHead className={cn(head, "hidden sm:table-cell")}><Term id="size-group">Size</Term></TableHead>
-            <TableHead className={cn(head, "text-right")}><Term id="value-traded">₹ traded</Term></TableHead>
+            <TableHead className={cn(head, "text-right", busy && "hidden sm:table-cell")}><Term id="value-traded">₹ traded</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Shares</TableHead>
-            <TableHead className={cn(head, "text-right")}><Term id="times-normal">× normal</Term>{period > 21 && <span className="block normal-case tracking-normal">(3 months before)</span>}</TableHead>
+            <TableHead className={cn(head, "text-right", !busy && "hidden sm:table-cell")}><Term id="times-normal">× normal</Term>{period > 21 && <span className="block normal-case tracking-normal">(3 months before)</span>}</TableHead>
             <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price move, {PERIOD_WORDS[period] ?? `${period} sessions`}</TableHead>
             <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}><Term id="unusual-activity">Unusual days</Term> in period</TableHead>
           </TableRow>
@@ -48,13 +49,13 @@ export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }
               <TableCell className="hidden px-3 py-cell sm:table-cell">
                 {r.size ? <Badge variant="neutral">{SIZE_LABEL[r.size]}</Badge> : <span className="text-muted-foreground">—</span>}
               </TableCell>
-              <TableCell className={cn("px-3 py-cell text-right text-body-sm", rank === "value" ? "font-semibold text-foreground" : "text-foreground-2")}>
+              <TableCell className={cn("px-3 py-cell text-right text-body-sm", rank === "value" ? "font-semibold text-foreground" : "text-foreground-2", busy && "hidden sm:table-cell")}>
                 {formatCrore(r.turnover)}
               </TableCell>
               <TableCell className={cn("hidden px-3 py-cell text-right text-body-sm sm:table-cell", rank === "shares" ? "font-semibold text-foreground" : "text-foreground-2")}>
                 {formatShares(r.shares)}
               </TableCell>
-              <TableCell className={cn("px-3 py-cell text-right text-body-sm", rank === "busy" ? "font-semibold text-foreground" : "text-foreground-2")}>
+              <TableCell className={cn("px-3 py-cell text-right text-body-sm", busy ? "font-semibold text-foreground" : "hidden text-foreground-2 sm:table-cell")}>
                 {r.busyRatio === null ? "–" : `${r.busyRatio.toFixed(1)}×`}
               </TableCell>
               <TableCell className={cn("py-cell pl-3 pr-card-x text-right text-body-sm font-medium md:pr-3", r.changePct === null ? "text-muted-foreground" : r.changePct >= 0 ? "text-up" : "text-down")}>
