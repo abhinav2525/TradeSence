@@ -448,7 +448,7 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     read: "It ranks stocks against their own habits, so a small company trading 10 times its usual shows up next to the giants. Heavy trading did not predict the next move in tradeSence's studies (research 0004 and 0005).",
     what: "The usual is the stock's average rupees a day over the 63 market sessions just before the period, the same normal Money flow uses, so a stock's 1-week figure is identical on both pages. It needs 40 traded sessions in those 63. The sessions are the market's, so a stock suspended for part of the period reads lower, not higher. The \"Unusually busy\" ranking leaves out stocks that usually trade under ₹5 crore a day.",
     calc: { plain: "₹ traded in the period ÷ (its usual ₹ a day × the period's sessions)." },
-    example: "In the week to 6 Oct 2026, SUNTV traded 22.9× its usual, yet it was only #24 by rupees; HDFCBANK, near the top by rupees, was at 1.36×.",
+    example: "In the week to 6 Oct 2026, SUNTV traded 22.8× its usual, yet it was only #24 by rupees; HDFCBANK, near the top by rupees, was at 1.36×.",
     mistakes: ["Reading it as \"buy\". It says a stock was busy, not which way it goes next.", "Trusting the 3- and 6-month figures as much as the short ones: their usual is 6 to 9 months old."],
     related: ["trading-vs-normal", "top-volume", "value-traded"],
     seeIt: { label: "Top volume", href: "/volume?rank=busy&period=5" },
