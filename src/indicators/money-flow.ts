@@ -268,6 +268,11 @@ export function weeklySectorFlows(
 export const SHARE_BLOCK_SESSIONS = 63; // "now": the last 3 months of sessions (owner's choice, 7 Oct 2026)
 /** A fixed display rule, never tuned: a row is marked when new listings are this much of its recent ₹. */
 export const NEW_LISTING_MARK = 0.1;
+/**
+ * A fixed display rule, never tuned: a row is flagged when one of its stocks demerged inside the comparison and that
+ * stock was this much of the sector's year-ago ₹ (part of that trading now belongs to another company).
+ */
+export const DEMERGER_MARK = 0.01;
 const MARK_EPS = 1e-9; // 0.3 / 3 is 0.09999999999999999 in floating point: exactly the mark is marked
 
 /** The same calendar date one year earlier; 29 February becomes 28 February. */
@@ -310,7 +315,9 @@ export type ShareYearRow = {
   sector: string; stocks: number;
   nowTurnover: number; nowTotal: number; agoTurnover: number; agoTotal: number;
   newListingTurnover: number; // the sector's now-block ₹ from newListings
+  demerged: Demerged[]; // its stocks that demerged after the year-ago block began (DEMERGER_MARK), by symbol
 };
+export type Demerged = { symbol: string; exDate: string };
 
 /**
  * Per shown sector (today's list, ≥ MIN_SECTOR_STOCKS), pooled ₹ in both blocks, summed over the same stocks whatever
@@ -321,21 +328,31 @@ export function sectorShareYear(stocks: { symbol: string; sector: string; h: His
   const isNew = newListings(stocks, b);
   let nowTotal = 0, agoTotal = 0;
   const by = new Map<string, ShareYearRow>();
+  // A demerger on the year-ago block's first day or before leaves both blocks after the split: nothing to flag.
+  const candidates: { sector: string; symbol: string; exDate: string; ago: number }[] = [];
   for (const { symbol, sector, h } of stocks) {
     const now = rupeesIn(h, b.nowFrom, b.nowTo).rupees, ago = rupeesIn(h, b.agoFrom, b.agoTo).rupees;
     nowTotal += now; agoTotal += ago;
     if (!shown.has(sector)) continue;
-    const r = by.get(sector) ?? by.set(sector, { sector, stocks: 0, nowTurnover: 0, nowTotal: 0, agoTurnover: 0, agoTotal: 0, newListingTurnover: 0 }).get(sector)!;
+    const r = by.get(sector) ?? by.set(sector, { sector, stocks: 0, nowTurnover: 0, nowTotal: 0, agoTurnover: 0, agoTotal: 0, newListingTurnover: 0, demerged: [] }).get(sector)!;
     r.stocks++; r.nowTurnover += now; r.agoTurnover += ago;
     if (isNew.has(symbol)) r.newListingTurnover += now;
+    for (const exDate of h.demergers ?? []) if (exDate > b.agoFrom && exDate <= b.nowTo) candidates.push({ sector, symbol, exDate, ago });
   }
-  return [...by.values()].map((r) => ({ ...r, nowTotal, agoTotal })).sort((a, b) => a.sector.localeCompare(b.sector));
+  for (const c of candidates) {
+    const r = by.get(c.sector)!;
+    if (r.agoTurnover > 0 && c.ago / r.agoTurnover >= DEMERGER_MARK - MARK_EPS) r.demerged.push({ symbol: c.symbol, exDate: c.exDate });
+  }
+  return [...by.values()]
+    .map((r) => ({ ...r, nowTotal, agoTotal, demerged: r.demerged.sort((x, y) => x.symbol.localeCompare(y.symbol) || x.exDate.localeCompare(y.exDate)) }))
+    .sort((a, b) => a.sector.localeCompare(b.sector));
 }
 
 export type ShareTrend = {
   sector: string; stocks: number;
   nowPct: number; agoPct: number | null; changePts: number | null; // shares in %, change in percentage points
   newListingPct: number | null; partlyNew: boolean;
+  demerged: Demerged[];
 };
 
 /** Shares from pooled ₹ (never a mean of weekly shares), change in points, largest gain first (ties by name); small sectors' share. */
@@ -348,6 +365,7 @@ export function shareChange(rows: ShareYearRow[]): { rows: ShareTrend[]; small: 
     return {
       sector: r.sector, stocks: r.stocks, nowPct, agoPct, changePts: agoPct === null ? null : nowPct - agoPct,
       newListingPct: nl === null ? null : 100 * nl, partlyNew: nl !== null && nl >= NEW_LISTING_MARK - MARK_EPS,
+      demerged: r.demerged,
     };
   });
   out.sort((a, b) => (b.changePts ?? -Infinity) - (a.changePts ?? -Infinity) || a.sector.localeCompare(b.sector));

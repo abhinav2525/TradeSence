@@ -69,9 +69,9 @@ export async function shareHistory(): Promise<Map<string, SharePoint[]>> {
 export async function shareYear(): Promise<{ blocks: ShareBlocks; rows: ShareYearRow[] } | null> {
   const r = await db.execute<{
     sector: string; stocks: number; now_turnover: number; now_total: number; ago_turnover: number; ago_total: number;
-    new_listing_turnover: number; now_from: string; now_to: string; ago_from: string; ago_to: string;
+    new_listing_turnover: number; demerged: { symbol: string; exDate: string }[]; now_from: string; now_to: string; ago_from: string; ago_to: string;
   }>(sql`
-    select sector, stocks, now_turnover, now_total, ago_turnover, ago_total, new_listing_turnover,
+    select sector, stocks, now_turnover, now_total, ago_turnover, ago_total, new_listing_turnover, demerged,
            now_from::text, now_to::text, ago_from::text, ago_to::text
     from sector_share_year order by sector`);
   const first = r[0];
@@ -81,6 +81,7 @@ export async function shareYear(): Promise<{ blocks: ShareBlocks; rows: ShareYea
     rows: r.map((x) => ({
       sector: x.sector, stocks: Number(x.stocks), nowTurnover: Number(x.now_turnover), nowTotal: Number(x.now_total),
       agoTurnover: Number(x.ago_turnover), agoTotal: Number(x.ago_total), newListingTurnover: Number(x.new_listing_turnover),
+      demerged: (x.demerged ?? []).map((d) => ({ symbol: String(d.symbol), exDate: String(d.exDate) })),
     })),
   };
 }

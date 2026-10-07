@@ -16,7 +16,7 @@ const price = (tradeDate: string, symbol: string, turnover: number) =>
 
 describe("computeMoneyFlow", () => {
   beforeEach(async () => {
-    for (const t of [schema.dailyPrices, schema.ingestLog, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions, schema.sectorShareYear, schema.indexConstituents, schema.symbolChanges]) await db.delete(t);
+    for (const t of [schema.corporateActions, schema.dailyPrices, schema.ingestLog, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions, schema.sectorShareYear, schema.indexConstituents, schema.symbolChanges]) await db.delete(t);
   });
 
   test("three periods per stock, a renamed stock's normal includes its old symbol, re-run replaces", async () => {
@@ -76,6 +76,7 @@ describe("computeMoneyFlow", () => {
     for (const s of it) await db.insert(schema.dailyPrices).values(days.map((d) => price(d, s === "R1" && d < "2027-01-01" ? "OLDR1" : s, 1e7)));
     // a small sector (2 stocks) that trades 3e7 a day; NEWL lists in 2027 (a new listing)
     for (const s of ["T1", "T2"]) await db.insert(schema.dailyPrices).values(days.map((d) => price(d, s, 3e7)));
+    await db.insert(schema.corporateActions).values({ symbol: "R1", exDate: "2026-12-01", subject: "Demerger", series: "EQ", kind: "demerger", factor: 1 });
     await db.insert(schema.indexConstituents).values([
       ...it.map((symbol) => ({ indexKey: "total-market", symbol, industry: "Information Technology", fetchedOn: days.at(-1)! })),
       ...["T1", "T2"].map((symbol) => ({ indexKey: "total-market", symbol, industry: "Textiles", fetchedOn: days.at(-1)! })),
@@ -91,6 +92,7 @@ describe("computeMoneyFlow", () => {
     expect(row!.agoTotal).toBeCloseTo(11 * agoSessions * 1e7, 0); // Textiles count in the total
     expect(row!.nowTotal).toBeCloseTo(11 * 63 * 1e7, 0);
     expect(row!.newListingTurnover).toBe(0);
+    expect(row!.demerged).toEqual([{ symbol: "R1", exDate: "2026-12-01" }]); // filed under today's symbol, while it traded as OLDR1
     const weeks = await db.select().from(schema.sectorFlowWeeks);
     expect(weeks).toHaveLength(52);
     const w0 = weeks.find((w) => w.weekEnd === days.at(-1))!;

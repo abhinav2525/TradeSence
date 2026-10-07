@@ -25,6 +25,7 @@ function since(h: History, from: string): History {
   return {
     dates: cut(h.dates), open: cut(h.open), high: cut(h.high), low: cut(h.low), close: cut(h.close), volume: cut(h.volume),
     turnover: cut(h.turnover), traded: cut(h.traded), delivered: cut(h.delivered), factors: cut(h.factors), shareFactors: cut(h.shareFactors),
+    demergers: h.demergers, // dates, not a series: kept whole
   };
 }
 

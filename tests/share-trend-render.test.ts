@@ -8,8 +8,8 @@ import { shareChange, type ShareYearRow } from "../src/indicators/money-flow";
 const bare = (html: string) => html.replace(/<!-- -->/g, "");
 const text = (html: string) => bare(html).replace(/<[^>]+>/g, " ").replace(/&#x27;|&apos;/g, "'").replace(/\s+/g, " ");
 const blocks = { nowFrom: "2026-07-08", nowTo: "2026-10-06", agoFrom: "2025-07-08", agoTo: "2025-10-06" };
-const row = (sector: string, now: number, ago: number, fresh = 0): ShareYearRow =>
-  ({ sector, stocks: 10, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: fresh });
+const row = (sector: string, now: number, ago: number, fresh = 0, demerged: ShareYearRow["demerged"] = []): ShareYearRow =>
+  ({ sector, stocks: 10, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: fresh, demerged });
 const render = (props: Parameters<typeof ShareTrendCard>[0]) => text(renderToString(createElement(ShareTrendCard, props)));
 
 describe("ShareTrendCard", () => {
@@ -41,4 +41,14 @@ describe("ShareTrendCard", () => {
     expect(html).toMatch(/text-muted-foreground[^"]*">\+?0\.0 pts/);
     expect(html).not.toMatch(/text-up[^"]*">\+0\.0 pts/);
   });
+
+  test("a demerger inside the comparison gets its note; the footnote names demergers", () => {
+    const trend = shareChange([row("Automobile and Auto Components", 72, 92, 0, [{ symbol: "TMPV", exDate: "2025-10-14" }]), row("IT", 70, 70)]);
+    const t = render({ trend, blocks, lines: new Map(), hrefFor: (s) => s });
+    expect(t).toContain("TMPV demerged on 14 Oct 2025: part of its year-ago trading now belongs to another company, so this change is partly a split, not trading.");
+    expect(t).toMatch(/IT [^D]*$/); // no note on IT's row
+    expect(t).toContain("demerged");
+    expect(t).toMatch(/Uses today's .*a company that demerged during the year counts whole a year ago/);
+  });
 });
+

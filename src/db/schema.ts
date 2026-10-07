@@ -1,5 +1,5 @@
 import {
-  pgTable, date, text, doublePrecision, bigint, integer, timestamp, primaryKey, index, boolean,
+  pgTable, date, text, doublePrecision, bigint, integer, timestamp, primaryKey, index, boolean, jsonb,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -244,6 +244,8 @@ export const sectorShareYear = pgTable("sector_share_year", {
   agoTurnover: doublePrecision("ago_turnover").notNull(),
   agoTotal: doublePrecision("ago_total").notNull(),
   newListingTurnover: doublePrecision("new_listing_turnover").notNull(),
+  // Its stocks (today's symbols) that demerged after the year-ago block began and were 1%+ of its year-ago ₹.
+  demerged: jsonb("demerged").$type<{ symbol: string; exDate: string }[]>().notNull().default([]),
   nowFrom: date("now_from").notNull(),
   nowTo: date("now_to").notNull(),
   agoFrom: date("ago_from").notNull(),

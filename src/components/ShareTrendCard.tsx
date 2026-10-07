@@ -4,7 +4,7 @@ import ShareSpark from "@/components/ShareSpark";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate, formatDayMonth, signed } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { MIN_SECTOR_STOCKS, NEW_LISTING_MARK, type ShareBlocks, type ShareTrend } from "@/indicators/money-flow";
+import { DEMERGER_MARK, MIN_SECTOR_STOCKS, NEW_LISTING_MARK, type ShareBlocks, type ShareTrend } from "@/indicators/money-flow";
 import type { SharePoint } from "@/query/money-flow";
 
 /** Sector · now · a year ago · change · each week. Phones keep sector, change and the small line. */
@@ -75,6 +75,11 @@ export default function ShareTrendCard({ trend, blocks, lines, hrefFor }: {
                       Partly <Term id="new-listing-share">new listings</Term>: {r.newListingPct.toFixed(0)}% of its recent trading is from stocks that weren&apos;t trading a year ago
                     </span>
                   )}
+                  {r.demerged.map((d) => (
+                    <span key={`${d.symbol}-${d.exDate}`} className="block text-[11px] text-muted-foreground">
+                      {d.symbol} demerged on {formatDate(d.exDate)}: part of its year-ago trading now belongs to another company, so this change is partly a split, not trading.
+                    </span>
+                  ))}
                   {/* phones: the two shares under the name, since their columns are hidden */}
                   <span className="block text-[11px] tabular-nums text-muted-foreground sm:hidden">
                     {r.agoPct === null ? "—" : `${r.agoPct.toFixed(1)}%`} → {r.nowPct.toFixed(1)}%
@@ -93,7 +98,7 @@ export default function ShareTrendCard({ trend, blocks, lines, hrefFor }: {
           </ul>
           <CardFooter className="block">
             Sectors with fewer than {MIN_SECTOR_STOCKS} stocks together: {trend.small.nowPct.toFixed(1)}% now, {trend.small.agoPct === null ? "—" : `${trend.small.agoPct.toFixed(1)}%`} a year ago, so the rows and this add to 100%.
-            {" "}Uses today&apos;s Nifty Total Market list and today&apos;s sector labels: a stock NSE moved to another sector counts in its new one for both years. Stocks that left the list aren&apos;t counted, and new listings had no trading a year ago (rows where they are {NEW_LISTING_MARK * 100}% or more of recent trading are marked).
+            {" "}Uses today&apos;s Nifty Total Market list and today&apos;s sector labels: a stock NSE moved to another sector counts in its new one for both years, and a company that demerged during the year counts whole a year ago but only its remaining part now (rows where that stock was {DEMERGER_MARK * 100}% or more of the sector&apos;s year-ago trading say so). Stocks that left the list aren&apos;t counted, and new listings had no trading a year ago (rows where they are {NEW_LISTING_MARK * 100}% or more of recent trading are marked).
           </CardFooter>
         </>
       )}

@@ -14,13 +14,15 @@ describe("shareYear (sector_share_year)", () => {
   test("rows and the two blocks' dates; empty table → null (needs a year of history)", async () => {
     expect(await shareYear()).toBeNull();
     await db.insert(schema.sectorShareYear).values([
-      { sector: "IT", stocks: 40, nowTurnover: 7, nowTotal: 100, agoTurnover: 8, agoTotal: 200, newListingTurnover: 1, ...block },
+      { sector: "IT", stocks: 40, nowTurnover: 7, nowTotal: 100, agoTurnover: 8, agoTotal: 200, newListingTurnover: 1, ...block,
+        demerged: [{ symbol: "LTM", exDate: "2026-01-05" }] },
       { sector: "Auto", stocks: 49, nowTurnover: 9, nowTotal: 100, agoTurnover: 20, agoTotal: 200, newListingTurnover: 0, ...block },
     ]);
     const y = (await shareYear())!;
     expect(y.blocks).toEqual(block);
     expect(y.rows.map((r) => r.sector)).toEqual(["Auto", "IT"]);
-    expect(y.rows[1]).toEqual({ sector: "IT", stocks: 40, nowTurnover: 7, nowTotal: 100, agoTurnover: 8, agoTotal: 200, newListingTurnover: 1 });
+    expect(y.rows[1]).toEqual({ sector: "IT", stocks: 40, nowTurnover: 7, nowTotal: 100, agoTurnover: 8, agoTotal: 200, newListingTurnover: 1, demerged: [{ symbol: "LTM", exDate: "2026-01-05" }] });
+    expect(y.rows[0]!.demerged).toEqual([]);
   });
 });
 

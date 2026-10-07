@@ -301,7 +301,7 @@ describe("cleanLoud", () => {
 
 // ── Share of trading over a year (spec 2026-10-07-sector-share-of-trading, decision 0041) ──
 import {
-  NEW_LISTING_MARK, SHARE_BLOCK_SESSIONS, newListings, sectorShareYear, shareBlocks, shareChange, yearBefore, type ShareYearRow,
+  DEMERGER_MARK, NEW_LISTING_MARK, SHARE_BLOCK_SESSIONS, newListings, sectorShareYear, shareBlocks, shareChange, yearBefore, type ShareYearRow,
 } from "../src/indicators/money-flow";
 import { NOISE_PCT } from "../src/indicators/risk";
 
@@ -379,7 +379,7 @@ describe("sectorShareYear and shareChange", () => {
 
   test("change is in percentage points: 23.4% → 26.1% is +2.7, not +11.5%", () => {
     const row = (sector: string, now: number, ago: number): ShareYearRow =>
-      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0 });
+      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0, demerged: [] });
     const out = shareChange([row("Financial Services", 261, 234), row("IT", 63, 81)]);
     const fs = out.rows.find((x) => x.sector === "Financial Services")!;
     expect(fs.nowPct).toBeCloseTo(26.1, 9);
@@ -390,7 +390,7 @@ describe("sectorShareYear and shareChange", () => {
 
   test("sort: largest gain first, ties by sector name", () => {
     const row = (sector: string, now: number, ago: number): ShareYearRow =>
-      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0 });
+      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0, demerged: [] });
     const out = shareChange([row("Zinc", 100, 90), row("Auto", 100, 90), row("Gas", 50, 80), row("Bank", 200, 100)]);
     expect(out.rows.map((x) => x.sector)).toEqual(["Bank", "Auto", "Zinc", "Gas"]);
   });
@@ -436,7 +436,7 @@ describe("sectorShareYear and shareChange", () => {
 
   test(`the ${NEW_LISTING_MARK * 100}% new-listing mark: exactly at the mark (even in float) is marked, just under is not`, () => {
     const row = (newListingTurnover: number, nowTurnover: number): ShareYearRow =>
-      ({ sector: "X", stocks: 5, nowTurnover, nowTotal: 100, agoTurnover: 1, agoTotal: 100, newListingTurnover });
+      ({ sector: "X", stocks: 5, nowTurnover, nowTotal: 100, agoTurnover: 1, agoTotal: 100, newListingTurnover, demerged: [] });
     expect(0.3 / 3).toBeLessThan(0.1); // 0.09999999999999999: a plain >= would miss it
     expect(shareChange([row(0.3, 3)]).rows[0]!.partlyNew).toBe(true);
     expect(shareChange([row(1, 10)]).rows[0]!.partlyNew).toBe(true);
@@ -482,5 +482,38 @@ describe("weekly share in sector_flow_weeks", () => {
     const days = newestFirst(stocks[0]!.h);
     const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set(), new Set(["A", "B"]));
     expect(weeks[0]!.newListingTurnover).toBeCloseTo(2 * 5 * 1e7, 0);
+  });
+});
+
+describe("demergers inside the comparison (part of a year-ago company now trades elsewhere)", () => {
+  const days = weekdaysBetween("2025-01-01", "2026-10-06");
+  const asc = [...days].reverse();
+  const b = shareBlocks(days)!;
+  // Auto: BIG trades 1e7 a day, four others share `rest` a day between them; BIG demerged on `ex`
+  const sector = (ex: string[], bigShare: number) => {
+    const rest = (1e7 * (1 - bigShare)) / bigShare / 4;
+    return [
+      { symbol: "BIG", sector: "Auto", h: { ...histOn(asc, () => 1e7), demergers: ex } },
+      ...["A2", "A3", "A4", "A5"].map((symbol) => ({ symbol, sector: "Auto", h: histOn(asc, () => rest) })),
+    ];
+  };
+  const flagged = (ex: string[], bigShare: number) => sectorShareYear(sector(ex, bigShare), b)[0]!.demerged;
+
+  test(`a demerger inside (year-ago start, latest session] by a stock with ${DEMERGER_MARK * 100}%+ of the sector's year-ago ₹ is flagged`, () => {
+    expect(flagged(["2025-10-14"], 0.5)).toEqual([{ symbol: "BIG", exDate: "2025-10-14" }]);
+    expect(flagged([b.nowTo], 0.5)).toEqual([{ symbol: "BIG", exDate: b.nowTo }]);
+  });
+  test("exactly at the mark is flagged (even in float); just under isn't", () => {
+    expect(flagged(["2025-10-14"], DEMERGER_MARK)).toHaveLength(1);
+    expect(flagged(["2025-10-14"], DEMERGER_MARK * 0.99)).toEqual([]);
+  });
+  test("outside the window: on or before the year-ago start, or after the latest session, isn't flagged", () => {
+    expect(flagged([b.agoFrom], 0.5)).toEqual([]); // both blocks are after the split
+    expect(flagged(["2025-01-02"], 0.5)).toEqual([]);
+    expect(flagged(["2026-10-07"], 0.5)).toEqual([]);
+    expect(flagged([], 0.5)).toEqual([]);
+  });
+  test("shareChange carries the flag to the row", () => {
+    expect(shareChange(sectorShareYear(sector(["2025-10-14"], 0.5), b)).rows[0]!.demerged).toEqual([{ symbol: "BIG", exDate: "2025-10-14" }]);
   });
 });
