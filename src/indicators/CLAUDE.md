@@ -27,8 +27,8 @@ arrays, used by those, the queries in `src/query/` and the research scripts.
 | `activity.ts` | Unusual activity rules, shared with research 0003: `unusualDays(history)` flags liquid days (median turnover ≥ ₹1 crore) as kept / volume / jump / collapse against the prior 20 sessions; `unusualScore`, `windowMean`, `EXCLUDED_DAYS`, `MAX_MOVE_GAP_DAYS`, thresholds. |
 | `compute-activity.ts`, `cli-activity.ts` | `computeUnusualDays` rebuilds `unusual_days` for every company (not funds) in one transaction; `bun run activity`. |
 | `volume-leaders.ts` | `leaderStats`: one stock's turnover, shares and move over 1/5/21/63/126-session windows (`PERIODS`); `windowMove`, the shared rule for a window's price move (also Money flow). |
-| `compute-volume-leaders.ts`, `cli-volume-leaders.ts` | `computeVolumeLeaders` rebuilds `volume_leaders` for the Nifty Total Market list (reads `index_constituents`, counts `unusual_days`) in one transaction; `bun run volume-leaders`. |
-| `money-flow.ts` | Money flow maths (decision 0028): `flowWindows` (last 1/5/21 sessions + the 63 before), `flowStats` (₹, normal per session with 40 of 63 traded, move), `sectorFlows` (ratio over stocks with a normal that traded, share vs usual, median move; under 5 stocks → `small`), `sectorStocks`, `shortSessions`, `cleanFlowPeriod`, `cleanSector`; history: `weekWindows`, `weeklySectorFlows`, `marketTotals` (bars and weeks share one `windowStat`). |
+| `compute-volume-leaders.ts`, `cli-volume-leaders.ts` | `computeVolumeLeaders` rebuilds `volume_leaders` for the Nifty Total Market list (reads `index_constituents`, counts `unusual_days`, writes each window's `normal_daily` through `normalDaily` over `normalSpans`: the 63 sessions before, 189 read) in one transaction; `bun run volume-leaders`. |
+| `money-flow.ts` | Money flow maths (decision 0028): `flowWindows` (last 1/5/21 sessions + the 63 before), `flowStats` (₹, normal per session with 40 of 63 traded, move), `normalDaily` (the one normal rule, also Top volume's, decision 0040), `sectorFlows` (ratio over stocks with a normal that traded, share vs usual, median move, `busier`/`counted`, `loudest`, `ratioWithoutLoudest`; under 5 stocks → `small`), `sortSectors`/`shownRatio`/`cleanLoud` (the Hide-the-loudest switch), `marketBusier`, `sectorStocks`, `shortSessions`, `cleanFlowPeriod`, `cleanSector`; history: `weekWindows`, `weeklySectorFlows`, `marketTotals` (bars and weeks share one `windowStat`). |
 | `compute-money-flow.ts`, `cli-money-flow.ts` | `computeMoneyFlow` rebuilds `money_flow`, `sector_flow_weeks` and `short_sessions` for the Nifty Total Market list in one transaction (histories trimmed to the 386 sessions needed); `bun run money-flow`. Runs nightly after Top volume. |
 | `universe.ts`, `fund-symbols.txt` | Which symbols are funds (ISIN `INF…`, not `INE…`): `companies(funds)` (one symbol per company), `fundSymbols`, `refreshFundSymbols(date)` (adds a night's new funds to `fund_symbols`), `allFundSymbols` (the committed text file plus that table). The text file is written by `bun run research:fund-symbols`. |
 
@@ -40,10 +40,11 @@ arrays, used by those, the queries in `src/query/` and the research scripts.
 - Compare returns with `NOISE_PCT`, never `===`; light cut-offs live only in `THRESHOLDS` (decisions 0011, 0013, 0014). Activity thresholds compare with `EPS` for the same reason.
 - A one-day move is null when the step skips more than `MAX_MOVE_GAP_DAYS` (a stretch in BE can hide an unpriced demerger, decision 0024).
 - `compute.ts`, `compute-activity.ts` and `compute-volume-leaders.ts` recompute everything on each run on purpose; there is no incremental path. The last two replace their table inside one transaction.
+- Top volume's × normal and Money flow's ratio share `normalDaily`; never compute a stock's normal another way (decision 0040).
 - Run order matters nightly: `compute-volume-leaders` reads `unusual_days`, so activity goes first.
 
 ## See also
-- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio), 0017 (Signals), 0021 (delivery), 0024 (unusual activity), 0025 (top volume).
+- Decisions 0002 (split adjustment), 0003 (renames), 0004 (demergers), 0008 (daily move), 0009 (volume ratio), 0017 (Signals), 0021 (delivery), 0024 (unusual activity), 0025 (top volume), 0028/0040 (money flow, loudest stock, × normal).
 - Tests: `tests/indicators.test.ts`, `compute.test.ts`, `history.test.ts`, `adjust.test.ts`, `volume.test.ts`, `risk.test.ts`, `market-risk.test.ts`, `episodes.test.ts`, `signals.test.ts`, `activity.test.ts`, `volume-leaders.test.ts`.
 - `src/ingest/symbol-changes.ts` for `symbolLineage`; `src/ingest/cli-nightly.ts` for the order of steps.
 <!-- folder-claude-md:end -->

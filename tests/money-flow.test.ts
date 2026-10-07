@@ -192,3 +192,109 @@ describe("weekly history", () => {
     expect(t).toEqual(a.dates.slice(2).map((date) => ({ date, turnover: 3e7 })));
   });
 });
+
+// ── Loudest stock and busier count (spec 2026-10-07) ──
+import { BUSY_SECTOR_FEW, cleanLoud, marketBusier, normalDaily, shownRatio, sortSectors } from "../src/indicators/money-flow";
+
+describe("normalDaily (one rule for Money flow and Top volume)", () => {
+  test("mean ₹ per traded session in [from, to]; null under 40 traded sessions", () => {
+    const h = hist(100, { turnover: Array.from({ length: 100 }, (_, i) => (i < 50 ? 1e7 : 3e7)) });
+    expect(normalDaily(h, h.dates[30]!, h.dates[69]!)).toBe((20 * 1e7 + 20 * 3e7) / 40); // 40 sessions: has a normal
+    expect(normalDaily(h, h.dates[30]!, h.dates[68]!)).toBeNull(); // 39 sessions: none
+  });
+  test("flowStats' normal is normalDaily over flowWindows' normal span", () => {
+    const h = hist(100, { turnover: Array.from({ length: 100 }, (_, i) => 1e7 + i * 1e5) });
+    const w = flowWindows(newestFirst(h))!;
+    for (const s of flowStats(h, w)) expect(s.normalDaily).toBe(normalDaily(h, w.normalFrom[s.period], w.normalTo[s.period]));
+  });
+});
+
+describe("sectorFlows: busier count and loudest stock", () => {
+  // period 5: normal 1e7 a day → 5e7 expected
+  const media: FlowRow[] = [
+    row("SUNTV", "Media", 50e7, 1e7, 1), // +45e7 extra: louder than the whole sector's +36e7
+    row("B", "Media", 6e7, 1e7, 1), // busier, +1e7
+    row("C", "Media", 5e7, 1e7, 1), // exactly at normal: not busier
+    row("D", "Media", 3e7, 1e7, 1),
+    row("E", "Media", 3e7, 1e7, 1),
+    row("F", "Media", 3e7, 1e7, 1),
+    row("G", "Media", 0, 1e7, null), // suspended: not counted
+    row("H", "Media", 9e7, null, 1), // too new for a normal: not counted
+  ];
+  test("b of n busier: strict above normal, n = stocks with a normal that traded", () => {
+    const m = sectorFlows(media, 5).sectors[0]!;
+    expect(m.counted).toBe(6);
+    expect(m.busier).toBe(2);
+  });
+  test("one stock's extra bigger than the sector's: ratio above 1, without it below 1", () => {
+    const m = sectorFlows(media, 5).sectors[0]!;
+    expect(m.loudest).toBe("SUNTV");
+    expect(m.ratio!).toBeCloseTo(70e7 / 30e7, 9);
+    expect(m.ratioWithoutLoudest!).toBeCloseTo(20e7 / 25e7, 9);
+    expect(m.ratio! > 1 && m.ratioWithoutLoudest! < 1).toBe(true);
+  });
+  test("loudest ties break on symbol, A first", () => {
+    const rows = ["Z", "A", "M", "Q", "R"].map((s) => row(s, "IT", s === "Z" || s === "A" ? 7e7 : 5e7, 1e7, 1));
+    expect(sectorFlows(rows, 5).sectors[0]!.loudest).toBe("A");
+  });
+  test("no stock above its normal: no loudest, and the without-ratio is the ratio", () => {
+    const rows = ["A", "B", "C", "D", "E"].map((s, i) => row(s, "IT", (i === 0 ? 5e7 : 4e7), 1e7, 1));
+    const s = sectorFlows(rows, 5).sectors[0]!;
+    expect(s.loudest).toBeNull();
+    expect(s.busier).toBe(0);
+    expect(s.ratioWithoutLoudest).toBe(s.ratio);
+  });
+  test("a 5-stock sector is still shown; nothing left after removal → null", () => {
+    // four stocks have no normal: only one counted, and it is the loudest
+    const rows = ["A", "B", "C", "D", "E"].map((s, i) => row(s, "IT", 9e7, i === 0 ? 1e7 : null, 1));
+    const s = sectorFlows(rows, 5).sectors[0]!;
+    expect(s.stocks).toBe(5);
+    expect(s.counted).toBe(1);
+    expect(s.loudest).toBe("A");
+    expect(s.ratioWithoutLoudest).toBeNull();
+    expect(s.counted <= BUSY_SECTOR_FEW).toBe(true);
+  });
+  test("taking out the biggest mover can raise a sector's figure (why the page says 'usually')", () => {
+    // A is 10× but small; B is 2× with the most extra rupees
+    const rows = [row("A", "IT", 50e7, 1e7, 1), row("B", "IT", 2000e7, 200e7, 1),
+      ...["C", "D", "E"].map((s) => row(s, "IT", 5e7, 1e7, 1))];
+    const s = sectorFlows(rows, 5).sectors[0]!;
+    expect(s.loudest).toBe("B");
+    expect(s.ratioWithoutLoudest! > s.ratio!).toBe(true);
+  });
+});
+
+describe("sortSectors and shownRatio (the 'Hide the loudest stock' toggle)", () => {
+  const rows: FlowRow[] = [
+    ...["SUNTV", "B", "C", "D", "E"].map((s) => row(s, "Media", s === "SUNTV" ? 60e7 : 4e7, 1e7, 1)), // 3.04× → 0.8×
+    ...["P", "Q", "R", "S", "T"].map((s) => row(s, "Power", 6e7, 1e7, 1)), // 1.2× → 1.2×
+  ];
+  test("off: today's order by ratio; on: by the ratio without the loudest", () => {
+    const { sectors } = sectorFlows(rows, 5);
+    expect(sectors.map((s) => s.sector)).toEqual(["Media", "Power"]);
+    expect(sortSectors(sectors, false).map((s) => s.sector)).toEqual(["Media", "Power"]);
+    expect(sortSectors(sectors, true).map((s) => s.sector)).toEqual(["Power", "Media"]);
+    expect(shownRatio(sectors.find((s) => s.sector === "Media")!, true)!).toBeCloseTo(0.8, 9);
+    expect(shownRatio(sectors.find((s) => s.sector === "Media")!, false)!).toBeCloseTo(76 / 25, 9);
+  });
+  test("sortSectors doesn't reorder its input", () => {
+    const { sectors } = sectorFlows(rows, 5);
+    sortSectors(sectors, true);
+    expect(sectors.map((s) => s.sector)).toEqual(["Media", "Power"]);
+  });
+});
+
+describe("marketBusier (whole market's count above the sectors)", () => {
+  test("every stock with a normal that traded, small sectors included; strict above normal", () => {
+    const rows = [row("A", "IT", 6e7, 1e7, 1), row("B", "IT", 5e7, 1e7, 1), row("C", "Tiny", 9e7, 1e7, 1),
+      row("D", "IT", 0, 1e7, null), row("E", "IT", 9e7, null, 1)];
+    expect(marketBusier(rows, 5)).toEqual({ busier: 2, counted: 3 });
+  });
+});
+
+describe("cleanLoud", () => {
+  test("exactly 'hide' turns it on; anything else is off", () => {
+    expect(cleanLoud("hide")).toBe(true);
+    for (const v of [undefined, "", "HIDE", "1", "true", "hide "]) expect(cleanLoud(v)).toBe(false);
+  });
+});

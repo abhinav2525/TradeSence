@@ -178,6 +178,7 @@ erDiagram
         float change_pct
         int sessions
         int unusual_days
+        float normal_daily "63 sessions before; 0040"
     }
     unusual_days {
         date trade_date PK
@@ -491,8 +492,9 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `parseConstituents`, `fetchConstituents`, `ingestIndexLists`, `sizeProblems` | Read an `ind_*list.csv` (header checked, quoted names); a bad download is an error, never an empty index; replace per index, keep yesterday's on failure; every universe stock in exactly one size list. |
 | `leaderStats(h, windowStarts, lastDay)`, `PERIODS` | One stock's ₹ traded, split-adjusted shares, price move and session count per window. |
 | `windowMove(h, first, last, lastDay)` | The shared rule for a window's price move: adjusted closes, ends on the latest session, no step over 5 calendar days (also used by Money flow). |
-| `computeVolumeLeaders` | Every universe stock through `loadAdjustedHistory`, plus Unusual activity counts; `volume_leaders` replaced in one transaction. |
-| `topVolume`, `sectorsPresent` | The page: rank by ₹ or shares, size / sector / index filters, Report Card links. |
+| `computeVolumeLeaders`, `normalSpans` | Every universe stock through `loadAdjustedHistory`, plus Unusual activity counts and each window's `normal_daily` (Money flow's `normalDaily` over the 63 sessions before; 189 sessions read); `volume_leaders` replaced in one transaction. |
+| `topVolume`, `sectorsPresent` | The page: rank by ₹, shares or × normal, size / sector / index filters, Report Card links; returns `leftOut` for the busy ranking. |
+| `rankLeaders(rows, rank, period)`, `cleanRank(v, period)`, `BUSY_FLOOR_RS`, `BUSY_PERIODS` | × normal = ₹ ÷ (normal × period); "busy" keeps stocks with a normal of at least ₹5 crore a day (filters first) and counts the rest; offered on 1/5/21 only (decision 0040). |
 
 ### `src/indicators/averages.ts`, `breadth-universes.ts`, `compute-breadth.ts` — breadth beyond the NIFTY 50
 
@@ -510,13 +512,15 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 |---|---|
 | `flowWindows(days)`, `FLOW_PERIODS` | From market sessions (newest first): the last 1/5/21 sessions and the 63 before each (the normal); null without enough history. |
 | `flowStats(h, w)` | One stock's ₹ traded per window, its normal ₹ per session (needs 40 of 63 traded) and price move (`windowMove`). |
-| `sectorFlows(rows, period)` | Per sector: ₹ vs normal (stocks with a normal), share of all ₹ now vs usual, median move, rising/falling counts; sectors under 5 stocks returned as `small`. |
+| `sectorFlows(rows, period)` | Per sector: ₹ vs normal (stocks with a normal), share of all ₹ now vs usual, median move, rising/falling counts, busier count (`busier` of `counted`), `loudest` stock and `ratioWithoutLoudest`; sectors under 5 stocks returned as `small`. |
+| `normalDaily(h, from, to)` | A stock's normal ₹ per session (40 of the span's sessions traded); the one rule for Money flow and Top volume's × normal. |
+| `sortSectors`, `shownRatio`, `marketBusier`, `cleanLoud` | The "Hide the loudest stock" switch (`loud=hide` only): re-sort by the ratio without each sector's loudest stock; the whole market's busier count (decision 0040). |
 | `sectorStocks(rows, sector, period)` | A sector's stocks by extra ₹ above their normal (top 25). |
 | `cleanFlowPeriod` | The page's `period` param: "1", "5" or "21", else 5. |
 | `computeMoneyFlow` | Every Nifty Total Market stock through `loadAdjustedHistory` (EQ+BE); `money_flow`, `sector_flow_weeks` and `short_sessions` replaced in one transaction. |
 | `weekWindows`, `weeklySectorFlows`, `HISTORY_WEEKS` | The 52-week history: week k = sessions 5k…5k+4 with its own 63-session normal (week 0 = the 1-week bar), each sector through `sectorFlows`. |
 | `marketTotals`, `shortSessions` / `shortSessionRows` | Market-wide ₹ per session; sessions under half the usual day (Muhurat, special Saturdays). |
-| `moneyFlowRows`, `withReportCard`, `sectorHistory`, `shortSessionsIn` | The page's reads (`sector_flow_weeks`, `short_sessions` by their keys). |
+| `moneyFlowRows`, `withReportCard`, `sectorHistory`, `shortSessionsIn` | The page's reads (`sector_flow_weeks`, `short_sessions` by their keys); `shortSessionsIn(period)` takes any period, so Top volume shows the same short-session note. |
 
 ### `src/indicators/activity.ts`, `compute-activity.ts`, `universe.ts` and `src/query/activity.ts` — Unusual activity
 

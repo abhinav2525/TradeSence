@@ -73,17 +73,26 @@ function span(dates: string[], from: string, to: string): [number, number] {
   return [lower(from), lower(to + "\uffff")]; // [first, end)
 }
 
+/**
+ * A stock's normal ₹ per session: the mean over the sessions it traded in
+ * [from, to], null under MIN_NORMAL of them. The one rule behind Money flow and
+ * Top volume's "× normal" (decision 0040), so a stock reads the same on both.
+ */
+export function normalDaily(h: History, from: string, to: string): number | null {
+  const [c, d] = span(h.dates, from, to);
+  let sum = 0;
+  for (let i = c; i < d; i++) sum += h.turnover[i]!;
+  return d - c >= MIN_NORMAL ? sum / (d - c) : null;
+}
+
 /** The shared core of a window's stats: one rule for the bars and the weekly history. */
 function windowStat(h: History, period: FlowPeriod, start: string, end: string, normalFrom: string, normalTo: string): FlowStat | null {
   const [a, b] = span(h.dates, start, end);
-  const [c, d] = span(h.dates, normalFrom, normalTo);
-  let normalSum = 0;
-  for (let i = c; i < d; i++) normalSum += h.turnover[i]!;
-  const normalDaily = d - c >= MIN_NORMAL ? normalSum / (d - c) : null;
-  if (b === a && normalDaily === null) return null;
+  const normal = normalDaily(h, normalFrom, normalTo);
+  if (b === a && normal === null) return null;
   let turnover = 0;
   for (let i = a; i < b; i++) turnover += h.turnover[i]!;
-  return { period, turnover, normalDaily, sessions: b - a, changePct: b > a ? windowMove(h, a, b - 1, end) : null };
+  return { period, turnover, normalDaily: normal, sessions: b - a, changePct: b > a ? windowMove(h, a, b - 1, end) : null };
 }
 
 /**
@@ -107,7 +116,40 @@ export type SectorFlow = {
   medianMove: number | null;
   up: number;
   down: number;
+  counted: number; // stocks with a normal that traded in the window (the ratio's stocks)
+  busier: number; // of those, traded more than their normal (strictly)
+  loudest: string | null; // the counted stock with the most ₹ above its normal; null if none is above
+  ratioWithoutLoudest: number | null; // the ratio over the counted stocks minus the loudest; = ratio without one; null if none left
 };
+
+/** A sector whose without-ratio rests on this few counted stocks is marked "few stocks". */
+export const BUSY_SECTOR_FEW = MIN_SECTOR_STOCKS;
+
+/** The page's `loud` param: exactly "hide" hides each sector's loudest stock; anything else shows all. */
+export function cleanLoud(v: string | undefined): boolean {
+  return v === "hide";
+}
+
+/** Stocks with a normal that traded in the window: the ones a ratio is measured on. */
+const counted = (rs: FlowRow[]) => rs.filter((r) => r.normalDaily !== null && r.turnover > 0);
+const isBusier = (r: FlowRow, period: number) => r.turnover > r.normalDaily! * period;
+
+/** The whole market's "b of n busier", over every stock with a normal that traded (small sectors too). */
+export function marketBusier(rows: FlowRow[], period: FlowPeriod): { busier: number; counted: number } {
+  const c = counted(rows);
+  return { busier: c.filter((r) => isBusier(r, period)).length, counted: c.length };
+}
+
+/** The ratio the bars draw: without the loudest stock when the toggle is on. */
+export function shownRatio(s: SectorFlow, hideLoudest: boolean): number | null {
+  return hideLoudest ? s.ratioWithoutLoudest : s.ratio;
+}
+
+/** Sectors by the shown ratio, busiest first, ties by name (sectorFlows' own order when off). A new array. */
+export function sortSectors(sectors: SectorFlow[], hideLoudest: boolean): SectorFlow[] {
+  const r = (s: SectorFlow) => shownRatio(s, hideLoudest) ?? -Infinity;
+  return [...sectors].sort((a, b) => r(b) - r(a) || a.sector.localeCompare(b.sector));
+}
 
 /** Per sector, busiest against its normal first; sectors under MIN_SECTOR_STOCKS are named in `small`. */
 export function sectorFlows(rows: FlowRow[], period: FlowPeriod): { sectors: SectorFlow[]; small: string[] } {
@@ -121,18 +163,29 @@ export function sectorFlows(rows: FlowRow[], period: FlowPeriod): { sectors: Sec
     if (rs.length < MIN_SECTOR_STOCKS) { small.push(sector); continue; }
     // The spec's ratio: stocks with a normal that traded in the window (a suspended
     // stock would otherwise pull its sector down by its whole normal).
-    const withNormal = rs.filter((r) => r.normalDaily !== null && r.turnover > 0);
+    const withNormal = counted(rs);
     const expected = withNormal.reduce((s, r) => s + r.normalDaily! * period, 0);
+    const ratio = expected > 0 ? withNormal.reduce((s, r) => s + r.turnover, 0) / expected : null;
+    // Loudest: the most ₹ above its own normal, ties by symbol; only a stock above its normal qualifies.
+    const extra = (r: FlowRow) => r.turnover - r.normalDaily! * period;
+    const loud = withNormal.filter((r) => isBusier(r, period))
+      .sort((a, b) => extra(b) - extra(a) || a.symbol.localeCompare(b.symbol))[0] ?? null;
+    const rest = loud ? withNormal.filter((r) => r !== loud) : withNormal;
+    const restExpected = rest.reduce((s, r) => s + r.normalDaily! * period, 0);
     const moves = rs.map((r) => r.changePct).filter((v): v is number => v !== null);
     const normalSum = rs.reduce((s, r) => s + (r.normalDaily ?? 0), 0);
     sectors.push({
       sector, stocks: rs.length,
-      ratio: expected > 0 ? withNormal.reduce((s, r) => s + r.turnover, 0) / expected : null,
+      ratio,
       share: total > 0 ? rs.reduce((s, r) => s + r.turnover, 0) / total : 0,
       usualShare: totalNormal > 0 ? normalSum / totalNormal : null,
       medianMove: median(moves),
       up: moves.filter((m) => m > NOISE_PCT).length,
       down: moves.filter((m) => m < -NOISE_PCT).length,
+      counted: withNormal.length,
+      busier: withNormal.filter((r) => isBusier(r, period)).length,
+      loudest: loud?.symbol ?? null,
+      ratioWithoutLoudest: !loud ? ratio : restExpected > 0 ? rest.reduce((s, r) => s + r.turnover, 0) / restExpected : null,
     });
   }
   sectors.sort((a, b) => (b.ratio ?? -Infinity) - (a.ratio ?? -Infinity) || a.sector.localeCompare(b.sector));

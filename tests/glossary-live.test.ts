@@ -55,6 +55,16 @@ describe("liveExample", () => {
     expect(await liveExample("sma")).toBe("KOTAKBANK closed at ₹418.35 on 1 Oct 2026; its 200-day SMA was ₹400.05.");
   });
 
+  test("busier count, loudest stock and × normal read the week's Money flow and Top volume rows", async () => {
+    const mf = (symbol: string, turnover: number) => ({ asOf: "2026-10-06", symbol, sector: "Media", period: 5, turnover, normalDaily: 1e8, sessions: 5, changePct: 1 });
+    await db.insert(schema.moneyFlow).values([mf("SUNTV", 50e8), mf("B", 6e8), mf("C", 4e8), mf("D", 4e8), mf("E", 4e8)]);
+    expect(await liveExample("busier-count")).toBe("Week to 6 Oct 2026: 2 of 5 stocks in the whole market traded more than their own normal; Media: 2 of 5.");
+    expect(await liveExample("loudest-stock")).toBe("Week to 6 Oct 2026: Media read 2.72× its normal, 0.90× without SUNTV.");
+    await db.insert(schema.indexConstituents).values([{ indexKey: "total-market", symbol: "SUNTV", industry: "Media", fetchedOn: "2026-10-06" }]);
+    await db.insert(schema.volumeLeaders).values({ asOf: "2026-10-06", symbol: "SUNTV", period: 5, turnover: 50e8, shares: 1, changePct: 1, sessions: 5, unusualDays: 0, normalDaily: 1e8 });
+    expect(await liveExample("times-normal")).toBe("Week to 6 Oct 2026: SUNTV was the most unusually busy stock, at 10.0× its normal.");
+  });
+
   test("membership comes from the committed history file", async () => {
     expect(await liveExample("membership")).toMatch(/^50 members today; the latest change was on \d+ \w{3} \d{4}\.$/);
   });

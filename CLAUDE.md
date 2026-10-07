@@ -20,10 +20,11 @@ the breadth washout alarm and what the index did after each episode, 200-day SMA
 or `u=financial-services` shows only that index's episode rows, no medians, decision 0035),
 `/activity` (`src/query/activity.ts` + `src/indicators/activity.ts`: each session's unusual
 stock-days, whole market or any registered index (`set=`), from the nightly `unusual_days` table), `/volume`
-(`src/query/volume.ts`: most-traded Nifty Total Market stocks by ₹ or shares over rolling
-windows, filtered by NSE size list, sector and index; decision 0025), `/money-flow`
+(`src/query/volume.ts`: most-traded Nifty Total Market stocks by ₹, shares or × their own normal ("Unusually busy")
+over rolling windows, filtered by NSE size list, sector and index; decisions 0025, 0040), `/money-flow`
 (`src/indicators/money-flow.ts`: each NSE sector's ₹ traded against its own 3-month normal,
-share of trading and the stocks driving it; decision 0028) and
+share of trading, how many of its stocks were busier, a "Hide the loudest stock" switch and the
+stocks driving it; decisions 0028, 0040; both pages share one normal, `normalDaily`) and
 `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it

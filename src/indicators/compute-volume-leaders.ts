@@ -1,19 +1,33 @@
 /**
  * Rebuilds `volume_leaders` for every Nifty Total Market stock: totals over the
- * last 1/5/21/63/126 market sessions, through loadAdjustedHistory (renames,
- * splits). Replaced in one transaction, like unusual_days.
+ * last 1/5/21/63/126 market sessions and each window's normal (Money flow's
+ * `normalDaily`, decision 0040), through loadAdjustedHistory (renames, splits). Replaced in one transaction, like unusual_days.
  */
 import { eq, sql as dsql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { loadAdjustedHistory, loadRenames } from "./history";
 import { PERIODS, leaderStats, type Period } from "./volume-leaders";
+import { NORMAL_SESSIONS, normalDaily } from "./money-flow";
+
+// The longest window plus the 63 sessions of its normal (decision 0040).
+const SESSIONS = PERIODS.at(-1)! + NORMAL_SESSIONS;
+
+/**
+ * Each window's normal span, built as flowWindows does (newest first: days[p] …
+ * days[p+62]); null when the market calendar doesn't reach back that far.
+ */
+export function normalSpans(days: string[]): Record<Period, { from: string; to: string } | null> {
+  return Object.fromEntries(PERIODS.map((p) => [p, days.length >= p + NORMAL_SESSIONS
+    ? { from: days[p + NORMAL_SESSIONS - 1]!, to: days[p]! } : null])) as Record<Period, { from: string; to: string } | null>;
+}
 
 export async function computeVolumeLeaders(opts: { symbols?: string[] } = {}): Promise<{ rows: number; asOf: string | null }> {
   const days = (await db.execute<{ d: string }>(dsql`
     select trade_date::text d from ingest_log where source = 'bhavcopy' and status = 'ok'
-    order by trade_date desc limit 126`)).map((r) => r.d);
+    order by trade_date desc limit ${SESSIONS}`)).map((r) => r.d);
   if (days.length === 0) return { rows: 0, asOf: null };
   const asOf = days[0]!;
+  const spans = normalSpans(days);
   const starts = Object.fromEntries(PERIODS.map((p) => [p, days[Math.min(p, days.length) - 1]!])) as Record<Period, string>;
   const symbols = opts.symbols ?? (await db.select({ s: schema.indexConstituents.symbol }).from(schema.indexConstituents)
     .where(eq(schema.indexConstituents.indexKey, "total-market"))).map((r) => r.s);
@@ -29,7 +43,11 @@ export async function computeVolumeLeaders(opts: { symbols?: string[] } = {}): P
     if (!h) continue;
     const u = unusualBy.get(symbol) ?? [];
     for (const s of leaderStats(h, starts, asOf)) {
-      rows.push({ asOf, symbol, ...s, unusualDays: u.filter((d) => d >= starts[s.period] && d <= asOf).length });
+      const span = spans[s.period];
+      rows.push({
+        asOf, symbol, ...s, unusualDays: u.filter((d) => d >= starts[s.period] && d <= asOf).length,
+        normalDaily: span ? normalDaily(h, span.from, span.to) : null,
+      });
     }
   }
   await db.transaction(async (tx) => {
