@@ -55,6 +55,20 @@ sectors are taking a bigger slice of all the money traded, and which a smaller o
   a sector is picked, its history card gains a second small panel with its weekly share (a
   second panel, not a second axis).
 
+- **Demergers** (data-integrity review): Auto's −2.06 pts is partly the Tata Motors demerger. The
+  whole of Tata Motors' year-ago trading sits in TMPV's history (Auto); after the 14 Oct 2025
+  demerger, TMCV (Capital Goods) traded ₹21,077 crore in the now block, 0.35% of all trading,
+  and counts there as a new listing. Moved back, Auto would read about −1.7 pts and Capital
+  Goods about −0.07 instead of +0.28. Sectors are **not** reassigned (that would be guessing);
+  instead `loadAdjustedHistory` returns each company's demerger ex-dates through the rename
+  lineage, and a row is noted when one of its stocks demerged after the year-ago block began
+  (ex-date in (year-ago start, latest session]) and that stock was **1% or more** of the
+  sector's year-ago ₹ (`DEMERGER_MARK`, beside `NEW_LISTING_MARK`: a fixed display rule, never
+  tuned). Stored as `sector_share_year.demerged` (`[{symbol, exDate}]`). Flagged on 6 Oct 2026:
+  Auto (TMPV, 9.6% of its year-ago ₹), Fast Moving Consumer Goods (HINDUNILVR, 10.0%),
+  Metals & Mining (VEDL, 11.2%), Realty (DBREALTY, 2.1%). Not flagged, under 1%: HEGAM
+  (0.82%, found through its old symbol HEG), INDIAGLYCO (0.52%), GENUSPOWER (0.27%).
+
 ## Why
 
 - Calendar anchoring compares like with like (same season, same results calendar).
@@ -97,7 +111,9 @@ sectors are taking a bigger slice of all the money traded, and which a smaller o
 - Two snapshots, not a trend: a busy few weeks at either end can move the change. The small
   line shows every week between.
 - Today's list and today's sector labels: stocks that left the list are missing a year ago,
-  and a stock NSE moved to another sector counts in its new one for both years.
+  and a stock NSE moved to another sector counts in its new one for both years. A company that
+  demerged during the year counts whole a year ago and only its remaining part now; the row
+  says so but the number is not corrected.
 - The total is today's Nifty Total Market stocks (~750), not the whole exchange.
 - Tracking only: a bigger slice can be heavy selling. It says where trading went, not where
   prices go.

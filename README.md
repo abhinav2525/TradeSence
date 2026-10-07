@@ -482,7 +482,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | Function | Signature | Notes |
 |---|---|---|
 | `loadRenames` | `() => Promise<Rename[]>` | Every row of `symbol_changes`. |
-| `loadAdjustedHistory` | `(symbol, renames) => Promise<History \| null>` | Raw OHLCV across the rename lineage, plus `factors` (divide prices) and `shareFactors` (multiply volume; splits/bonuses only). Shared by `computeIndicators` and research 0002. |
+| `loadAdjustedHistory` | `(symbol, renames) => Promise<History \| null>` | Raw OHLCV across the rename lineage, plus `factors` (divide prices), `shareFactors` (multiply volume; splits/bonuses only) and `demergers` (every demerger ex-date through the lineage, priced or not; Money flow's share flag, 0041). Shared by `computeIndicators` and research 0002. |
 
 ### `src/ingest/index-constituents.ts`, `src/indicators/volume-leaders.ts`, `compute-volume-leaders.ts` and `src/query/volume.ts` — Top volume
 
@@ -520,7 +520,7 @@ The breadth washout alarm and what happened after each episode (decision 0017). 
 | `computeMoneyFlow` | Every Nifty Total Market stock through `loadAdjustedHistory` (EQ+BE); `money_flow`, `sector_flow_weeks`, `short_sessions` and `sector_share_year` replaced in one transaction. |
 | `weekWindows`, `weeklySectorFlows`, `HISTORY_WEEKS`, `shownSectors` | The 52-week history: week k = sessions 5k…5k+4 with its own 63-session normal (week 0 = the 1-week bar). Rows for every sector with 5+ stocks on today's list (chosen once), with the sector's ₹, the universe's total ₹ and new listings' ₹ that week; ratio and median move through `sectorFlows`, null in a week with under 5 trading stocks. |
 | `shareBlocks`, `yearBefore`, `SHARE_BLOCK_SESSIONS` | Share of trading over a year (decision 0041): the last 63 sessions and the same calendar span a year earlier (29 Feb → 28 Feb); null unless the year-ago block has sessions and the history reaches before it. |
-| `sectorShareYear`, `newListings`, `shareChange`, `NEW_LISTING_MARK` | Per shown sector, pooled ₹ in both blocks over the same stocks, totals including small sectors; stocks with no traded session a year ago are new listings; shares in %, change in pts, largest gain first, rows marked at 10%+ new-listing ₹ (fixed display rule), small sectors' share. |
+| `sectorShareYear`, `newListings`, `shareChange`, `NEW_LISTING_MARK`, `DEMERGER_MARK` | Per shown sector, pooled ₹ in both blocks over the same stocks, totals including small sectors; `demerged`: its stocks that demerged after the year-ago block began and were 1%+ of its year-ago ₹ (from `History.demergers`); stocks with no traded session a year ago are new listings; shares in %, change in pts, largest gain first, rows marked at 10%+ new-listing ₹ (fixed display rule), small sectors' share. |
 | `marketTotals`, `shortSessions` / `shortSessionRows` | Market-wide ₹ per session; sessions under half the usual day (Muhurat, special Saturdays). |
 | `shareYear`, `shareHistory` | `sector_share_year` rows and their dates (null when empty: "Needs a year of history"); every sector's weekly share in one query. `sectorHistory` also returns each week's share. |
 | `moneyFlowRows`, `withReportCard`, `sectorHistory`, `shortSessionsIn` | The page's reads (`sector_flow_weeks`, `short_sessions` by their keys); `shortSessionsIn(period)` takes any period, so Top volume shows the same short-session note. |
