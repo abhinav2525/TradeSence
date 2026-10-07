@@ -178,6 +178,9 @@ export const volumeLeaders = pgTable(
     changePct: doublePrecision("change_pct"),
     sessions: integer("sessions").notNull(),
     unusualDays: integer("unusual_days").notNull(),
+    // Normal ₹ per session over the 63 market sessions before the window (Money flow's rule,
+    // decision 0040); null with under 40 traded sessions there or too little market history.
+    normalDaily: doublePrecision("normal_daily"),
   },
   (t) => [primaryKey({ columns: [t.symbol, t.period] })],
 );

@@ -1,0 +1,1 @@
+ALTER TABLE "volume_leaders" ADD COLUMN "normal_daily" double precision;

@@ -118,3 +118,80 @@ describe("computeVolumeLeaders, review fixes", () => {
     expect(rows.some((r) => r.symbol === "DUMMYX")).toBe(false);
   });
 });
+
+// ── "× normal" on Top volume (spec 2026-10-07): the same normal as Money flow ──
+import { computeMoneyFlow } from "../src/indicators/compute-money-flow";
+import { NORMAL_SESSIONS } from "../src/indicators/money-flow";
+
+describe("computeVolumeLeaders: normal_daily", () => {
+  beforeEach(async () => {
+    for (const t of [schema.dailyPrices, schema.ingestLog, schema.volumeLeaders, schema.unusualDays, schema.indexConstituents,
+      schema.symbolChanges, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions]) await db.delete(t);
+  });
+  const seed = async (n: number, prices: (d: string, i: number) => { symbol: string; turnover: number }[], symbols: string[]) => {
+    const days = hist(n).dates;
+    await db.insert(schema.ingestLog).values(days.map((d) => ({ tradeDate: d, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 1 })));
+    const rows = days.flatMap((d, i) => prices(d, i).map((p) => ({ tradeDate: d, ...p, series: "EQ", open: 1, high: 1, low: 1, close: 1, prevClose: 1, volume: 10 })));
+    for (let i = 0; i < rows.length; i += 1000) await db.insert(schema.dailyPrices).values(rows.slice(i, i + 1000));
+    await db.insert(schema.indexConstituents).values(symbols.map((symbol) => ({ indexKey: "total-market", symbol, industry: "Media", fetchedOn: days.at(-1)! })));
+    return days;
+  };
+  const tv = (i: number) => 1e7 + i * 1e5; // a different ₹ every day, so the wrong window shows
+  const mean = (from: number, to: number) => { let s = 0; for (let i = from; i <= to; i++) s += tv(i); return s / (to - from + 1); };
+
+  test("each period's normal is the 63 market sessions before its window, across a rename", async () => {
+    const n = 200;
+    const days = await seed(n, (_, i) => [{ symbol: i < 150 ? "OLDCO" : "NEWCO", turnover: tv(i) }], ["NEWCO"]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDCO", newSymbol: "NEWCO", changedOn: days[150]! });
+    await computeVolumeLeaders();
+    const rows = await db.select().from(schema.volumeLeaders);
+    for (const p of PERIODS) {
+      const r = rows.find((x) => x.symbol === "NEWCO" && x.period === p)!;
+      // window = ascending indices n-p … n-1; its normal = n-p-63 … n-p-1, mostly under OLDCO
+      expect(r.normalDaily!).toBeCloseTo(mean(n - p - NORMAL_SESSIONS, n - p - 1), 3);
+    }
+  });
+
+  test("the 6-month normal needs 126 + 63 = 189 market sessions", async () => {
+    await seed(189, (_, i) => [{ symbol: "ABC", turnover: tv(i) }], ["ABC"]);
+    await computeVolumeLeaders();
+    const r189 = (await db.select().from(schema.volumeLeaders)).find((x) => x.period === 126)!;
+    expect(r189.normalDaily!).toBeCloseTo(mean(0, 62), 3);
+    for (const t of [schema.dailyPrices, schema.ingestLog, schema.volumeLeaders, schema.indexConstituents]) await db.delete(t);
+    await seed(188, (_, i) => [{ symbol: "ABC", turnover: tv(i) }], ["ABC"]);
+    await computeVolumeLeaders();
+    const r188 = (await db.select().from(schema.volumeLeaders));
+    expect(r188.find((x) => x.period === 126)!.normalDaily).toBeNull();
+    expect(r188.find((x) => x.period === 63)!.normalDaily).not.toBeNull();
+  });
+
+  test("39 traded sessions in the 63 before: no normal; 40: a normal", async () => {
+    const n = 100;
+    // ABC trades only the last 39 sessions of the 1-day window's normal; XYZ the last 40
+    await seed(n, (_, i) => [
+      ...(i >= n - 1 - 39 ? [{ symbol: "ABC", turnover: 1e7 }] : []),
+      ...(i >= n - 1 - 40 ? [{ symbol: "XYZ", turnover: 1e7 }] : []),
+    ], ["ABC", "XYZ"]);
+    await computeVolumeLeaders();
+    const rows = await db.select().from(schema.volumeLeaders);
+    expect(rows.find((x) => x.symbol === "ABC" && x.period === 1)!.normalDaily).toBeNull();
+    expect(rows.find((x) => x.symbol === "XYZ" && x.period === 1)!.normalDaily).toBe(1e7);
+  });
+
+  test("Top volume's normal equals Money flow's for 1, 5 and 21 sessions (one fixture)", async () => {
+    const n = 200;
+    // gappy trading so the traded-session rule matters: GAP skips every 7th day (but trades the last one;
+    // Top volume has no row for a window a stock did not trade in)
+    await seed(n, (_, i) => [{ symbol: "ABC", turnover: tv(i) }, ...(i % 7 === 4 ? [] : [{ symbol: "GAP", turnover: 3 * tv(i) }])], ["ABC", "GAP"]);
+    await computeVolumeLeaders();
+    await computeMoneyFlow();
+    const vl = await db.select().from(schema.volumeLeaders);
+    const mf = await db.select().from(schema.moneyFlow);
+    for (const sym of ["ABC", "GAP"]) for (const p of [1, 5, 21]) {
+      const a = vl.find((x) => x.symbol === sym && x.period === p)!.normalDaily;
+      const b = mf.find((x) => x.symbol === sym && x.period === p)!.normalDaily;
+      expect(a).not.toBeNull();
+      expect(Math.abs(a! - b!)).toBeLessThanOrEqual(1e-9 * b!); // the same function over the same sessions
+    }
+  });
+});
