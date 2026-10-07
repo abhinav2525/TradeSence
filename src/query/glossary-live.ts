@@ -15,8 +15,9 @@ import { NIFTY_BANK, NIFTY_FIN_SERVICE, type IndexEntry } from "../ingest/indice
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { BIG_JUMP_PCT } from "../indicators/activity";
-import { sectorFlows } from "../indicators/money-flow";
+import { marketBusier, sectorFlows } from "../indicators/money-flow";
 import { moneyFlowRows } from "./money-flow";
+import { topVolume } from "./volume";
 import { formatDate, formatInt, formatPrice, ordinal, signed } from "../lib/format";
 import type { TermId } from "../lib/glossary";
 import { sectorOf, shortSector } from "../lib/sectors";
@@ -138,6 +139,24 @@ async function build(id: TermId): Promise<string | null> {
         return `${top.sector} traded ${(top.share * 100).toFixed(1)}% of all rupees in the week to ${formatDate(rows.asOf)}${top.usualShare === null ? "" : `, usually ${(top.usualShare * 100).toFixed(1)}%`}.`;
       }
       return `Busiest sector against its normal in the week to ${formatDate(rows.asOf)}: ${top.sector}, at ${top.ratio!.toFixed(1)}×.`;
+    }
+    case "busier-count": case "loudest-stock": {
+      const rows = await moneyFlowRows(5);
+      if (!rows.asOf || rows.rows.length === 0) return null;
+      const wk = `Week to ${formatDate(rows.asOf)}`;
+      const { sectors } = sectorFlows(rows.rows, 5);
+      const top = sectors.find((x) => x.ratio !== null);
+      if (id === "busier-count") {
+        const m = marketBusier(rows.rows, 5);
+        return m.counted === 0 ? null : `${wk}: ${formatInt(m.busier)} of ${formatInt(m.counted)} stocks in the whole market traded more than their own normal${top ? `; ${top.sector}: ${top.busier} of ${top.counted}` : ""}.`;
+      }
+      return !top?.loudest || top.ratioWithoutLoudest === null ? null
+        : `${wk}: ${top.sector} read ${top.ratio!.toFixed(2)}× its normal, ${top.ratioWithoutLoudest.toFixed(2)}× without ${top.loudest}.`;
+    }
+    case "times-normal": {
+      const v = await topVolume({ period: 5, rank: "busy", size: null, sector: null, indexKey: null });
+      const r = v.rows[0];
+      return !v.asOf || !r?.busyRatio ? null : `Week to ${formatDate(v.asOf)}: ${r.symbol} was the most unusually busy stock, at ${r.busyRatio.toFixed(1)}× its normal.`;
     }
     case "big-price-jump": {
       const [row] = await db.execute<{ d: string | null; n: number }>(sql`
