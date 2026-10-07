@@ -11,14 +11,14 @@ import { stockReport } from "./stock-report";
 import { signalsData } from "./signals";
 import { pctText } from "../components/signals-copy";
 import { membersOn, readMembershipHistory } from "../ingest/nifty50-history";
-import { NIFTY_BANK, NIFTY_FIN_SERVICE, type IndexEntry } from "../ingest/indices";
+import { NIFTY_BANK, NIFTY_FIN_SERVICE, possessive, type IndexEntry } from "../ingest/indices";
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { BIG_JUMP_PCT } from "../indicators/activity";
-import { marketBusier, sectorFlows } from "../indicators/money-flow";
-import { moneyFlowRows } from "./money-flow";
+import { marketBusier, sectorFlows, shareChange } from "../indicators/money-flow";
+import { moneyFlowRows, shareYear } from "./money-flow";
 import { topVolume } from "./volume";
-import { formatDate, formatInt, formatPrice, ordinal, signed } from "../lib/format";
+import { formatDate, formatDayMonth, formatInt, formatPrice, ordinal, signed } from "../lib/format";
 import type { TermId } from "../lib/glossary";
 import { sectorOf, shortSector } from "../lib/sectors";
 
@@ -152,6 +152,21 @@ async function build(id: TermId): Promise<string | null> {
       }
       return !top?.loudest || top.ratioWithoutLoudest === null ? null
         : `${wk}: ${top.sector} read ${top.ratio!.toFixed(2)}× its normal, ${top.ratioWithoutLoudest.toFixed(2)}× without ${top.loudest}.`;
+    }
+    case "share-of-trading-trend": case "new-listing-share": {
+      const y = await shareYear();
+      if (!y) return null;
+      const { rows } = shareChange(y.rows);
+      const span = `${formatDayMonth(y.blocks.nowFrom)}–${formatDate(y.blocks.nowTo)}`;
+      if (id === "new-listing-share") {
+        const top = [...rows].sort((a, b) => (b.newListingPct ?? -1) - (a.newListingPct ?? -1))[0];
+        return !top?.newListingPct ? null
+          : `${span}: ${top.newListingPct.toFixed(0)}% of ${possessive(top.sector)} trading was in stocks that weren't trading a year earlier, the most of any sector.`;
+      }
+      const line = (r: (typeof rows)[number]) => `${r.sector} ${r.agoPct!.toFixed(1)}% → ${r.nowPct.toFixed(1)}% (${signed(r.changePts!, 1)} pts)`;
+      const gain = rows[0], loss = rows.at(-1);
+      if (!gain || gain.changePts === null || !loss || loss === gain) return null;
+      return `${span} against the same dates in ${y.blocks.agoTo.slice(0, 4)}: ${line(gain)}, the biggest gain; ${line(loss)}, the biggest loss.`;
     }
     case "times-normal": {
       const v = await topVolume({ period: 5, rank: "busy", size: null, sector: null, indexKey: null });

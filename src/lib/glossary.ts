@@ -15,7 +15,7 @@ const IDS = [
   "advancers-decliners", "net-advances", "rana", "mcclellan", "summation-index", "ad-line", "advancing-share-10d", "breadth-thrust",
   "crossing", "whipsaw", "volume-ratio", "near-the-line", "sector",
   "unusual-activity", "big-keeping", "huge-volume", "big-price-jump", "delivery-pct", "delivery-jump", "delivery-collapse",
-  "top-volume", "value-traded", "size-group", "nse-sector", "money-flow", "trading-vs-normal", "share-of-trading", "busier-count", "loudest-stock", "times-normal", "whole-market-breadth",
+  "top-volume", "value-traded", "size-group", "nse-sector", "money-flow", "trading-vs-normal", "share-of-trading", "share-of-trading-trend", "new-listing-share", "busier-count", "loudest-stock", "times-normal", "whole-market-breadth",
   "trend-check", "relative-strength", "volatility", "drawdown", "liquidity", "stretches", "adjusted-prices", "right-now", "bad-days", "crash-episodes",
 ] as const;
 
@@ -462,6 +462,30 @@ export const GLOSSARY: Record<TermId, GlossaryEntry> = {
     example: "If the market trades ₹4 lakh crore in a week and Financial Services ₹1 lakh crore of it, its share is 25%; usually 22% would mean trading shifted towards it.",
     mistakes: ["Expecting shares to stay put: the biggest sectors swing by a few points from week to week."],
     related: ["money-flow", "trading-vs-normal", "nse-sector"],
+  },
+  "share-of-trading-trend": {
+    id: "share-of-trading-trend", term: "Share of trading over a year", topic: "Stocks",
+    short: "A sector's slice of all ₹ traded by today's Nifty Total Market stocks over the last 3 months, against the same 3 months a year ago. Shows where trading went, not where prices go.",
+    read: "+1.0 pts means the sector's slice grew, say from 22.9% to 23.9%. It compares two snapshots, so a busy few weeks at either end can move it; the small line beside each row shows every week in between. Heavy trading can be selling as much as buying.",
+    what: "Trading vs normal compares a sector with its own last 3 months, so a slow shift over a year reads about 1× every week. This compares the same 3 calendar months one year apart, so a steady shift shows. The total is today's Nifty Total Market stocks, not the whole market, and each stock counts in today's sector for both years.",
+    calc: { plain: "Sector ₹ over the last 63 sessions ÷ all those stocks' ₹ over the same sessions; the same for the same calendar dates a year earlier; change = now − then, in percentage points. Rupees are added over the whole 3 months before dividing, so one huge week counts by its size." },
+    example: "A sector that traded 22.9% of the ₹ a year ago and 23.9% now has gained +1.0 pts. Not \"+4.4%\": that would be a percent of a percent.",
+    mistakes: [
+      "Reading a bigger slice as a buy signal. Heavy trading can be people selling.",
+      "Ignoring the new-listing mark: a sector with big new listings looks like it grew, because they had no trading a year ago.",
+    ],
+    related: ["share-of-trading", "new-listing-share", "money-flow", "nse-sector"],
+    seeIt: { label: "Money flow", href: "/money-flow" },
+  },
+  "new-listing-share": {
+    id: "new-listing-share", term: "New-listing share", topic: "Stocks",
+    short: "The part of a sector's last 3 months of ₹ traded that comes from stocks with no trading in the same 3 months a year ago. At 10% or more the row is marked: they make the sector look like it grew.",
+    read: "A marked row's gain is partly new companies arriving, not existing ones trading more. Weigh the gain against the marked share.",
+    what: "The year-on-year comparison uses today's list. A stock listed this year traded nothing a year ago, so all its trading shows up as growth for its sector. Stocks that left the list during the year are missing the other way. The 10% mark is a fixed display rule, never tuned to any result.",
+    calc: { plain: "₹ traded in the last 3 months by the sector's stocks that had no traded session in the year-ago 3 months ÷ the sector's ₹ in the last 3 months." },
+    example: "A sector that traded ₹1,000 crore in the last 3 months, ₹140 crore of it in stocks that weren't trading a year ago, has a new-listing share of 14%, and its row is marked.",
+    mistakes: ["Treating a marked sector's gain as its existing companies getting busier."],
+    related: ["share-of-trading-trend", "nse-sector", "money-flow"],
   },
   "big-price-jump": {
     id: "big-price-jump", term: "Big price jump", topic: "Stocks",
