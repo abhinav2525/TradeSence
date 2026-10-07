@@ -60,3 +60,72 @@ describe("withReportCard (Money flow drill-down)", () => {
     expect(await withReportCard(["BIGBANK", "MIDBANK", "SMALLIT"])).toEqual(new Set(["BIGBANK", "MIDBANK"]));
   });
 });
+
+// ── "Unusually busy" (spec 2026-10-07) ──
+import { BUSY_FLOOR_RS, cleanRank, rankLeaders } from "../src/query/volume";
+
+describe("cleanRank", () => {
+  test("exactly 'shares' or 'busy', else ₹ value; busy only on 1 day, 1 week, 1 month", () => {
+    expect(cleanRank("shares", 21)).toBe("shares");
+    expect(cleanRank("busy", 1)).toBe("busy");
+    expect(cleanRank("busy", 5)).toBe("busy");
+    expect(cleanRank("busy", 21)).toBe("busy");
+    expect(cleanRank("busy", 63)).toBe("value");
+    expect(cleanRank("busy", 126)).toBe("value");
+    for (const v of [undefined, "", "BUSY", "Busy", "busy ", "value", "x"]) expect(cleanRank(v, 5)).toBe("value");
+  });
+});
+
+describe("rankLeaders: the busy sort and its floor", () => {
+  const r = (symbol: string, turnover: number, normalDaily: number | null) => ({ symbol, turnover, shares: 1, normalDaily });
+  test("× normal = ₹ ÷ (normal × period), never the sessions the stock traded", () => {
+    const [x] = rankLeaders([{ ...r("A", 30e8, 1e8), sessions: 3 }], "value", 5).rows;
+    expect(x!.busyRatio!).toBeCloseTo(6, 9);
+    expect(rankLeaders([r("B", 1, null)], "value", 5).rows[0]!.busyRatio).toBeNull();
+  });
+  test("a normal of exactly ₹5 crore is ranked; one rupee under is not, and is counted as left out", () => {
+    expect(BUSY_FLOOR_RS).toBe(5e7);
+    const rows = [r("AT", 5 * 5e7 * 3, BUSY_FLOOR_RS), r("UNDER", 5 * (5e7 - 1) * 9, BUSY_FLOOR_RS - 1), r("NEW", 9e9, null), r("BIG", 5 * 1e9 * 2, 1e9)];
+    const out = rankLeaders(rows, "busy", 5);
+    expect(out.rows.map((x) => x.symbol)).toEqual(["AT", "BIG"]);
+    expect(out.leftOut).toBe(2);
+  });
+  test("ties by symbol; ₹ and Shares rankings keep everyone and leave nobody out", () => {
+    const rows = [r("Z", 10e8, 1e8), r("A", 10e8, 1e8), r("TINY", 1e6, 1e4)];
+    expect(rankLeaders(rows, "busy", 1).rows.map((x) => x.symbol)).toEqual(["A", "Z"]);
+    expect(rankLeaders(rows, "value", 1)).toMatchObject({ leftOut: 0 });
+    expect(rankLeaders(rows, "value", 1).rows.map((x) => x.symbol)).toEqual(["A", "Z", "TINY"]);
+  });
+});
+
+describe("topVolume, rank by busy", () => {
+  beforeEach(async () => {
+    await db.delete(schema.volumeLeaders);
+    const v = (symbol: string, turnover: number, normalDaily: number | null) =>
+      ({ asOf: "2026-10-01", symbol, period: 5, turnover, shares: 1, changePct: 1, sessions: 5, unusualDays: 0, normalDaily });
+    await db.insert(schema.volumeLeaders).values([
+      v("BIGBANK", 5 * 1e9 * 1.2, 1e9), // 1.2×
+      v("MIDBANK", 5 * 6e7 * 3, 6e7), // 3×
+      v("SMALLIT", 5 * 1e7 * 20, 1e7), // 20×, but trades ₹1 crore a day: under the floor
+    ]);
+  });
+  const busy = { period: 5 as const, rank: "busy" as const, size: null, sector: null, indexKey: null };
+  test("sorted by × normal; the left-out count comes with the rows", async () => {
+    const out = await topVolume(busy);
+    expect(out.rows.map((r) => r.symbol)).toEqual(["MIDBANK", "BIGBANK"]);
+    expect(out.rows[0]!.busyRatio!).toBeCloseTo(3, 9);
+    expect(out.leftOut).toBe(1);
+  });
+  test("filters apply before the floor: the left-out count is within the filter", async () => {
+    const fin = await topVolume({ ...busy, sector: "Financial Services" });
+    expect(fin.rows.map((r) => r.symbol)).toEqual(["MIDBANK", "BIGBANK"]);
+    expect(fin.leftOut).toBe(0);
+    const it = await topVolume({ ...busy, sector: "Information Technology" });
+    expect(it.rows).toEqual([]);
+    expect(it.leftOut).toBe(1);
+  });
+  test("the ₹ ranking still shows × normal for a stock under the floor", async () => {
+    const rows = (await topVolume({ ...busy, rank: "value" })).rows;
+    expect(rows.find((r) => r.symbol === "SMALLIT")!.busyRatio!).toBeCloseTo(20, 9);
+  });
+});
