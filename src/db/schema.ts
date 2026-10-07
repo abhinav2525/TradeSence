@@ -221,9 +221,34 @@ export const sectorFlowWeeks = pgTable(
     medianMove: doublePrecision("median_move"),
     stocks: integer("stocks").notNull(),
     shortSession: boolean("short_session").notNull(),
+    // Share of trading (decision 0041): the sector's ₹ that week, and every universe stock's ₹ that week (small
+    // sectors included; the same on each of the week's rows), so pooled shares are exact sums.
+    turnover: doublePrecision("turnover").notNull().default(0),
+    totalTurnover: doublePrecision("total_turnover").notNull().default(0),
+    // The sector's ₹ that week from stocks with no traded session in the year-ago block; null without one.
+    newListingTurnover: doublePrecision("new_listing_turnover"),
   },
   (t) => [primaryKey({ columns: [t.sector, t.weekEnd] })],
 );
+
+/**
+ * Share of trading over a year (decision 0041): per sector with 5+ stocks on today's Nifty Total Market list, its ₹
+ * over the last 63 sessions (now) and over the same calendar span a year earlier (ago), with every stock's ₹ in each
+ * block (totals; small sectors included). Rebuilt nightly with money_flow; empty without a year of history.
+ */
+export const sectorShareYear = pgTable("sector_share_year", {
+  sector: text("sector").primaryKey(),
+  stocks: integer("stocks").notNull(),
+  nowTurnover: doublePrecision("now_turnover").notNull(),
+  nowTotal: doublePrecision("now_total").notNull(),
+  agoTurnover: doublePrecision("ago_turnover").notNull(),
+  agoTotal: doublePrecision("ago_total").notNull(),
+  newListingTurnover: doublePrecision("new_listing_turnover").notNull(),
+  nowFrom: date("now_from").notNull(),
+  nowTo: date("now_to").notNull(),
+  agoFrom: date("ago_from").notNull(),
+  agoTo: date("ago_to").notNull(),
+});
 
 /**
  * Sessions where the Nifty Total Market traded under half its usual day (Diwali
