@@ -112,6 +112,9 @@ Research 0002 tested 15 volume signals on the NIFTY 50 since 2020; none beat ran
 - [x] **One loud stock vs the whole sector; Unusually busy** (decision 0040, 7 Oct; branch
   `feat/loudest-stock-busy-sort`): "b of n busier" and "Hide the loudest stock" on Money flow;
   × normal column and an Unusually busy ranking on Top volume.
+- [x] **Sector share of trading over a year** (decision 0041, 7 Oct; branch `feat/sector-share-year`;
+  TODO-research MF-4): each sector's slice of all ₹ traded, last 3 months vs the same 3 months a
+  year ago, a weekly line per sector, new listings marked.
 - [ ] **Heavy vs light breakouts on the bigger stocks** (follow-up to 0005): among today's
   ~750 Nifty Total Market stocks heavy-volume breakouts lagged light ones by ~1 pt a month in
   both periods (an after-the-fact side row). Fix the rules first: size measured on each day

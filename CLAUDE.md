@@ -24,7 +24,7 @@ stock-days, whole market or any registered index (`set=`), from the nightly `unu
 over rolling windows, filtered by NSE size list, sector and index; decisions 0025, 0040), `/money-flow`
 (`src/indicators/money-flow.ts`: each NSE sector's ₹ traded against its own 3-month normal,
 share of trading, how many of its stocks were busier, a "Hide the loudest stock" switch and the
-stocks driving it; decisions 0028, 0040; both pages share one normal, `normalDaily`) and
+stocks driving it, and each sector's share of trading over a year; decisions 0028, 0040, 0041; both pages share one normal, `normalDaily`) and
 `/learn` (`src/lib/glossary.ts`: every term explained). New pages are specified in `docs/design/HANDOFF.md`.
 
 **`README.md` holds the architecture diagrams and a full function reference.** Read it
@@ -117,7 +117,7 @@ bun run indicators                             # recompute every average (~5s)
 bun run activity                               # rebuild the Unusual activity table (~20s)
 bun run ingest:index-lists                     # today's members of 43 NSE indices (~15s)
 bun run volume-leaders                         # rebuild the Top volume table (~5s)
-bun run money-flow                             # rebuild the Money flow tables + 52-week history (~10s)
+bun run money-flow                             # rebuild the Money flow tables + 52-week history + share over a year (~10s)
 bun run breadth                                # whole-market + index-list breadth, upsert only (~20s)
 bun run audit:report-card [date]               # independent recalculation; exits 1 on a mismatch
 bun run research:forward-returns               # breadth -> later NIFTY return study
