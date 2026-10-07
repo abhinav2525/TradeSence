@@ -48,7 +48,7 @@ export async function computeMoneyFlow(opts: { symbols?: string[] } = {}): Promi
     kept.push({ symbol, sector, h });
   }
   const short = shortSessionRows(marketTotals(kept.map((k) => k.h), oldest));
-  const weeks = weeklySectorFlows(kept, weekWindows(days), new Set(short.map((s) => s.date)));
+  const weeks = weeklySectorFlows(kept, weekWindows(days), new Set(short.map((s) => s.date)), null);
 
   await db.transaction(async (tx) => {
     await tx.delete(schema.moneyFlow);

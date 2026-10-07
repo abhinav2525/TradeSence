@@ -220,19 +220,146 @@ export function weekWindows(days: string[], weeks = HISTORY_WEEKS): WeekWindow[]
   return out;
 }
 
-export type SectorWeek = { weekEnd: string; sector: string; ratio: number | null; medianMove: number | null; stocks: number; shortSession: boolean };
+export type SectorWeek = {
+  weekEnd: string; sector: string; ratio: number | null; medianMove: number | null; stocks: number; shortSession: boolean;
+  turnover: number; // the sector's ₹ that week
+  totalTurnover: number; // every universe stock's ₹ that week, small sectors included (same on each of the week's rows)
+  newListingTurnover: number | null; // the sector's ₹ that week from new listings (newListings); null without a year-ago block
+};
 
-/** Each sector's 1-week reading per week, through sectorFlows (sectors under 5 stocks with data that week are left out). */
-export function weeklySectorFlows(stocks: { symbol: string; sector: string; h: History }[], weeks: WeekWindow[], short: Set<string>): SectorWeek[] {
+/** Sectors that get rows: at least MIN_SECTOR_STOCKS stocks on today's list, chosen once (not week by week). */
+export function shownSectors(stocks: { sector: string }[]): string[] {
+  const n = new Map<string, number>();
+  for (const s of stocks) n.set(s.sector, (n.get(s.sector) ?? 0) + 1);
+  return [...n].filter(([, c]) => c >= MIN_SECTOR_STOCKS).map(([s]) => s).sort();
+}
+
+/**
+ * Each shown sector's 1-week reading per week. Ratio and median move come from sectorFlows, so a week where the
+ * sector had under 5 stocks with data has none (null); its ₹ is still there, so its share line has no hole.
+ */
+export function weeklySectorFlows(
+  stocks: { symbol: string; sector: string; h: History }[], weeks: WeekWindow[], short: Set<string>, isNew: Set<string> | null,
+): SectorWeek[] {
   const shorts = [...short];
+  const shown = shownSectors(stocks);
   return weeks.flatMap((wk) => {
     const rows: FlowRow[] = stocks.flatMap(({ symbol, sector, h }) => {
       const s = windowStat(h, 5, wk.start, wk.end, wk.normalFrom, wk.normalTo);
       return s ? [{ symbol, sector, turnover: s.turnover, normalDaily: s.normalDaily, changePct: s.changePct }] : [];
     });
     const shortSession = shorts.some((d) => d >= wk.start && d <= wk.end);
-    return sectorFlows(rows, 5).sectors.map((x) => ({ weekEnd: wk.end, sector: x.sector, ratio: x.ratio, medianMove: x.medianMove, stocks: x.stocks, shortSession }));
+    const totalTurnover = rows.reduce((s, r) => s + r.turnover, 0);
+    const flows = new Map(sectorFlows(rows, 5).sectors.map((x) => [x.sector, x]));
+    return shown.map((sector) => {
+      const rs = rows.filter((r) => r.sector === sector);
+      const f = flows.get(sector);
+      return {
+        weekEnd: wk.end, sector, ratio: f?.ratio ?? null, medianMove: f?.medianMove ?? null, stocks: rs.length, shortSession,
+        turnover: rs.reduce((s, r) => s + r.turnover, 0), totalTurnover,
+        newListingTurnover: isNew ? rs.filter((r) => isNew.has(r.symbol)).reduce((s, r) => s + r.turnover, 0) : null,
+      };
+    });
   });
+}
+
+// ── Share of trading over a year (spec 2026-10-07-sector-share-of-trading, decision 0041) ──
+
+export const SHARE_BLOCK_SESSIONS = 63; // "now": the last 3 months of sessions (owner's choice, 7 Oct 2026)
+/** A fixed display rule, never tuned: a row is marked when new listings are this much of its recent ₹. */
+export const NEW_LISTING_MARK = 0.1;
+const MARK_EPS = 1e-9; // 0.3 / 3 is 0.09999999999999999 in floating point: exactly the mark is marked
+
+/** The same calendar date one year earlier; 29 February becomes 28 February. */
+export function yearBefore(iso: string): string {
+  const y = String(Number(iso.slice(0, 4)) - 1).padStart(4, "0");
+  const md = iso.slice(5) === "02-29" ? "02-28" : iso.slice(5);
+  return `${y}-${md}`;
+}
+
+export type ShareBlocks = { nowFrom: string; nowTo: string; agoFrom: string; agoTo: string };
+
+/**
+ * Now = the last SHARE_BLOCK_SESSIONS sessions; a year ago = the sessions inside the same calendar span one year
+ * earlier. `days` newest first. Null (needs a year of history) unless the year-ago span has sessions and the list
+ * reaches before it, so a partly held year-ago block is never read as complete.
+ */
+export function shareBlocks(days: string[]): ShareBlocks | null {
+  if (days.length < SHARE_BLOCK_SESSIONS) return null;
+  const nowTo = days[0]!, nowFrom = days[SHARE_BLOCK_SESSIONS - 1]!;
+  const agoFrom = yearBefore(nowFrom), agoTo = yearBefore(nowTo);
+  if (!(days.at(-1)! < agoFrom)) return null;
+  if (!days.some((d) => d >= agoFrom && d <= agoTo)) return null;
+  return { nowFrom, nowTo, agoFrom, agoTo };
+}
+
+/** A stock's ₹ and traded sessions in [from, to]. */
+function rupeesIn(h: History, from: string, to: string): { rupees: number; sessions: number } {
+  const [a, b] = span(h.dates, from, to);
+  let rupees = 0, sessions = 0;
+  for (let i = a; i < b; i++) { rupees += h.turnover[i]!; if (h.turnover[i]! > 0) sessions++; }
+  return { rupees, sessions };
+}
+
+/** Stocks with no traded session in the year-ago block: this year's new listings (and long-suspended stocks). */
+export function newListings(stocks: { symbol: string; h: History }[], b: ShareBlocks): Set<string> {
+  return new Set(stocks.filter(({ h }) => rupeesIn(h, b.agoFrom, b.agoTo).sessions === 0).map((s) => s.symbol));
+}
+
+export type ShareYearRow = {
+  sector: string; stocks: number;
+  nowTurnover: number; nowTotal: number; agoTurnover: number; agoTotal: number;
+  newListingTurnover: number; // the sector's now-block ₹ from newListings
+};
+
+/**
+ * Per shown sector (today's list, ≥ MIN_SECTOR_STOCKS), pooled ₹ in both blocks, summed over the same stocks whatever
+ * their count a year ago. Totals are every stock's ₹, small sectors included, so small sectors = total − rows.
+ */
+export function sectorShareYear(stocks: { symbol: string; sector: string; h: History }[], b: ShareBlocks): ShareYearRow[] {
+  const shown = new Set(shownSectors(stocks));
+  const isNew = newListings(stocks, b);
+  let nowTotal = 0, agoTotal = 0;
+  const by = new Map<string, ShareYearRow>();
+  for (const { symbol, sector, h } of stocks) {
+    const now = rupeesIn(h, b.nowFrom, b.nowTo).rupees, ago = rupeesIn(h, b.agoFrom, b.agoTo).rupees;
+    nowTotal += now; agoTotal += ago;
+    if (!shown.has(sector)) continue;
+    const r = by.get(sector) ?? by.set(sector, { sector, stocks: 0, nowTurnover: 0, nowTotal: 0, agoTurnover: 0, agoTotal: 0, newListingTurnover: 0 }).get(sector)!;
+    r.stocks++; r.nowTurnover += now; r.agoTurnover += ago;
+    if (isNew.has(symbol)) r.newListingTurnover += now;
+  }
+  return [...by.values()].map((r) => ({ ...r, nowTotal, agoTotal })).sort((a, b) => a.sector.localeCompare(b.sector));
+}
+
+export type ShareTrend = {
+  sector: string; stocks: number;
+  nowPct: number; agoPct: number | null; changePts: number | null; // shares in %, change in percentage points
+  newListingPct: number | null; partlyNew: boolean;
+};
+
+/** Shares from pooled ₹ (never a mean of weekly shares), change in points, largest gain first (ties by name); small sectors' share. */
+export function shareChange(rows: ShareYearRow[]): { rows: ShareTrend[]; small: { nowPct: number; agoPct: number | null } } {
+  const pct = (part: number, whole: number) => (whole > 0 ? (100 * part) / whole : null);
+  const out = rows.map((r) => {
+    const nowPct = pct(r.nowTurnover, r.nowTotal) ?? 0;
+    const agoPct = pct(r.agoTurnover, r.agoTotal);
+    const nl = r.nowTurnover > 0 ? r.newListingTurnover / r.nowTurnover : null;
+    return {
+      sector: r.sector, stocks: r.stocks, nowPct, agoPct, changePts: agoPct === null ? null : nowPct - agoPct,
+      newListingPct: nl === null ? null : 100 * nl, partlyNew: nl !== null && nl >= NEW_LISTING_MARK - MARK_EPS,
+    };
+  });
+  out.sort((a, b) => (b.changePts ?? -Infinity) - (a.changePts ?? -Infinity) || a.sector.localeCompare(b.sector));
+  const first = rows[0];
+  const shownNow = rows.reduce((s, r) => s + r.nowTurnover, 0), shownAgo = rows.reduce((s, r) => s + r.agoTurnover, 0);
+  return {
+    rows: out,
+    small: {
+      nowPct: first ? pct(first.nowTotal - shownNow, first.nowTotal) ?? 0 : 0,
+      agoPct: first ? pct(first.agoTotal - shownAgo, first.agoTotal) : null,
+    },
+  };
 }
 
 /** Market-wide ₹ per session across these histories, oldest first, from a date: input to shortSessions. */

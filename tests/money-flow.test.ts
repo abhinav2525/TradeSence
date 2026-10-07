@@ -171,7 +171,7 @@ describe("weekly history", () => {
         close: Array.from({ length: 400 }, (_, i) => (i >= 395 ? 110 : 100)) }),
     }));
     const days = newestFirst(stocks[0]!.h);
-    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set());
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set(), null);
     const bar = sectorFlows(stocks.map((s) => ({ symbol: s.symbol, sector: s.sector, ...flowStats(s.h, flowWindows(days)!).find((x) => x.period === 5)! })), 5).sectors[0]!;
     const w0 = weeks.find((x) => x.weekEnd === days[0])!;
     expect(w0.ratio).toBeCloseTo(bar.ratio!, 12);
@@ -182,7 +182,7 @@ describe("weekly history", () => {
   test("a week containing a short session is marked", () => {
     const stocks = ["A", "B", "C", "D", "E"].map((symbol) => ({ symbol, sector: "IT", h: hist(400) }));
     const days = newestFirst(stocks[0]!.h);
-    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set([days[7]!]));
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set([days[7]!]), null);
     expect(weeks.find((x) => x.weekEnd === days[5])!.shortSession).toBe(true);
     expect(weeks.find((x) => x.weekEnd === days[0])!.shortSession).toBe(false);
   });
@@ -296,5 +296,191 @@ describe("cleanLoud", () => {
   test("exactly 'hide' turns it on; anything else is off", () => {
     expect(cleanLoud("hide")).toBe(true);
     for (const v of [undefined, "", "HIDE", "1", "true", "hide "]) expect(cleanLoud(v)).toBe(false);
+  });
+});
+
+// ── Share of trading over a year (spec 2026-10-07-sector-share-of-trading, decision 0041) ──
+import {
+  NEW_LISTING_MARK, SHARE_BLOCK_SESSIONS, newListings, sectorShareYear, shareBlocks, shareChange, yearBefore, type ShareYearRow,
+} from "../src/indicators/money-flow";
+import { NOISE_PCT } from "../src/indicators/risk";
+
+/** Weekday sessions between two dates inclusive, newest first. */
+function weekdaysBetween(from: string, to: string): string[] {
+  const out: string[] = [];
+  const d = new Date(`${from}T00:00:00Z`);
+  while (d.toISOString().slice(0, 10) <= to) {
+    if (d.getUTCDay() % 6 !== 0) out.push(d.toISOString().slice(0, 10));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return out.reverse();
+}
+
+describe("shareBlocks: the last 63 sessions against the same calendar span a year earlier", () => {
+  test("yearBefore shifts the calendar date; 29 Feb becomes 28 Feb", () => {
+    expect(yearBefore("2026-10-06")).toBe("2025-10-06");
+    expect(yearBefore("2024-02-29")).toBe("2023-02-28");
+    expect(yearBefore("2025-03-01")).toBe("2024-03-01");
+  });
+  test("pinned dates: 6 Oct 2026 → now 7 Jul–6 Oct 2026, a year ago 7 Jul–6 Oct 2025", () => {
+    // 2026-07-07 to 2026-10-06 is exactly 66 weekdays; drop 3 as holidays to get 63 sessions
+    const holidays = new Set(["2026-08-14", "2026-08-27", "2026-10-02"]);
+    const days = weekdaysBetween("2025-01-01", "2026-10-06").filter((d) => !holidays.has(d));
+    const b = shareBlocks(days)!;
+    expect(b).toEqual({ nowFrom: "2026-07-07", nowTo: "2026-10-06", agoFrom: "2025-07-07", agoTo: "2025-10-06" });
+    expect(days.indexOf(b.nowFrom)).toBe(SHARE_BLOCK_SESSIONS - 1);
+  });
+  test("needs a year of history: null when the session list doesn't reach before the year-ago block", () => {
+    const days = weekdaysBetween("2025-08-01", "2026-10-06");
+    expect(shareBlocks(days)).toBeNull(); // year-ago block would start in early July 2025: not held
+    expect(shareBlocks(days.slice(0, 62))).toBeNull(); // fewer than 63 sessions
+  });
+  test("null when no session falls inside the year-ago span", () => {
+    const now = weekdaysBetween("2026-07-01", "2026-10-06");
+    const old = weekdaysBetween("2024-01-01", "2024-03-01");
+    expect(shareBlocks([...now, ...old])).toBeNull();
+  });
+});
+
+/** A history on these sessions (oldest first) with ₹ per session from `rupees(date)`; sessions with 0 ₹ are left out. */
+function histOn(datesAsc: string[], rupees: (d: string) => number): History {
+  const dates = datesAsc.filter((d) => rupees(d) > 0);
+  const fill = <T,>(v: T) => dates.map(() => v);
+  return {
+    dates, open: fill(100), high: fill(101), low: fill(99), close: fill(100), volume: fill(1000),
+    turnover: dates.map(rupees), factors: fill(1), shareFactors: fill(1), traded: fill(null), delivered: fill(null),
+  };
+}
+
+describe("sectorShareYear and shareChange", () => {
+  const days = weekdaysBetween("2025-01-01", "2026-10-06");
+  const asc = [...days].reverse();
+  const b = shareBlocks(days)!;
+  const inNow = (d: string) => d >= b.nowFrom && d <= b.nowTo;
+  const inAgo = (d: string) => d >= b.agoFrom && d <= b.agoTo;
+
+  test("pooled ₹, not the mean of weekly shares: one huge week counts by its size", () => {
+    // IT: 5 stocks. In the now block, IT trades 1 crore a day except one week where it trades 100 crore a day.
+    // Others (Auto, 5 stocks) trade a steady 10 crore a day.
+    const nowSessions = days.slice(0, SHARE_BLOCK_SESSIONS);
+    const bigWeek = new Set(nowSessions.slice(0, 5));
+    const it = ["I1", "I2", "I3", "I4", "I5"].map((symbol) => ({ symbol, sector: "IT", h: histOn(asc, (d) => (bigWeek.has(d) ? 1e9 : 1e7)) }));
+    const auto = ["A1", "A2", "A3", "A4", "A5"].map((symbol) => ({ symbol, sector: "Auto", h: histOn(asc, () => 1e8) }));
+    const rows = sectorShareYear([...it, ...auto], b);
+    const r = rows.find((x) => x.sector === "IT")!;
+    const itNow = 5 * (5 * 1e9 + 58 * 1e7), autoNow = 5 * 63 * 1e8;
+    expect(r.nowTurnover).toBeCloseTo(itNow, 0);
+    expect(r.nowTotal).toBeCloseTo(itNow + autoNow, 0);
+    const s = shareChange(rows).rows.find((x) => x.sector === "IT")!;
+    expect(s.nowPct).toBeCloseTo((100 * itNow) / (itNow + autoNow), 9);
+    // the mean of weekly shares would be far lower: one week at ~91%, the rest at ~9%
+    expect(s.nowPct).toBeGreaterThan(40);
+  });
+
+  test("change is in percentage points: 23.4% → 26.1% is +2.7, not +11.5%", () => {
+    const row = (sector: string, now: number, ago: number): ShareYearRow =>
+      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0 });
+    const out = shareChange([row("Financial Services", 261, 234), row("IT", 63, 81)]);
+    const fs = out.rows.find((x) => x.sector === "Financial Services")!;
+    expect(fs.nowPct).toBeCloseTo(26.1, 9);
+    expect(fs.agoPct).toBeCloseTo(23.4, 9);
+    expect(fs.changePts).toBeCloseTo(2.7, 9);
+    expect(out.rows.map((x) => x.sector)).toEqual(["Financial Services", "IT"]); // largest gain first
+  });
+
+  test("sort: largest gain first, ties by sector name", () => {
+    const row = (sector: string, now: number, ago: number): ShareYearRow =>
+      ({ sector, stocks: 5, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0 });
+    const out = shareChange([row("Zinc", 100, 90), row("Auto", 100, 90), row("Gas", 50, 80), row("Bank", 200, 100)]);
+    expect(out.rows.map((x) => x.sector)).toEqual(["Bank", "Auto", "Zinc", "Gas"]);
+  });
+
+  test("rows plus the small-sectors footnote add to 100%, now and a year ago", () => {
+    const mk = (prefix: string, sector: string, n: number, rupees: number) =>
+      Array.from({ length: n }, (_, i) => ({ symbol: `${prefix}${i}`, sector, h: histOn(asc, () => rupees + i * 1e5) }));
+    const stocks = [...mk("F", "Financial Services", 6, 3e7), ...mk("I", "IT", 5, 2e7), ...mk("T", "Textiles", 3, 5e7), ...mk("M", "Media", 1, 9e7)];
+    const rows = sectorShareYear(stocks, b);
+    expect(rows.map((r) => r.sector).sort()).toEqual(["Financial Services", "IT"]);
+    const out = shareChange(rows);
+    expect(out.small.nowPct).toBeGreaterThan(0);
+    expect(Math.abs(out.rows.reduce((s, r) => s + r.nowPct, 0) + out.small.nowPct - 100)).toBeLessThan(NOISE_PCT);
+    expect(Math.abs(out.rows.reduce((s, r) => s + r.agoPct!, 0) + out.small.agoPct! - 100)).toBeLessThan(NOISE_PCT);
+  });
+
+  test("rows come from today's list: a sector with 3 trading stocks a year ago keeps its year-ago ₹", () => {
+    // Pharma has 5 stocks today; two listed after the year-ago block.
+    const old = ["P1", "P2", "P3"].map((symbol) => ({ symbol, sector: "Pharma", h: histOn(asc, () => 1e7) }));
+    const fresh = ["P4", "P5"].map((symbol) => ({ symbol, sector: "Pharma", h: histOn(asc, (d) => (d >= "2026-01-01" ? 1e7 : 0)) }));
+    const other = ["O1", "O2", "O3", "O4", "O5"].map((symbol) => ({ symbol, sector: "Oil", h: histOn(asc, () => 1e7) }));
+    const rows = sectorShareYear([...old, ...fresh, ...other], b);
+    const p = rows.find((r) => r.sector === "Pharma")!;
+    const agoSessions = days.filter(inAgo).length;
+    expect(p.agoTurnover).toBeCloseTo(3 * agoSessions * 1e7, 0);
+    expect(p.stocks).toBe(5);
+  });
+
+  test("new listings: no traded session in the year-ago block counts; one traded session there doesn't", () => {
+    const agoDay = days.find(inAgo)!;
+    const stocks = [
+      { symbol: "NEW", sector: "Pharma", h: histOn(asc, (d) => (inNow(d) ? 1e7 : 0)) },
+      { symbol: "ONE", sector: "Pharma", h: histOn(asc, (d) => (inNow(d) || d === agoDay ? 1e7 : 0)) },
+      ...["P3", "P4", "P5"].map((symbol) => ({ symbol, sector: "Pharma", h: histOn(asc, () => 1e7) })),
+    ];
+    expect([...newListings(stocks, b)]).toEqual(["NEW"]);
+    const p = sectorShareYear(stocks, b)[0]!;
+    expect(p.newListingTurnover).toBeCloseTo(SHARE_BLOCK_SESSIONS * 1e7, 0);
+    const s = shareChange([p]).rows[0]!;
+    expect(s.newListingPct).toBeCloseTo(20, 9);
+    expect(s.partlyNew).toBe(true);
+  });
+
+  test(`the ${NEW_LISTING_MARK * 100}% new-listing mark: exactly at the mark (even in float) is marked, just under is not`, () => {
+    const row = (newListingTurnover: number, nowTurnover: number): ShareYearRow =>
+      ({ sector: "X", stocks: 5, nowTurnover, nowTotal: 100, agoTurnover: 1, agoTotal: 100, newListingTurnover });
+    expect(0.3 / 3).toBeLessThan(0.1); // 0.09999999999999999: a plain >= would miss it
+    expect(shareChange([row(0.3, 3)]).rows[0]!.partlyNew).toBe(true);
+    expect(shareChange([row(1, 10)]).rows[0]!.partlyNew).toBe(true);
+    expect(shareChange([row(0.99, 10)]).rows[0]!.partlyNew).toBe(false);
+    expect(shareChange([row(0, 0)]).rows[0]!).toMatchObject({ newListingPct: null, partlyNew: false });
+  });
+});
+
+describe("weekly share in sector_flow_weeks", () => {
+  test("week 0 share equals the bars' 1-week share; total includes small sectors", () => {
+    const stocks = [
+      ...["A", "B", "C", "D", "E"].map((symbol, j) => ({ symbol, sector: "IT", h: hist(400, { turnover: Array.from({ length: 400 }, (_, i) => 1e7 + j * 1e6 + i * 1e4) }) })),
+      ...["F", "G"].map((symbol) => ({ symbol, sector: "Textiles", h: hist(400, { turnover: Array(400).fill(4e7) }) })),
+    ];
+    const days = newestFirst(stocks[0]!.h);
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set(), null);
+    const bars = sectorFlows(stocks.map((s) => ({ symbol: s.symbol, sector: s.sector, ...flowStats(s.h, flowWindows(days)!).find((x) => x.period === 5)! })), 5);
+    const w0 = weeks.find((x) => x.weekEnd === days[0] && x.sector === "IT")!;
+    expect(w0.turnover / w0.totalTurnover).toBeCloseTo(bars.sectors[0]!.share, 12);
+    expect(weeks.some((x) => x.sector === "Textiles")).toBe(false); // small today: no rows
+    expect(w0.newListingTurnover).toBeNull(); // no year-ago block given
+  });
+
+  test("a week where the sector had under 5 trading stocks keeps its ₹ (share), with no ratio", () => {
+    // E lists late: in old weeks IT has only 4 trading stocks
+    const late = 300;
+    const stocks = ["A", "B", "C", "D", "E"].map((symbol) => ({
+      symbol, sector: "IT",
+      h: symbol === "E" ? (() => { const h = hist(400); return { ...h, ...Object.fromEntries(Object.entries(h).map(([k, v]) => [k, (v as unknown[]).slice(late)])) } as History; })() : hist(400),
+    }));
+    const days = newestFirst(stocks[0]!.h);
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set(), null);
+    expect(weeks).toHaveLength(HISTORY_WEEKS);
+    const oldest = weeks.at(-1)!;
+    expect(oldest.stocks).toBe(4);
+    expect(oldest.ratio).toBeNull();
+    expect(oldest.turnover).toBeCloseTo(4 * 5 * 1e7, 0);
+    expect(weeks[0]!.ratio).not.toBeNull();
+  });
+
+  test("newListingTurnover: that week's ₹ from stocks marked new", () => {
+    const stocks = ["A", "B", "C", "D", "E"].map((symbol) => ({ symbol, sector: "IT", h: hist(400) }));
+    const days = newestFirst(stocks[0]!.h);
+    const weeks = weeklySectorFlows(stocks, weekWindows(days), new Set(), new Set(["A", "B"]));
+    expect(weeks[0]!.newListingTurnover).toBeCloseTo(2 * 5 * 1e7, 0);
   });
 });
