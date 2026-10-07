@@ -1,7 +1,7 @@
 ---
 name: data-integrity-reviewer
 description: Reviews any new query, compute step, page number or research study in tradeSence for the data traps that make a correct-looking number wrong: look-ahead, survivorship, unadjusted prices, series gaps, same-stock controls, overlapping returns, day-of-data mismatches. Use it on a branch before the independent code review, on a study before its write-up, or on any number that looks surprising. Read-only; reports findings with a concrete failure case for each.
-model: opus
+model: sonnet
 tools: Read, Grep, Glob, mcp__postgres__execute_sql, mcp__postgres__explain_query
 ---
 

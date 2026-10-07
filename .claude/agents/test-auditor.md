@@ -1,7 +1,7 @@
 ---
 name: test-auditor
 description: Audits tradeSence's tests for the gaps independent reviews keep finding: hollow tests that pass whether or not the feature works, missing failing cases, assertions on row counts instead of values, thresholds tested without their exact-boundary float case, rules in CLI files with no test at all. Use it on a branch before review, or on a test file someone doubts. Read-only except for running `bun test` from the repo root; proposes the exact tests to add.
-model: opus
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

@@ -68,7 +68,7 @@ checkers read only the changed files.
 | Owner-facing text only | `plain-language-editor` | no |
 | "Is it running?" / morning | `nightly-doctor` | no |
 
-**Token discipline (owner, 6 Oct 2026):** one reviewer per branch by default (data-integrity for data or study work; a code reviewer only for new pipelines or schema; test-auditor only when tests were written after code); cheaper models for nightly-doctor, plain-language-editor and test-auditor; never re-run checks the builder already ran; report the agent-token total at the end of each feature.
+**Token discipline (owner, 6 Oct 2026):** one reviewer per branch by default (data-integrity for data or study work; a code reviewer only for new pipelines or schema; test-auditor only when tests were written after code); Opus only for the agents that plan and think (quant-advisor, lead-engineer, technical-lead), Sonnet for every checker (owner, 7 Oct 2026); never re-run checks the builder already ran; report the agent-token total at the end of each feature.
 
 Workflows need the owner's opt-in to run ("run the review-spec workflow for …"); the main
 session can also run the same agents one by one when a workflow is overkill.
