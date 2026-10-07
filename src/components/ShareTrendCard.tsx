@@ -8,7 +8,7 @@ import { MIN_SECTOR_STOCKS, NEW_LISTING_MARK, type ShareBlocks, type ShareTrend 
 import type { SharePoint } from "@/query/money-flow";
 
 /** Sector · now · a year ago · change · each week. Phones keep sector, change and the small line. */
-const COLS = "grid-cols-[minmax(0,1fr)_4.5rem_5.5rem] sm:grid-cols-[minmax(0,14rem)_4.5rem_5.5rem_5.5rem_minmax(0,1fr)]";
+const COLS = "grid-cols-[minmax(0,1fr)_4.5rem_5.5rem] sm:grid-cols-[minmax(0,14rem)_4.5rem_5.5rem_5.5rem_minmax(0,1fr)] lg:grid-cols-[minmax(0,20rem)_4.5rem_5.5rem_5.5rem_minmax(0,1fr)]";
 const colHead = "text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const span = (from: string, to: string) => `${formatDayMonth(from)}–${formatDate(to)}`;
 
