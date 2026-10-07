@@ -138,7 +138,7 @@ try {
 // Money flow page (spec 2026-10-05): same universe and sectors as Top volume.
 try {
   const mf = await computeMoneyFlow();
-  console.log(`[nightly] money flow: ${mf.rows} rows, ${mf.weeks} sector-weeks as of ${mf.asOf}`);
+  console.log(`[nightly] money flow: ${mf.rows} rows, ${mf.weeks} sector-weeks, ${mf.shareRows} share-of-trading sectors as of ${mf.asOf}`);
 } catch (e) {
   console.warn(`[nightly] WARNING money flow not rebuilt: ${e instanceof Error ? e.message : e}`);
 }
