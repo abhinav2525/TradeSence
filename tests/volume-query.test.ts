@@ -129,3 +129,18 @@ describe("topVolume, rank by busy", () => {
     expect(rows.find((r) => r.symbol === "SMALLIT")!.busyRatio!).toBeCloseTo(20, 9);
   });
 });
+
+import { shortSessionsIn } from "../src/query/money-flow";
+describe("shortSessionsIn (Top volume's short-session note, any period)", () => {
+  test("a short session 40 market sessions back is inside 3 months, not inside 1 week", async () => {
+    for (const t of [schema.ingestLog, schema.shortSessions]) await db.delete(t);
+    const days: string[] = [];
+    const d = new Date("2026-05-01T00:00:00Z");
+    while (days.length < 70) { if (d.getUTCDay() % 6 !== 0) days.push(d.toISOString().slice(0, 10)); d.setUTCDate(d.getUTCDate() + 1); }
+    await db.insert(schema.ingestLog).values(days.map((x) => ({ tradeDate: x, source: "bhavcopy", status: "ok", format: "udiff", rowCount: 1 })));
+    const muhurat = days[days.length - 40]!;
+    await db.insert(schema.shortSessions).values({ tradeDate: muhurat, marketTurnover: 1, usualTurnover: 10 });
+    expect(await shortSessionsIn(63)).toEqual([muhurat]);
+    expect(await shortSessionsIn(5)).toEqual([]);
+  });
+});

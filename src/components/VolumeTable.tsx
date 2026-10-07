@@ -9,7 +9,7 @@ import type { LeaderRow, RankBy, SizeGroup } from "@/query/volume";
 export const SIZE_LABEL: Record<SizeGroup, string> = { large: "Large", mid: "Mid", small: "Small", micro: "Micro" };
 const head = "h-row-head px-3 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 
-/** The leaderboard. The ranked measure is bold; NIFTY 50 Report Cards are linked where one exists. */
+/** The leaderboard. The ranked measure is bold (₹, shares or × normal); Report Cards are linked where one exists. */
 const PERIOD_WORDS: Record<number, string> = { 1: "1 day", 5: "1 week", 21: "1 month", 63: "3 months", 126: "6 months" };
 
 export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }: { rows: LeaderRow[]; firstRank?: number; rank: RankBy; period: number; empty: string }) {
@@ -25,6 +25,7 @@ export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }
             <TableHead className={cn(head, "hidden sm:table-cell")}><Term id="size-group">Size</Term></TableHead>
             <TableHead className={cn(head, "text-right")}><Term id="value-traded">₹ traded</Term></TableHead>
             <TableHead className={cn(head, "hidden text-right sm:table-cell")}>Shares</TableHead>
+            <TableHead className={cn(head, "text-right")}><Term id="times-normal">× normal</Term>{period > 21 && <span className="block normal-case tracking-normal">(3 months before)</span>}</TableHead>
             <TableHead className={cn(head, "pr-card-x text-right md:pr-3")}>Price move, {PERIOD_WORDS[period] ?? `${period} sessions`}</TableHead>
             <TableHead className={cn(head, "hidden pr-card-x text-right md:table-cell")}><Term id="unusual-activity">Unusual days</Term> in period</TableHead>
           </TableRow>
@@ -52,6 +53,9 @@ export default function VolumeTable({ rows, firstRank = 1, rank, period, empty }
               </TableCell>
               <TableCell className={cn("hidden px-3 py-cell text-right text-body-sm sm:table-cell", rank === "shares" ? "font-semibold text-foreground" : "text-foreground-2")}>
                 {formatShares(r.shares)}
+              </TableCell>
+              <TableCell className={cn("px-3 py-cell text-right text-body-sm", rank === "busy" ? "font-semibold text-foreground" : "text-foreground-2")}>
+                {r.busyRatio === null ? "–" : `${r.busyRatio.toFixed(1)}×`}
               </TableCell>
               <TableCell className={cn("py-cell pl-3 pr-card-x text-right text-body-sm font-medium md:pr-3", r.changePct === null ? "text-muted-foreground" : r.changePct >= 0 ? "text-up" : "text-down")}>
                 {r.changePct === null ? "—" : `${signed(r.changePct, 1)}%`}

@@ -28,8 +28,8 @@ export async function withReportCard(symbols: string[]): Promise<Set<string>> {
   return new Set(r.map((x) => x.symbol));
 }
 
-/** Short special sessions inside the period's window, from the nightly short_sessions table. */
-export async function shortSessionsIn(period: FlowPeriod): Promise<string[]> {
+/** Short special sessions inside the last `period` market sessions (Money flow and Top volume), from the nightly short_sessions table. */
+export async function shortSessionsIn(period: number): Promise<string[]> {
   const days = (await db.execute<{ d: string }>(sql`
     select trade_date::text d from ingest_log where source = 'bhavcopy' and status = 'ok'
     order by trade_date desc limit ${period}`)).map((r) => r.d);

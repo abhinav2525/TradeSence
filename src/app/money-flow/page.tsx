@@ -4,7 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import Hotkeys from "@/components/Hotkeys";
 import SlidingPill from "@/components/SlidingPill";
 import Term from "@/components/Term";
-import FlowBars from "@/components/FlowBars";
+import FlowBars, { FLOW_COLS } from "@/components/FlowBars";
 import FlowStocks from "@/components/FlowStocks";
 import FlowHistoryChart from "@/components/FlowHistoryChart";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +12,14 @@ import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
-import { cleanFlowPeriod, cleanSector, sectorFlows, sectorStocks, type FlowPeriod } from "@/indicators/money-flow";
+import { cleanFlowPeriod, cleanLoud, cleanSector, marketBusier, sectorFlows, sectorStocks, shownRatio, sortSectors, type FlowPeriod } from "@/indicators/money-flow";
 import { moneyFlowRows, sectorHistory, shortSessionsIn, withReportCard } from "@/query/money-flow";
 
 export const dynamic = "force-dynamic";
 
 // Every search param is checked with strict comparisons and falls back to its
 // default (CLAUDE.md); `sector` must match a sector in tonight's rows, so nothing
-// else from the URL reaches SQL.
+// else from the URL reaches SQL. `loud` is on only for exactly "hide".
 function isMaKind(v: string | undefined): v is MaKind {
   return v === "sma200" || v === "ema200" || v === "sma50";
 }
@@ -35,13 +35,17 @@ const colHead = "text-[11px] font-medium uppercase tracking-[0.06em] text-muted-
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ ma?: string; period?: string; sector?: string }>;
+  searchParams: Promise<{ ma?: string; period?: string; sector?: string; loud?: string }>;
 }) {
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
   const period = cleanFlowPeriod(sp.period);
   const { asOf, rows } = await moneyFlowRows(period);
-  const { sectors, small } = sectorFlows(rows, period);
+  const hide = cleanLoud(sp.loud);
+  const flows = sectorFlows(rows, period);
+  const sectors = sortSectors(flows.sectors, hide);
+  const small = flows.small;
+  const market = marketBusier(rows, period);
   const sector = cleanSector(sp.sector, sectors.map((s) => s.sector));
   const short = asOf ? await shortSessionsIn(period) : [];
   const stocks = sector ? sectorStocks(rows, sector, period) : [];
@@ -49,13 +53,14 @@ export default async function Page({
   const picked = sectors.find((s) => s.sector === sector);
   const history = sector ? await sectorHistory(sector) : [];
 
-  const href = (p: { period?: FlowPeriod; sector?: string | null }) => {
+  const href = (p: { period?: FlowPeriod; sector?: string | null; hide?: boolean }) => {
     const q = new URLSearchParams({ ma, period: String(p.period ?? period) });
     const sec = p.sector === undefined ? sector : p.sector;
     if (sec) q.set("sector", sec);
+    if (p.hide ?? hide) q.set("loud", "hide");
     return `/money-flow?${q.toString()}${sec ? "#stocks" : ""}`;
   };
-  const busier = sectors.filter((s) => s.ratio !== null && s.ratio > 1).length;
+  const busier = sectors.filter((s) => (shownRatio(s, hide) ?? 0) > 1).length;
 
   return (
     <AppShell current="money-flow" ma={ma} asOf={asOf}>
@@ -85,6 +90,11 @@ export default async function Page({
                   </Link>
                 ))}
               </div>
+              <div className="seg relative inline-flex items-center gap-0.5 rounded-md border bg-raised p-0.5" role="group" aria-label="Loudest stock">
+                <SlidingPill active={hide ? "hide" : "all"} />
+                <Link href={href({ hide: false })} aria-pressed={!hide} className={cn(seg(!hide), "h-7 px-2.5 text-[12px]")}>All stocks</Link>
+                <Link href={href({ hide: true })} aria-pressed={hide} className={cn(seg(hide), "h-7 px-2.5 text-[12px]")}>Hide the loudest stock</Link>
+              </div>
               <Badge variant="neutral">{busier} of {sectors.length} sectors busier than usual</Badge>
             </div>
 
@@ -95,20 +105,29 @@ export default async function Page({
               <p className="mt-0.5 text-[12px] text-muted-foreground">
                 Each <Term id="nse-sector">sector</Term> against its own last 3 months; the line is 1× (a usual amount). Bar length: trading. Colour: price move (green: its stocks mostly rose; red: mostly fell). Heavy trading can be selling as much as buying. Pick a sector to see the stocks driving it.
               </p>
+              <p className="mt-2 text-[12px] text-foreground-2">
+                Whole market: {market.busier} of {market.counted} stocks <Term id="busier-count">busier</Term> than their own normal. In an ordinary week most stocks sit below their normal, because a few very busy days pull an average up.
+                {hide && <> Each bar now leaves out its sector&apos;s <Term id="loudest-stock">loudest stock</Term>.</>}
+              </p>
               {short.length > 0 && (
                 <p className="mt-2 rounded-md border bg-raised px-3 py-2 text-[12px] text-foreground-2">
                   {short.map(formatDate).join(", ")} {short.length === 1 ? "was a short special session" : "were short special sessions"} (such as Diwali Muhurat), when the whole market trades a fraction of a normal day. Every sector looks quieter {period === 1 ? "today" : "this period"} because of {short.length === 1 ? "it" : "them"}.
                 </p>
               )}
             </div>
-            <div className={cn("hidden gap-x-4 border-b px-card-x pb-2 sm:grid sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)_4rem_7.5rem_5rem]", colHead)}>
+            <div className={cn("hidden gap-x-4 border-b px-card-x pb-2 sm:grid", FLOW_COLS, colHead)}>
               <span>Sector</span>
               <span />
               <span className="text-right">vs normal</span>
               <span className="text-right"><Term id="share-of-trading">Share of all trading</Term> (usual)</span>
               <span className="text-right">Typical stock&apos;s price move</span>
             </div>
-            <FlowBars sectors={sectors} selected={sector} hrefFor={(s) => href({ sector: s === sector ? null : s })} />
+            <FlowBars sectors={sectors} selected={sector} hideLoudest={hide} hrefFor={(s) => href({ sector: s === sector ? null : s })} />
+            {hide && (
+              <p className="border-t px-card-x py-2 text-[12px] text-foreground-2">
+                Taking out a sector&apos;s biggest mover usually lowers its number. Compare sectors with each other, not one sector with and without it.
+              </p>
+            )}
             <CardFooter>
               About 750 Nifty Total Market stocks, with NSE&apos;s sectors.
               {small.length > 0 && ` Left out (fewer than 5 stocks): ${small.join(", ")}.`}

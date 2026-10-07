@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
 import { INDEX_LISTS, UNIVERSE_KEY } from "@/ingest/index-constituents";
 import type { Period } from "@/indicators/volume-leaders";
-import { PAGE_SIZE, pageOfRows, sectorsPresent, topVolume, type RankBy, type SizeGroup } from "@/query/volume";
+import { BUSY_PERIODS, PAGE_SIZE, cleanRank, pageOfRows, sectorsPresent, topVolume, type SizeGroup } from "@/query/volume";
+import { shortSessionsIn } from "@/query/money-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -26,9 +27,6 @@ const PERIOD_LABEL: Record<Period, string> = { 1: "1 day", 5: "1 week", 21: "1 m
 const PERIOD_SHORT: Record<Period, string> = { 1: "1D", 5: "1W", 21: "1M", 63: "3M", 126: "6M" }; // phones: one row
 function cleanPeriod(v: string | undefined): Period {
   return v === "1" ? 1 : v === "5" ? 5 : v === "63" ? 63 : v === "126" ? 126 : 21;
-}
-function cleanRank(v: string | undefined): RankBy {
-  return v === "shares" ? "shares" : "value";
 }
 function cleanSize(v: string | undefined): SizeGroup | null {
   return v === "large" || v === "mid" || v === "small" || v === "micro" ? v : null;
@@ -56,12 +54,14 @@ export default async function Page({
   const sp = await searchParams;
   const ma: MaKind = isMaKind(sp.ma) ? sp.ma : "sma200";
   const period = cleanPeriod(sp.period);
-  const rank = cleanRank(sp.rank);
+  const rank = cleanRank(sp.rank, period);
   const size = cleanSize(sp.size);
   const sectors = await sectorsPresent();
   const sector = sp.sector && sectors.includes(sp.sector) ? sp.sector : null;
   const indexKey = sp.index && PICKABLE.some((x) => x.key === sp.index) ? sp.index : null;
-  const { asOf, rows } = await topVolume({ period, rank, size, sector, indexKey });
+  const { asOf, rows, leftOut } = await topVolume({ period, rank, size, sector, indexKey });
+  const short = asOf ? await shortSessionsIn(period) : [];
+  const busyOffered = BUSY_PERIODS.includes(period);
   const wantedPage = /^[1-9][0-9]{0,2}$/.test(sp.page ?? "") ? Number(sp.page) : 1;
   const pg = pageOfRows(rows, wantedPage);
 
@@ -109,6 +109,9 @@ export default async function Page({
                   <SlidingPill active={rank} />
                   <Link href={href({ rank: "value" })} aria-pressed={rank === "value"} className={cn(seg(rank === "value"), "h-7 px-2.5 text-[12px]")}>₹ value</Link>
                   <Link href={href({ rank: "shares" })} aria-pressed={rank === "shares"} className={cn(seg(rank === "shares"), "h-7 px-2.5 text-[12px]")}>Shares</Link>
+                  {busyOffered && (
+                    <Link href={href({ rank: "busy" })} aria-pressed={rank === "busy"} className={cn(seg(rank === "busy"), "h-7 px-2.5 text-[12px]")}>Unusually busy</Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -149,8 +152,21 @@ export default async function Page({
                 <Term id="top-volume">Most traded</Term> over {PERIOD_LABEL[period]} to {formatDate(asOf)}
               </h2>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
-                Ranked by {rank === "value" ? "rupees traded" : "shares traded"}{filterNote ? ` · ${filterNote}` : ""}.
+                Ranked by {rank === "value" ? "rupees traded" : rank === "shares" ? "shares traded" : <><Term id="times-normal">× normal</Term>, how busy each stock was against its own usual</>}{filterNote ? ` · ${filterNote}` : ""}.
+                {" "}Shares favour low-priced stocks; ₹ compares companies on the same footing.
               </p>
+              {rank === "busy" && (
+                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  {leftOut > 0 && <>{leftOut} {leftOut === 1 ? "stock that usually trades" : "stocks that usually trade"} under ₹5 crore a day, or {leftOut === 1 ? "is" : "are"} too new for a normal, {leftOut === 1 ? "isn't" : "aren't"} ranked here. </>}
+                  {period === 1 && "Index rebalance days and ex-dates often top this list. "}
+                  Busy is not a forecast: heavy trading did not predict the next move in tradeSence&apos;s studies.
+                </p>
+              )}
+              {short.length > 0 && (
+                <p className="mt-2 rounded-md border bg-raised px-3 py-2 text-[12px] text-foreground-2">
+                  {short.map(formatDate).join(", ")} {short.length === 1 ? "was a short special session" : "were short special sessions"} (such as Diwali Muhurat), when the whole market trades a fraction of a normal day. Every stock&apos;s × normal looks lower {period === 1 ? "today" : "this period"} because of {short.length === 1 ? "it" : "them"}.
+                </p>
+              )}
             </div>
             <Badge variant="neutral">{rows.length} {rows.length === 1 ? "stock" : "stocks"}</Badge>
           </div>
