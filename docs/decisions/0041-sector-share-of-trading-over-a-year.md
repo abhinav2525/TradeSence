@@ -1,6 +1,6 @@
 # 0041 — Sector share of trading over a year (Money flow)
 
-**Date:** 2026-10-07 · **Status:** built (branch `feat/sector-share-year`, awaiting review) ·
+**Date:** 2026-10-07 · **Status:** done (reviewed and merged 16 Oct 2026) ·
 **Spec:** `docs/superpowers/specs/2026-10-07-sector-share-of-trading-design.md` (owner approved, 3-month blocks)
 
 ## Problem
@@ -115,8 +115,25 @@ sectors are taking a bigger slice of all the money traded, and which a smaller o
   demerged during the year counts whole a year ago and only its remaining part now; the row
   says so but the number is not corrected.
 - The total is today's Nifty Total Market stocks (~750), not the whole exchange.
+- A stock that listed partway through the year-ago block (even one traded session there) is
+  not counted as a new listing, yet it only contributes part of a block a year ago, so its
+  sector can look like it gained a little more than it did.
 - Tracking only: a bigger slice can be heavy selling. It says where trading went, not where
   prices go.
+
+## Found by the independent review (fixed)
+
+The final code review (16 Oct 2026) found the share maths, block dates, demerger flag and
+nightly failure handling correct. One wording slip was fixed: the live example on `/learn`
+always called the last row "the biggest loss" and the first "the biggest gain". Because the
+small sectors sit outside the rows, every shown sector can move the same way, so it could
+have called a growing sector a loss. It now names a gain only if it gained and a loss only if
+it lost (test in `glossary-live`).
+
+Left as small follow-ups: `sector_share_year` is not in the nightly statistics-refresh list
+(`NIGHTLY_ANALYZE`; tiny table, no visible effect); no end-to-end test with a non-zero
+new-listing share; green and red mark a share gain or loss, though elsewhere in the app those
+colours mean price direction (an owner design call).
 
 ## Revisit when
 

@@ -164,9 +164,15 @@ async function build(id: TermId): Promise<string | null> {
           : `${span}: ${top.newListingPct.toFixed(0)}% of ${possessive(top.sector)} trading was in stocks that weren't trading a year earlier, the most of any sector.`;
       }
       const line = (r: (typeof rows)[number]) => `${r.sector} ${r.agoPct!.toFixed(1)}% → ${r.nowPct.toFixed(1)}% (${signed(r.changePts!, 1)} pts)`;
+      // The small-sectors bucket sits outside the rows, so every shown row can move the same way:
+      // name a gain only if it gained and a loss only if it lost.
       const gain = rows[0], loss = rows.at(-1);
-      if (!gain || gain.changePts === null || !loss || loss === gain) return null;
-      return `${span} against the same dates in ${y.blocks.agoTo.slice(0, 4)}: ${line(gain)}, the biggest gain; ${line(loss)}, the biggest loss.`;
+      const parts = [
+        gain?.changePts != null && gain.changePts > 0 ? `${line(gain)}, the biggest gain` : null,
+        loss && loss !== gain && loss.changePts != null && loss.changePts < 0 ? `${line(loss)}, the biggest loss` : null,
+      ].filter(Boolean);
+      if (parts.length === 0) return null;
+      return `${span} against the same dates in ${y.blocks.agoTo.slice(0, 4)}: ${parts.join("; ")}.`;
     }
     case "times-normal": {
       const v = await topVolume({ period: 5, rank: "busy", size: null, sector: null, indexKey: null });
