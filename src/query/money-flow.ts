@@ -2,7 +2,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
 import { CARD_INDEX_NAMES } from "./card-indices";
-import type { FlowPeriod, FlowRow } from "../indicators/money-flow";
+import type { FlowPeriod, FlowRow, ShareBlocks, ShareYearRow } from "../indicators/money-flow";
 
 export async function moneyFlowRows(period: FlowPeriod): Promise<{ asOf: string | null; rows: FlowRow[] }> {
   const rows = await db.execute<{ symbol: string; sector: string; turnover: number; normal_daily: number | null; change_pct: number | null }>(sql`
@@ -39,14 +39,49 @@ export async function shortSessionsIn(period: number): Promise<string[]> {
   return r.map((x) => x.d);
 }
 
-export type HistoryPoint = { weekEnd: string; ratio: number | null; medianMove: number | null; shortSession: boolean };
+export type HistoryPoint = { weekEnd: string; ratio: number | null; medianMove: number | null; shortSession: boolean; sharePct: number | null };
 
-/** One sector's weekly trading vs normal, oldest first (sector_flow_weeks, keyed by sector then week). */
+const sharePct = (turnover: number, total: number) => (Number(total) > 0 ? (100 * Number(turnover)) / Number(total) : null);
+
+/** One sector's weekly trading vs normal and share of all trading, oldest first (sector_flow_weeks, keyed by sector then week). */
 export async function sectorHistory(sector: string): Promise<HistoryPoint[]> {
-  const r = await db.execute<{ week_end: string; ratio: number | null; median_move: number | null; short_session: boolean }>(sql`
-    select week_end::text, ratio, median_move, short_session from sector_flow_weeks where sector = ${sector} order by week_end`);
+  const r = await db.execute<{ week_end: string; ratio: number | null; median_move: number | null; short_session: boolean; turnover: number; total_turnover: number }>(sql`
+    select week_end::text, ratio, median_move, short_session, turnover, total_turnover from sector_flow_weeks where sector = ${sector} order by week_end`);
   return r.map((x) => ({
     weekEnd: x.week_end, ratio: x.ratio === null ? null : Number(x.ratio),
     medianMove: x.median_move === null ? null : Number(x.median_move), shortSession: x.short_session,
+    sharePct: sharePct(x.turnover, x.total_turnover),
   }));
+}
+
+export type SharePoint = { weekEnd: string; sharePct: number | null };
+
+/** Every sector's weekly share of all trading in %, oldest first: the Share-of-trading card's small lines (one query). */
+export async function shareHistory(): Promise<Map<string, SharePoint[]>> {
+  const r = await db.execute<{ sector: string; week_end: string; turnover: number; total_turnover: number }>(sql`
+    select sector, week_end::text, turnover, total_turnover from sector_flow_weeks order by sector, week_end`);
+  const out = new Map<string, SharePoint[]>();
+  for (const x of r) (out.get(x.sector) ?? out.set(x.sector, []).get(x.sector)!).push({ weekEnd: x.week_end, sharePct: sharePct(x.turnover, x.total_turnover) });
+  return out;
+}
+
+/** The nightly sector_share_year rows and their two blocks; null when empty (under a year of history). */
+export async function shareYear(): Promise<{ blocks: ShareBlocks; rows: ShareYearRow[] } | null> {
+  const r = await db.execute<{
+    sector: string; stocks: number; now_turnover: number; now_total: number; ago_turnover: number; ago_total: number;
+    new_listing_turnover: number; demerged: { symbol: string; exDate: string }[]; now_from: string; now_to: string; ago_from: string; ago_to: string;
+  }>(sql`
+    select sector, stocks, now_turnover, now_total, ago_turnover, ago_total, new_listing_turnover, demerged,
+           now_from::text, now_to::text, ago_from::text, ago_to::text
+    from sector_share_year order by sector`);
+  const first = r[0];
+  if (!first) return null;
+  return {
+    blocks: { nowFrom: first.now_from, nowTo: first.now_to, agoFrom: first.ago_from, agoTo: first.ago_to },
+    rows: r.map((x) => ({
+      sector: x.sector, stocks: Number(x.stocks), nowTurnover: Number(x.now_turnover), nowTotal: Number(x.now_total),
+      agoTurnover: Number(x.ago_turnover), agoTotal: Number(x.ago_total), newListingTurnover: Number(x.new_listing_turnover),
+      demerged: (x.demerged ?? []).map((d) => ({ symbol: String(d.symbol), exDate: String(d.exDate) })),
+    })),
+  };
 }

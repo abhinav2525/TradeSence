@@ -22,6 +22,9 @@ export type History = {
   delivered: (number | null)[]; // shares delivered (raw; multiply by shareFactors like volume)
   factors: number[]; // divide a raw price by this for the adjusted series
   shareFactors: number[]; // multiply raw volume by this (splits/bonuses only, never demergers)
+  // Ex-dates of every demerger found through the lineage, priced or not (oldest first). Optional so hand-built
+  // fixtures needn't carry it; loadAdjustedHistory always fills it. Money flow flags them (decision 0041).
+  demergers?: string[];
 };
 
 /** `symbol = s` restricted to the dates that symbol belonged to this company. */
@@ -122,5 +125,6 @@ export async function loadAdjustedHistory(
     // Volume is scaled by share-count changes only: a demerger moves the price
     // but leaves the number of shares alone (decision 0008).
     shareFactors: adjustmentFactors(dates, events.filter((e) => !e.demerger)),
+    demergers: [...new Set(eventRows.filter((e) => e.kind === "demerger").map((e) => String(e.ex_date)))].sort(),
   };
 }

@@ -3,17 +3,19 @@
  * loadAdjustedHistory (renames; EQ and BE, decision 0025), in one transaction:
  * - money_flow: ₹ traded over the last 1/5/21 sessions and the normal before each;
  * - sector_flow_weeks: each sector's 1-week reading for the last 52 weeks;
- * - short_sessions: Muhurat / special-Saturday sessions (market-wide ₹ under half usual).
+ * - short_sessions: Muhurat / special-Saturday sessions (market-wide ₹ under half usual);
+ * - sector_share_year: each sector's ₹ over the last 63 sessions and the same calendar span a year earlier (0041).
  */
 import { eq, sql as dsql } from "drizzle-orm";
 import { db, schema } from "../db";
 import { loadAdjustedHistory, loadRenames, type History } from "./history";
 import {
-  FLOW_PERIODS, HISTORY_WEEKS, NORMAL_SESSIONS, flowStats, flowWindows, marketTotals, shortSessionRows, weekWindows, weeklySectorFlows,
+  HISTORY_WEEKS, NORMAL_SESSIONS, flowStats, flowWindows, marketTotals, newListings, sectorShareYear, shareBlocks, shortSessionRows, weekWindows, weeklySectorFlows,
 } from "./money-flow";
 
-// 52 weeks + the oldest week's normal + 63 more so shortSessions can judge the oldest week's days
-const SESSIONS = HISTORY_WEEKS * 5 + NORMAL_SESSIONS + 63;
+// 52 weeks + the oldest week's normal + 63 more so shortSessions can judge the oldest week's days. 386 sessions is
+// about 1.55 years: it also reaches before the share's year-ago block (63 sessions + one calendar year ≈ 311).
+export const SESSIONS = HISTORY_WEEKS * 5 + NORMAL_SESSIONS + 63;
 
 /** The part of a history from `from` on: what the weekly history needs, without keeping 10 years per stock. */
 function since(h: History, from: string): History {
@@ -23,15 +25,16 @@ function since(h: History, from: string): History {
   return {
     dates: cut(h.dates), open: cut(h.open), high: cut(h.high), low: cut(h.low), close: cut(h.close), volume: cut(h.volume),
     turnover: cut(h.turnover), traded: cut(h.traded), delivered: cut(h.delivered), factors: cut(h.factors), shareFactors: cut(h.shareFactors),
+    demergers: h.demergers, // dates, not a series: kept whole
   };
 }
 
-export async function computeMoneyFlow(opts: { symbols?: string[] } = {}): Promise<{ rows: number; weeks: number; shortSessions: number; asOf: string | null }> {
+export async function computeMoneyFlow(opts: { symbols?: string[] } = {}): Promise<{ rows: number; weeks: number; shortSessions: number; shareRows: number; asOf: string | null }> {
   const days = (await db.execute<{ d: string }>(dsql`
     select trade_date::text d from ingest_log where source = 'bhavcopy' and status = 'ok'
     order by trade_date desc limit ${SESSIONS}`)).map((r) => r.d);
   const w = flowWindows(days);
-  if (!w) return { rows: 0, weeks: 0, shortSessions: 0, asOf: null };
+  if (!w) return { rows: 0, weeks: 0, shortSessions: 0, shareRows: 0, asOf: null };
   const members = await db.select({ symbol: schema.indexConstituents.symbol, sector: schema.indexConstituents.industry })
     .from(schema.indexConstituents).where(eq(schema.indexConstituents.indexKey, "total-market"));
   const wanted = opts.symbols ? members.filter((m) => opts.symbols!.includes(m.symbol)) : members;
@@ -48,15 +51,19 @@ export async function computeMoneyFlow(opts: { symbols?: string[] } = {}): Promi
     kept.push({ symbol, sector, h });
   }
   const short = shortSessionRows(marketTotals(kept.map((k) => k.h), oldest));
-  const weeks = weeklySectorFlows(kept, weekWindows(days), new Set(short.map((s) => s.date)));
+  const blocks = shareBlocks(days);
+  const weeks = weeklySectorFlows(kept, weekWindows(days), new Set(short.map((s) => s.date)), blocks ? newListings(kept, blocks) : null);
+  const share = blocks ? sectorShareYear(kept, blocks).map((r) => ({ ...r, ...blocks })) : [];
 
   await db.transaction(async (tx) => {
     await tx.delete(schema.moneyFlow);
     await tx.delete(schema.sectorFlowWeeks);
     await tx.delete(schema.shortSessions);
+    await tx.delete(schema.sectorShareYear);
     for (let i = 0; i < rows.length; i += 1000) await tx.insert(schema.moneyFlow).values(rows.slice(i, i + 1000));
     if (weeks.length) await tx.insert(schema.sectorFlowWeeks).values(weeks);
+    if (share.length) await tx.insert(schema.sectorShareYear).values(share);
     if (short.length) await tx.insert(schema.shortSessions).values(short.map((s) => ({ tradeDate: s.date, marketTurnover: s.turnover, usualTurnover: s.usual })));
   });
-  return { rows: rows.length, weeks: weeks.length, shortSessions: short.length, asOf: w.asOf };
+  return { rows: rows.length, weeks: weeks.length, shortSessions: short.length, shareRows: share.length, asOf: w.asOf };
 }

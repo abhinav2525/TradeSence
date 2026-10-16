@@ -7,13 +7,15 @@ import Term from "@/components/Term";
 import FlowBars, { FLOW_COLS } from "@/components/FlowBars";
 import FlowStocks from "@/components/FlowStocks";
 import FlowHistoryChart from "@/components/FlowHistoryChart";
+import ShareHistoryChart from "@/components/ShareHistoryChart";
+import ShareTrendCard from "@/components/ShareTrendCard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardFooter } from "@/components/ui/card";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MaKind } from "@/query/breadth";
-import { cleanFlowPeriod, cleanLoud, cleanSector, marketBusier, sectorFlows, sectorStocks, shownRatio, sortSectors, type FlowPeriod } from "@/indicators/money-flow";
-import { moneyFlowRows, sectorHistory, shortSessionsIn, withReportCard } from "@/query/money-flow";
+import { cleanFlowPeriod, cleanLoud, cleanSector, marketBusier, sectorFlows, sectorStocks, shareChange, shownRatio, sortSectors, type FlowPeriod } from "@/indicators/money-flow";
+import { moneyFlowRows, sectorHistory, shareHistory, shareYear, shortSessionsIn, withReportCard } from "@/query/money-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +54,9 @@ export default async function Page({
   const withCard = await withReportCard(stocks.map((s) => s.symbol));
   const picked = sectors.find((s) => s.sector === sector);
   const history = sector ? await sectorHistory(sector) : [];
+  // Share of trading over a year: independent of the period tab (decision 0041)
+  const year = asOf ? await shareYear() : null;
+  const lines = year ? await shareHistory() : new Map();
 
   const href = (p: { period?: FlowPeriod; sector?: string | null; hide?: boolean }) => {
     const q = new URLSearchParams({ ma, period: String(p.period ?? period) });
@@ -135,6 +140,9 @@ export default async function Page({
             </CardFooter>
           </Card>
 
+          <ShareTrendCard trend={year ? shareChange(year.rows) : null} blocks={year?.blocks ?? null} lines={lines}
+            hrefFor={(s) => href({ sector: s })} />
+
           {picked && (
             <Card id="stocks" className="overflow-hidden">
               <div className="flex items-start justify-between gap-3 px-card-x pb-2 pt-4">
@@ -151,6 +159,14 @@ export default async function Page({
                   ? <FlowHistoryChart data={history} />
                   : <p className="py-6 text-body-sm text-muted-foreground">No history yet for this sector.</p>}
               </div>
+              {history.some((h) => h.sharePct !== null) && (
+                <div className="px-card-x pb-3">
+                  <h3 className="text-[12px] font-medium text-foreground-2">
+                    Its <Term id="share-of-trading">share of all trading</Term>, each week
+                  </h3>
+                  <ShareHistoryChart data={history} />
+                </div>
+              )}
               <CardFooter>Uses today&apos;s Nifty Total Market stocks and sectors for the whole year; each sector is compared with its own past on the same stocks.</CardFooter>
             </Card>
           )}

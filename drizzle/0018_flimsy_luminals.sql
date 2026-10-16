@@ -1,0 +1,1 @@
+ALTER TABLE "sector_share_year" ADD COLUMN "demerged" jsonb DEFAULT '[]'::jsonb NOT NULL;

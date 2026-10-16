@@ -66,4 +66,23 @@ describe("loadAdjustedHistory", () => {
   test("no prices: null", async () => {
     expect(await loadAdjustedHistory("NOPE", [])).toBeNull();
   });
+
+  test("demerger ex-dates through the lineage: filed under today's symbol or the old one in its window; never another company's", async () => {
+    await db.insert(schema.dailyPrices).values([
+      bar("2025-10-01", "OLDTM", 600, 100), bar("2025-10-14", "OLDTM", 400, 100), bar("2025-10-30", "NEWTM", 400, 100),
+    ]);
+    await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDTM", newSymbol: "NEWTM", changedOn: "2025-10-24" });
+    await db.insert(schema.corporateActions).values([
+      // NSE files the past demerger under today's symbol
+      { symbol: "NEWTM", exDate: "2025-10-14", subject: "Demerger", series: "EQ", kind: "demerger", factor: 1 },
+      // filed under the old symbol while it was that company's: counts
+      { symbol: "OLDTM", exDate: "2025-10-02", subject: "Demerger of unit B", series: "EQ", kind: "demerger", factor: 1 },
+      // the old ticker after the rename (reused by someone else): doesn't
+      { symbol: "OLDTM", exDate: "2026-02-02", subject: "Demerger", series: "EQ", kind: "demerger", factor: 1 },
+      { symbol: "NEWTM", exDate: "2025-10-20", subject: "Bonus 1:1", series: "EQ", kind: "bonus", factor: 2 },
+    ]);
+    const h = (await loadAdjustedHistory("NEWTM", await loadRenames(), { series: ["EQ", "BE"] }))!;
+    expect(h.demergers).toEqual(["2025-10-02", "2025-10-14"]);
+  });
 });
+

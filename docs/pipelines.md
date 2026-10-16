@@ -232,13 +232,13 @@ that looks like a holiday is re-checked for 2 days in case NSE was just late.
 
 | | |
 |---|---|
-| **What** | Per Nifty Total Market stock and window (last 1/5/21 market sessions): ₹ traded, its normal ₹ per session over the 63 sessions before the window (needs 40 traded), price move, NSE sector (the page sums per sector). Plus each sector's 1-week reading for the last 52 weeks, and short special sessions (market-wide ₹ under half usual) |
-| **Writes** | `money_flow` (~2,250 rows), `sector_flow_weeks` (~1,000), `short_sessions` (a few), replaced together in one transaction; then `ANALYZE` of every table rebuilt nightly |
+| **What** | Per Nifty Total Market stock and window (last 1/5/21 market sessions): ₹ traded, its normal ₹ per session over the 63 sessions before the window (needs 40 traded), price move, NSE sector (the page sums per sector). Plus each sector's 1-week reading for the last 52 weeks (with its ₹ and the universe's total ₹ that week, for the share line), short special sessions (market-wide ₹ under half usual), and each sector's ₹ over the last 63 sessions vs the same calendar span a year earlier (decision 0041) |
+| **Writes** | `money_flow` (~2,250 rows), `sector_flow_weeks` (~1,000; `turnover`, `total_turnover`, `new_listing_turnover` since 0041), `short_sessions` (a few), `sector_share_year` (~19; empty without a year of history), replaced together in one transaction; then `ANALYZE` of every table rebuilt nightly |
 | **Nightly** | ✅ After Top volume, ~10 s |
 | **By hand** | `bun run money-flow` |
 | **Used by** | `/money-flow` |
 | **Code** | `src/indicators/money-flow.ts`, `compute-money-flow.ts`; `src/query/money-flow.ts` |
-| **Why** | [0028](decisions/0028-money-flow.md), [0029](decisions/0029-money-flow-history-and-db-tidy.md) |
+| **Why** | [0028](decisions/0028-money-flow.md), [0029](decisions/0029-money-flow-history-and-db-tidy.md), [0041](decisions/0041-sector-share-of-trading-over-a-year.md) |
 
 ## 16. Breadth beyond the NIFTY 50
 

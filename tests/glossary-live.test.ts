@@ -4,7 +4,7 @@ import { liveExample } from "../src/query/glossary-live";
 import { GLOSSARY, type TermId } from "../src/lib/glossary";
 
 async function empty() {
-  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges, schema.unusualDays, schema.dailyDelivery, schema.volumeLeaders, schema.moneyFlow, schema.sectorFlowWeeks, schema.shortSessions, schema.breadthDaily, schema.indexConstituents]) await db.delete(t);
+  for (const t of [schema.dailyIndicators, schema.indexMembers, schema.indexPrices, schema.corporateActions, schema.symbolChanges, schema.unusualDays, schema.dailyDelivery, schema.volumeLeaders, schema.moneyFlow, schema.sectorFlowWeeks, schema.sectorShareYear, schema.shortSessions, schema.breadthDaily, schema.indexConstituents]) await db.delete(t);
 }
 
 describe("liveExample", () => {
@@ -63,6 +63,27 @@ describe("liveExample", () => {
     await db.insert(schema.indexConstituents).values([{ indexKey: "total-market", symbol: "SUNTV", industry: "Media", fetchedOn: "2026-10-06" }]);
     await db.insert(schema.volumeLeaders).values({ asOf: "2026-10-06", symbol: "SUNTV", period: 5, turnover: 50e8, shares: 1, changePct: 1, sessions: 5, unusualDays: 0, normalDaily: 1e8 });
     expect(await liveExample("times-normal")).toBe("Week to 6 Oct 2026: SUNTV was the most unusually busy stock, at 10.0× its normal.");
+  });
+
+  test("share of trading over a year and new-listing share read sector_share_year", async () => {
+    const b = { nowFrom: "2026-07-08", nowTo: "2026-10-06", agoFrom: "2025-07-08", agoTo: "2025-10-06" };
+    const r = (sector: string, now: number, ago: number, fresh: number) =>
+      ({ sector, stocks: 10, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: fresh, ...b });
+    await db.insert(schema.sectorShareYear).values([r("Consumer Durables", 52, 36, 2), r("Consumer Services", 56, 64, 11.2), r("Auto", 72, 92, 0)]);
+    expect(await liveExample("share-of-trading-trend")).toBe("8 Jul–6 Oct 2026 against the same dates in 2025: Consumer Durables 3.6% → 5.2% (+1.6 pts), the biggest gain; Auto 9.2% → 7.2% (−2.0 pts), the biggest loss.");
+    expect(await liveExample("new-listing-share")).toBe("8 Jul–6 Oct 2026: 20% of Consumer Services' trading was in stocks that weren't trading a year earlier, the most of any sector.");
+  });
+
+  test("share of trading never calls a gaining sector a loss, or a losing one a gain", async () => {
+    // the small-sectors bucket (outside the rows) takes the other side, so every shown row can move one way
+    const b = { nowFrom: "2026-07-08", nowTo: "2026-10-06", agoFrom: "2025-07-08", agoTo: "2025-10-06" };
+    const r = (sector: string, now: number, ago: number) =>
+      ({ sector, stocks: 10, nowTurnover: now, nowTotal: 1000, agoTurnover: ago, agoTotal: 1000, newListingTurnover: 0, ...b });
+    await db.insert(schema.sectorShareYear).values([r("Consumer Durables", 52, 36), r("Chemicals", 33, 30)]);
+    expect(await liveExample("share-of-trading-trend")).toBe("8 Jul–6 Oct 2026 against the same dates in 2025: Consumer Durables 3.6% → 5.2% (+1.6 pts), the biggest gain.");
+    await db.delete(schema.sectorShareYear);
+    await db.insert(schema.sectorShareYear).values([r("Auto", 72, 92), r("Realty", 13, 18)]);
+    expect(await liveExample("share-of-trading-trend")).toBe("8 Jul–6 Oct 2026 against the same dates in 2025: Auto 9.2% → 7.2% (−2.0 pts), the biggest loss.");
   });
 
   test("membership comes from the committed history file", async () => {

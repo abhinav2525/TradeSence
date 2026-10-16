@@ -47,6 +47,7 @@ describe("the glossary", () => {
     for (const id of ["money-flow", "trading-vs-normal", "share-of-trading"]) expect(isTermId(id)).toBe(true);
     expect(isTermId("whole-market-breadth")).toBe(true);
     for (const id of ["busier-count", "loudest-stock", "times-normal"]) expect(isTermId(id)).toBe(true); // decision 0040
+    for (const id of ["share-of-trading-trend", "new-listing-share"]) expect(isTermId(id)).toBe(true); // decision 0041
     expect(isTermId("nifty-bank")).toBe(true); // the index selector (decision 0034)
     expect(isTermId("nifty-financial-services")).toBe(true); // decision 0037
   });

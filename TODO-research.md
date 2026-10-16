@@ -46,7 +46,8 @@ Full reasoning and the queries behind the numbers: `docs/proposals/`.
 - [ ] **MF-3. Delivery share by sector vs the market's change** (tracking, 1–1½ days; already
   on TODO.md "Later"). IT 61.2% vs 39.1% normal while all ~750 went 36.4% to 43.7%. Weight by ₹,
   not shares. Skip `EXCLUDED_DAYS`. Not a buying signal (research 0003).
-- [ ] **MF-4. Sector share of trading over 52 weeks** (tracking, ~1 day). Same 4 weeks:
+- [x] **MF-4. Sector share of trading over 52 weeks** (tracking, ~1 day). → picked and built 7 Oct
+  (decision 0041, branch `feat/sector-share-year`; shipped as 3-month blocks on the same calendar dates). Same 4 weeks:
   Financial Services 23.4% to 26.1%, IT 8.1% to 6.3% (2025 to 2026). Trap: today's members
   (new listings inflate 2026), so state it under the chart.
 - [ ] **MF-5. Optional study: do busy weeks stay jumpy?** (predictive, ~2 days, prior high
