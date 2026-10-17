@@ -1,6 +1,6 @@
 # Loudest stock (Money flow) and "Unusually busy" (Top volume) — design
 
-**Date:** 2026-10-07 · **Status:** reviewed by both advisors (approve with changes, all taken); awaiting owner approval · **Path:** feature (two
+**Date:** 2026-10-07 · **Status:** reviewed by both advisors (approve with changes, all taken); approved by the owner and built (decision 0040) · **Path:** feature (two
 existing pages; one new column on an existing nightly table)
 **Source:** quant advisor's proposal `docs/proposals/2026-10-07-money-flow-and-top-volume-next.md`,
 ideas 1 and 2 plus "misleading today" item 2. The owner chose all three ("yes write it, include idea 2 too")

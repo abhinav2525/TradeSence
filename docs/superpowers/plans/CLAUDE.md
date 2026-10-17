@@ -21,13 +21,21 @@ executing-plans skill.
 | `2026-10-04-unusual-activity.md` | Builds `/activity`: `src/indicators/activity.ts` (maths moved out of research), `unusual_days` table, Report Card card |
 | `2026-10-04-volume-whole-market.md` | Builds research 0004: `src/research/volume-market.ts`, `cli-volume-market.ts`, the charts page |
 | `2026-10-04-top-volume.md` | Builds `/volume`: `src/ingest/index-constituents.ts`, `src/indicators/volume-leaders.ts`, `index_constituents` and `volume_leaders` tables |
+| `2026-10-04-volume-or-jump.md` | Builds research 0005: `src/research/volume-or-jump.ts` (move bands, size thirds, matching groups, regression), `cli-volume-or-jump.ts`, the charts page |
+| `2026-10-05-money-flow.md`, `2026-10-05-money-flow-history.md` | Build `/money-flow` (`src/indicators/money-flow.ts`, `money_flow` table) and its 12-month weekly line (`sector_flow_weeks`, `short_sessions`) |
+| `2026-10-05-breadth-universes.md` | Builds breadth for the whole market and every NSE index list: `src/indicators/breadth-universes.ts`, `breadth_daily` |
+| `2026-10-05-bank-finservice-indices.md` | Nifty Bank and Nifty Financial Services on true membership: the `src/ingest/indices.ts` registry, step A (data, five pages) and step B (Report Cards, Signals) |
+| `2026-10-06-bank-step-b.md`, `2026-10-06-finservice.md` | Step B expanded task by task; the third index (Nifty Financial Services) and making every "two indices" place generic |
+| `2026-10-07-loudest-stock-busy-sort.md` | Money flow's "Hide the loudest stock" switch and Top volume's "Unusually busy" sort: shared `normalDaily`, `volume_leaders.normal_daily` |
+| `2026-10-07-sector-share-of-trading.md` | A sector's share of trading over a year on Money flow: `sector_share_year`, extra `sector_flow_weeks` columns |
 
 ## Rules here
-- Each plan opens with Goal, Architecture, Tech Stack, `**Spec:**` path, `## Global Constraints` and (from 2026-10-03) `## Review Focus`, then TDD tasks as `- [ ]` checkboxes.
-- The checkboxes were never ticked; all eleven plans shipped. Progress was tracked in a git-ignored ledger, not in these files. Don't read an open box as unfinished work.
+- Each plan opens with Goal, Architecture, Tech Stack, `**Spec:**` path, `## Global Constraints` and (from 2026-10-03) `## Review Focus`, then TDD tasks as `- [ ]` checkboxes. The two 2026-10-07 plans are shorter and have no checkboxes.
+- The checkboxes were never ticked; all twenty plans shipped. Progress was tracked in a git-ignored ledger, not in these files. Don't read an open box as unfinished work.
 - Plans are historical: rulings during the build and review fixes changed some details (e.g. the app-motion plan's `loading.tsx` skeleton was dropped, decision 0015; the Signals bar-chart label moved into the caption, decision 0017; Top volume was paged at 100 rows after the plan, decision 0026). Check the code and decision file first.
+- The 2026-10-07 plans say the spec's "changes after both reviews" list overrides the spec body; read that list first.
 
 ## See also
 - `docs/superpowers/specs/`: the design each plan implements
-- `docs/decisions/`: 0011, 0012, 0014, 0015, 0017, 0020, 0022, 0024, 0025 record what was built and why; `docs/research/` for the studies (0002–0004)
+- `docs/decisions/`: the record of what was built and why (0011–0041); `docs/research/` for the studies (0002–0005)
 <!-- folder-claude-md:end -->

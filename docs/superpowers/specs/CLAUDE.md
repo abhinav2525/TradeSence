@@ -21,13 +21,21 @@ agreed intent, the chosen approach and its constraints. Each has a matching plan
 | `2026-10-04-unusual-activity-design.md` | `/activity` page, nightly `unusual_days` table, Report Card card (decision 0024) |
 | `2026-10-04-volume-whole-market-design.md` | Research 0004: 6 volume signals across the liquid market, rules fixed before any result |
 | `2026-10-04-top-volume-design.md` | `/volume` Top volume: data from NSE index lists, page layout, limits, checks (decision 0025) |
+| `2026-10-04-volume-or-jump-design.md` | Research 0005: same-size jumps, ordinary vs heavy volume, rules fixed before any result |
+| `2026-10-05-money-flow-design.md`, `2026-10-05-money-flow-history-design.md` | `/money-flow` and its 12-month weekly line (decisions 0028, 0029) |
+| `2026-10-05-breadth-universes-design.md` | Breadth for the whole market and NSE index lists (decision 0030) |
+| `2026-10-05-bank-finservice-indices-design.md` | Nifty Bank and Nifty Financial Services with true history; carries both advisors' changes (decisions 0034–0037) |
+| `2026-10-07-loudest-stock-and-busy-sort-design.md` | Money flow's loudest-stock switch and Top volume's "Unusually busy" sort (decision 0040) |
+| `2026-10-07-sector-share-of-trading-design.md` | A sector's share of trading over a year, in 3-month blocks (decision 0041) |
 
 ## Rules here
-- Name new specs `YYYY-MM-DD-<topic>-design.md`, header `**Date:** · **Status:** · **Path:**`, starting with `## Intent (agreed)`.
-- These are pre-build snapshots: the status line still says "awaiting owner review" (or "design agreed in conversation") though all shipped. Amendments made while planning are marked "(amended while planning)". What was actually built is in the decision or research file; trust it and the code over the spec.
+- Name new specs `YYYY-MM-DD-<topic>-design.md`, header `**Date:** · **Status:** · **Path:**`, starting with `## Intent (agreed)` (the 2026-10-07 specs have `## Intent`).
+- These are pre-build snapshots: status lines still say "awaiting owner review" or "design agreed in conversation" though all shipped. Amendments made while planning are marked "(amended while planning)". What was actually built is in the decision or research file; trust it and the code over the spec.
+- Specs the advisors reviewed carry a list of adopted changes ("Changes after the advisor reviews" in the bank/finservice spec, "Main session's changes after both reviews" in the two 2026-10-07 specs); it overrides the body.
 - A study's spec is where its pass/fail rules are fixed before any result is seen; don't change them after.
 
 ## See also
 - `docs/superpowers/plans/`: the step-by-step build plan for each spec
 - `docs/decisions/README.md`: the outcome of each
+- `docs/proposals/`: the advisor proposals and reviews several specs came from
 <!-- folder-claude-md:end -->

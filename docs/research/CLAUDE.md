@@ -11,18 +11,21 @@ Data studies: a question asked of our own data, the method, results, caveats and
 | `0001-does-breadth-predict.md` | Does NIFTY 50 breadth predict the index's next 1/3/6 months? Re-run: `bun run research:forward-returns`. Shown live on `/signals` (that page reports medians, the note averages) |
 | `0002-does-volume-predict.md` | 15 volume signals on the NIFTY 50; none beat random days. Re-run: `bun run research:volume`. Spec in `docs/superpowers/specs/2026-10-03-volume-study-design.md` |
 | `0003-does-delivery-predict.md` | 8 delivery-% signals on the liquid whole market, 2016–2026, confirmed on 2023–; none Build. Re-run: `bun run research:delivery` (~2 min) |
-| `0004-does-volume-predict-whole-market.md` | 6 volume signals on 2,367 liquid companies; two kinds of day followed by underperformance. Re-run: `bun run research:volume-market` (~75 s; `-- --json file` writes chart data) |
+| `0004-does-volume-predict-whole-market.md` | 6 volume signals on 2,367 liquid companies; two kinds of day followed by underperformance. Re-run: `bun run research:volume-market` (~75 s; `-- --json file` writes chart data). Its follow-up note points to 0005 |
 | `0004-charts.html` | Standalone page with three charts for study 0004, built from that JSON; also published as a private artifact "Does Volume Predict?" |
+| `0005-volume-or-jump.md` | Same-size jumps, ordinary vs heavy volume: the lag in 0004 goes with the jump, not the volume (huge-volume up days); the breakout call is borderline. Re-run: `bun run research:volume-or-jump` (~75 s; `-- --json file`). Spec: `docs/superpowers/specs/2026-10-04-volume-or-jump-design.md` |
+| `0005-charts.html` | Standalone charts page for study 0005; also published as a private page "Volume or the Jump?" |
 
 ## Rules here
 - Files are `NNNN-<question>.md`, numbered separately from decisions; each study gets a "Research NNNN" row in `docs/decisions/README.md`.
 - The `## Appendix: full results (generated)` section is written by the study's command: re-run it, don't hand-edit the numbers.
-- Sections used: The question, The short answer, How to read the numbers, Results, Caveats (please read), Method, What this means for the app (0001 and 0002 say what it means for the TODO items or projects).
-- Studies 0003 and 0004 judge against random other stocks on the same dates (`matchedLuck`, decision 0022) with a 2023+ hold-out; 0001 and 0002 predate that.
-- Charts file uses the app's colours as literal values (it's a standalone page, outside the app's token rules).
+- Sections used: The question, The short answer, How to read the numbers, Results, Caveats (please read), Method, What this means for the app (0001 and 0002 say what it means for the TODO items or projects; 0005 adds "How this fits what others found").
+- Studies 0003–0005 judge against random other stocks on the same dates (`matchedLuck`, decision 0022) with a 2023+ hold-out; 0001 and 0002 predate that. 0005 also runs a second method (a regression) beside the matched one.
+- When a later study answers an earlier one's open question, the earlier file gets a short update note pointing forward (0004 does for 0005).
+- Charts files use the app's colours as literal values (standalone pages, outside the app's token rules).
 
 ## See also
-- `src/research/`: the code behind each study (`cli-*.ts` runners; `delivery.ts`, `volume-market.ts`, `volume.ts` maths)
+- `src/research/`: the code behind each study (`cli-*.ts` runners; `delivery.ts`, `volume-market.ts`, `volume-or-jump.ts`, `volume.ts` maths)
 - `docs/superpowers/specs/` and `plans/`: each study's pre-registered rules and build plan
 - `docs/decisions/0022-matched-luck-check.md`
 <!-- folder-claude-md:end -->

@@ -20,16 +20,18 @@ Nothing here writes to the database (except `cli-fund-symbols.ts`, which writes 
 | `cli-delivery.ts` | `bun run research:delivery`: two passes over every company (pass 1 builds each day's pool and cut points, pass 2 finds signals), so no history is kept in memory. |
 | `volume-market.ts` | Research 0004 (volume, whole market): `volumeSeries`, `volumeSignalFlags`, `MARKET_SIGNALS`, `CHART_HORIZONS`, `HUGE_X`, `effectOf`. Judged with `delivery.ts`'s `part` / `deliveryVerdict`. |
 | `cli-volume-market.ts` | `bun run research:volume-market`; `-- --json <file>` also writes the chart data (`docs/research/0004-charts.html`). |
+| `volume-or-jump.ts` | Research 0005 (heavy volume or just a big jump?), pure: `bandOf`, `thirdCuts`/`thirdOf`, `groupKey` (month, move band, size third), `jumpFlags`, `breakoutFlags`, least squares `normalEq`/`addRow`/`solveEq`/`ols`, `neweyWest`, `verdict5` ("Volume adds" / "The jump explains it" / "Not settled"), `excludeSelf`, `alignToPools`, `droppedCount`; constants `Q1_BANDS`, `Q2_BANDS`, `JUMP_FLOOR`, `SETTLED_BELOW`, `FM_T` |
+| `cli-volume-or-jump.ts` | `bun run research:volume-or-jump` (~75s): same-size jumps with heavy vs ordinary volume (matched groups) plus daily Fama-MacBeth fits; two passes like 0003/0004; `-- --json <file>` writes chart data (`docs/research/0005-charts.html`) |
 | `cli-fund-symbols.ts` | `bun run research:fund-symbols`: writes the committed fund (ETF) symbol list that `indicators/universe.ts` reads, so company-only studies exclude funds. Re-run occasionally. |
 
 ## Rules here
 - Pass/fail rules are fixed in the study's spec (`docs/superpowers/specs/`) before results are seen; indicator settings are textbook, never tuned.
-- Reuse the tested machinery rather than new statistics. Whole-market, per-stock studies (0003, 0004) use the same-date comparison in `delivery.ts` (decision 0022), not `luckCheck`, whose independent days flatter signals that bunch up. `luckCheck` still serves the NIFTY-50 studies.
+- Reuse the tested machinery rather than new statistics. Whole-market, per-stock studies (0003, 0004, 0005) use the same-date comparison in `delivery.ts` (decision 0022), not `luckCheck`, whose independent days flatter signals that bunch up. `luckCheck` still serves the NIFTY-50 studies.
 - Per-member history comes from `loadAdjustedHistory` (`src/indicators/history.ts`), so splits, demergers and renames match the nightly averages.
 - Per-stock signals count only on member days (`memberFlags`, from 2020) in the NIFTY-50 study; whole-market studies use `companies()` from `indicators/universe`. Episodes merge within `MERGE_GAP` per stock.
 - Call `assertAligned` before matching: a pool out of step with its day index would silently compare the wrong stocks.
 
 ## See also
-- `docs/research/0001-does-breadth-predict.md`, `0002-does-volume-predict.md`, `0003-does-delivery-predict.md`, `0004-does-volume-predict-whole-market.md`: results; re-run before quoting.
-- Tests: `tests/forward-returns.test.ts`, `volume-research.test.ts`, `volume-data.test.ts`, `volume-market.test.ts`, `delivery.test.ts`, `delivery-research.test.ts`.
+- `docs/research/0001-does-breadth-predict.md`, `0002-does-volume-predict.md`, `0003-does-delivery-predict.md`, `0004-does-volume-predict-whole-market.md`, `0005-volume-or-jump.md`: results; re-run before quoting.
+- Tests: `tests/forward-returns.test.ts`, `volume-research.test.ts`, `volume-data.test.ts`, `volume-market.test.ts`, `delivery.test.ts`, `delivery-research.test.ts`, `volume-or-jump.test.ts`.
 <!-- folder-claude-md:end -->

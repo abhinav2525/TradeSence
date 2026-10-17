@@ -9,7 +9,7 @@ Machine setup for the nightly job and the database on the owner's Mac. Nothing h
 | File | What it's for |
 |---|---|
 | `install-nightly.sh` | Installs (or reinstalls) the launchd agent: fills in the paths in the plist template, lints it, `launchctl bootout` then `bootstrap`. Safe to re-run. |
-| `com.tradesence.nightly.plist` | Template for the agent: `bun run ingest:nightly`, Mon–Fri 19:30 local, log to `~/Library/Logs/tradesence-nightly.log`. `__BUN__`, `__REPO__`, `__LOG__` are rewritten by the installer; never install the template as is. |
+| `com.tradesence.nightly.plist` | Template for the agent: `bun run ingest:nightly`, Mon–Fri 19:30 local with a 20:15 retry slot (NSE was still publishing at 19:30 on 5 Oct 2026; the job is idempotent, so the retry re-fetches only what failed, decision 0033), log to `~/Library/Logs/tradesence-nightly.log`. `__BUN__`, `__REPO__`, `__LOG__` are rewritten by the installer; never install the template as is. |
 | `backup.sh` | One `pg_dump` (custom format) per night into `~/Backups/tradesence` (newest 7 kept), plus a copy to iCloud Drive (newest 3). Also `bun run db:backup`. Env knobs: `TRADESENCE_BACKUP_DIR`, `_KEEP`, `_MIRROR` (empty turns iCloud off), `_MIRROR_KEEP`, `_MIRROR_TIMEOUT`. |
 | `postgres-tuning.sql` | `ALTER SYSTEM` settings (memory, SSD cost) for this machine; applied by hand as superuser, then restart Postgres. |
 
@@ -22,6 +22,6 @@ Machine setup for the nightly job and the database on the owner's Mac. Nothing h
 
 ## See also
 - Root CLAUDE.md, "Commands" (nightly and launchd); `docs/pipelines.md` for step status.
-- Decision 0021 (database health, tuning, backup, delivery).
+- Decision 0021 (database health, tuning, backup, delivery); decision 0033 (retry slot, logged failure reasons).
 - `src/ingest/cli-nightly.ts` — the job these files schedule and finish.
 <!-- folder-claude-md:end -->

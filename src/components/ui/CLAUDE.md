@@ -10,19 +10,20 @@ directly by pages in `src/app/` (mostly `Card`).
 ## Files
 | File | What it's for |
 |---|---|
-| `button.tsx` | Customised: token colours (`bg-raised`, `text-brand`…), 13px text, no own focus ring (global `:focus-visible` draws it). Used by `calendar.tsx` |
+| `button.tsx` | Customised: token colours (`bg-raised`, `text-brand`…), `text-body-sm` / `text-body` (density tokens), no own focus ring (global `:focus-visible` draws it). Used by `calendar.tsx` |
 | `badge.tsx` | Pills with project variants `neutral` (default), `outline`, `brand`, `up`, `down`; `destructive` maps to the down tint |
-| `card.tsx` | `Card` carries the `reveal` class, so every card rises in (stagger by `nth-child` in globals.css); `tests/motion.test.ts` checks it |
-| `table.tsx` | `Table` takes `containerClassName` so a caller can cap the scroll container's height (cards scroll their own tables) |
+| `card.tsx` | `Card` carries the `reveal` class, so every card rises in (stagger by `nth-child` in globals.css); `tests/motion.test.ts` checks it. Header and content padding use `px-card-x` / `pb-card` |
+| `table.tsx` | `Table` takes `containerClassName` so a caller can cap the scroll container's height (cards scroll their own tables); head and cells use `h-row-head`, `py-cell`, `text-body` |
 | `chart.tsx` | Recharts wrapper: `ChartContainer`, `ChartTooltip`, `ChartConfig`, legend |
-| `calendar.tsx` | react-day-picker calendar, used only by `DatePicker` (decision 0010) |
+| `calendar.tsx` | react-day-picker calendar, used only by `DatePicker` (decision 0010); text uses `text-body` |
 | `popover.tsx` | Radix popover, used by `Term` and `DatePicker` |
 
 ## Rules here
 - `bunx shadcn add` writes Tailwind v3 `[--var]`; rewrite each to `(--var)` (see `calendar.tsx`'s `h-(--cell-size)`). Never let it overwrite `button.tsx`. Details: decision 0010 and the root CLAUDE.md.
+- Sizes and spacing here use the density tokens (`text-body`, `text-body-sm`, `h-row-head`, `py-cell`, `px-card-x`, `pb-card`), not raw `text-sm` / `p-4` / `px-5`; `tests/density.test.ts` enforces it (decision 0020). A regenerated shadcn file arrives with raw ones: swap them.
 - `tests/tailwind-v4.test.ts` fails on any v3 `utility-[--var]` class left in `src` (decision 0016).
 
 ## See also
-- `docs/decisions/0010-shadcn-date-picker.md`, `docs/decisions/0015-app-motion.md`
+- `docs/decisions/0010-shadcn-date-picker.md`, `0015-app-motion.md`, `0020-ui-density.md`
 - `docs/design/system/README.md`; `src/lib/utils.ts` (`cn` and the custom type sizes)
 <!-- folder-claude-md:end -->

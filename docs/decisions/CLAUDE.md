@@ -9,13 +9,15 @@ design choice), written in plain language for the owner, who reads these instead
 ## Files
 | File | What it's for |
 |---|---|
-| `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file, plus "Research NNNN" rows for studies (the table is not strictly in number order: rows 0023–0026 sit between the research rows) |
-| `NNNN-short-name.md` | One decision. 0001–0039 so far, from the launchd nightly job (0001) to sector tags on the NIFTY 50 tables (0039). See the README table for the list |
+| `README.md` | The index: the four questions each file answers, and a table row (number, date, problem, decision) per file, plus "Research NNNN" rows for studies (decisions in number order, then the research rows) |
+| `NNNN-short-name.md` | One decision. 0001–0041 so far, from the launchd nightly job (0001) to the sector share of trading over a year (0041). See the README table for the list |
+| `0034`–`0037` | Nifty Bank and Nifty Financial Services: true membership (0034, 0037), their Report Cards and Signals (0035), Yes Bank's exit date (0036) |
+| `0038`–`0041` | Sector on Unusual activity (0038), sector tags (0039), the loudest-stock switch and "Unusually busy" (0040), sector share of trading over a year (0041) |
 
 ## Format of a decision file
-- Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015, 0020, 0022, 0024, 0025; 0017 has no spec line though a spec and plan exist).
+- Title `# NNNN — <plain title>`, then `**Date:** YYYY-MM-DD · **Status:** done`; add `· Spec: … · Plan: …` when a `docs/superpowers/` spec and plan exist (0011, 0012, 0014, 0015, 0020, 0022, 0024, 0025, 0028–0030; 0034, 0035, 0037, 0040 and 0041 link a spec only; 0017 has no spec line though a spec and plan exist).
 - Sections: `## Problem`, `## Options` (a table works well), `## Decision`, `## Why`, `## Revisit when`. Some newer files (0009, 0017, 0024, 0025) use `## Decisions` with numbered choices instead; 0021 uses `## Options and decisions`.
-- Optional sections used so far: `Result`, `Checks`, `What we built`, `Something we found along the way`, `Problems met while building it`, `Found by the independent review (fixed)`, `What the numbers don't prove`, `What we found`, `Limits`, `Growth`, `Backfill result`.
+- Optional sections used so far: `Result`, `Checks`, `Limits`, `What we built`, `Something we found along the way`, `Problems met while building it`, `Found by the independent review (fixed)`, `What the numbers don't prove`, `What we found`, `Growth`, `Backfill result`.
 
 ## Adding one
 - Take the next number, short kebab-case name, written in the same change as the fix.
@@ -29,6 +31,6 @@ design choice), written in plain language for the owner, who reads these instead
 - Decisions made before the log began live in the root CLAUDE.md ("Design decisions that are load-bearing", "Gotchas").
 
 ## See also
-- `docs/superpowers/specs/`, `docs/superpowers/plans/`: the design and build plan behind 0011, 0012, 0014, 0015, 0017, 0020, 0022, 0024, 0025
+- `docs/superpowers/specs/`, `docs/superpowers/plans/`: the design and build plan behind most feature decisions
 - `docs/research/`: data studies
 <!-- folder-claude-md:end -->

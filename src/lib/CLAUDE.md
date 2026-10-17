@@ -9,7 +9,7 @@ ticks and trimmed chart data, motion settings and small Report Card wording help
 ## Files
 | File | What it's for |
 |---|---|
-| `glossary.ts` | `GLOSSARY`: every term explained once (`short`, `read`, `what`, `calc`, `example`, `mistakes`, `related`, `seeIt`), keyed by `TermId`; `TOPICS`, `isTermId`, `termHref`, `todayLine`. Drives `<Term>` popovers and `/learn`. |
+| `glossary.ts` | `GLOSSARY`: every term explained once (`short`, `read`, `what`, `calc`, `example`, `mistakes`, `related`, `seeIt`), keyed by `TermId`; `TOPICS`, `isTermId`, `termHref`, `todayLine`. Money flow terms: `share-of-trading`, `share-of-trading-trend`, `new-listing-share`, `busier-count`, `loudest-stock`, `times-normal`. Drives `<Term>` popovers and `/learn`. |
 | `format.ts` | `formatDate`, `formatMonth`, `formatDayMonth`, `signed` (true minus), `formatInt`, `formatPrice`, `formatRupees`, `formatCrore` (₹ in crore), `formatShares` (cr / lakh), `ordinal`. Indian grouping (`en-IN`), months by hand so server and browser agree. |
 | `chart-data.ts` | `chartPrice`, `chartDrawdown`: round Report Card chart series to 2 decimals before they go to the browser (decision 0026). Display only; the report's own numbers are untouched. |
 | `count.ts` | Maths behind `<CountUp>`: `parseShown` reads an on-screen figure, `formatLike` redraws in-between values in the same format, `countFrame` (ease-out), `countPlan`. |
