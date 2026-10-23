@@ -134,6 +134,15 @@ describe("toggleDensity", () => {
     expect(src).toContain('e.key === "d"');
     expect(src).toContain("toggleDensity()");
   });
+  test("the phone top bar's icon toggles never shrink beside the scrolling page links (0020 review)", () => {
+    for (const f of ["ThemeToggle", "DensityToggle"]) {
+      expect({ f, ok: readFileSync(`src/components/${f}.tsx`, "utf8").includes('compact ? "size-9 shrink-0 justify-center"') }).toEqual({ f, ok: true });
+    }
+  });
+  test("holding t or d flips once, not on every key repeat (0020 review)", () => {
+    const src = readFileSync("src/components/Hotkeys.tsx", "utf8");
+    expect(src).toMatch(/if \(e\.key === "t" \|\| e\.key === "d"\) \{\s*e\.preventDefault\(\);\s*if \(e\.repeat\) return;/);
+  });
 });
 
 describe("body type follows density", () => {

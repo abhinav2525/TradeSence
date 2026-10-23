@@ -80,9 +80,13 @@ two-by-two). Colours, contrast, animation and wording are identical in both.
 - **The `d` key wasn't in the sidebar's Shortcuts list**, though the spec said it would be.
   It now reads "Theme / spacing: t d".
 
-Left as small follow-ups: holding `d` flips the spacing over and over (holding `t` already
-did the same with the theme); on a phone the two icon buttons in the top bar can get a few
-pixels narrower than intended.
+Left as small follow-ups, fixed on 24 Oct 2026: holding `d` flipped the spacing over and over
+(holding `t` did the same with the theme), because a held key repeats about 30 times a second.
+Both keys now act once per press and ignore the repeats. On a phone the two icon buttons in
+the top bar could get a few pixels narrower than intended when the page links beside them ran
+out of room; they now keep their size (`shrink-0`). Tests cover both. The spec's token table
+also named two variables by their planned names (`--spacing-cell-y`, `--chart-scale`); it
+now uses the names in the code.
 
 ## Revisit when
 

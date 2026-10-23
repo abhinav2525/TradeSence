@@ -130,10 +130,22 @@ small sectors sit outside the rows, every shown sector can move the same way, so
 have called a growing sector a loss. It now names a gain only if it gained and a loss only if
 it lost (test in `glossary-live`).
 
-Left as small follow-ups: `sector_share_year` is not in the nightly statistics-refresh list
-(`NIGHTLY_ANALYZE`; tiny table, no visible effect); no end-to-end test with a non-zero
-new-listing share; green and red mark a share gain or loss, though elsewhere in the app those
-colours mean price direction (an owner design call).
+Left as small follow-ups: green and red mark a share gain or loss, though elsewhere in the app
+those colours mean price direction (an owner design call).
+
+Two follow-ups were fixed on 24 Oct 2026:
+- **The nightly statistics refresh missed the new table.** Postgres keeps a short summary of
+  each table (how many rows, what the values look like) to plan its reads, like a librarian's
+  card index. `sector_share_year` wasn't on the nightly refresh list. Checking for it turned up
+  two more tables rewritten every night and also missing: today's index lists
+  (`index_constituents`) and the ETF list (`fund_symbols`, whose summary said 4 rows when it
+  held 358). All three are on the list now. A test now places every table either on the list
+  or on a short "left to Postgres" list (`NOT_ANALYZED`: membership, corporate actions,
+  renames), so a new table can't be forgotten again.
+- **The end-to-end test now includes a real new listing.** The test's comment promised one
+  but never added it. A sixth IT stock now lists in the latest three months: the sector's
+  new-listing rupees are a sixth of its total, in the yearly figure and in the weekly line.
+  Emptying the new-listing rule on purpose makes the test fail, so it can't pass by accident.
 
 ## Revisit when
 

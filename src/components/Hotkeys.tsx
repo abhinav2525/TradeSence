@@ -22,14 +22,11 @@ export default function Hotkeys({ ma, prev, next, page, base, extra }: HotkeyCon
       if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
       if (el?.closest?.("[data-radix-popper-content-wrapper]")) return; // a popover or date picker is open
 
-      if (e.key === "t") {
+      if (e.key === "t" || e.key === "d") {
         e.preventDefault();
-        toggleTheme();
-        return;
-      }
-      if (e.key === "d") {
-        e.preventDefault();
-        toggleDensity();
+        if (e.repeat) return; // a held key flips once, not ~30 times a second
+        if (e.key === "t") toggleTheme();
+        else toggleDensity();
         return;
       }
       const href = hotkeyTarget(e.key, { ma, prev, next, page, base, extra });
