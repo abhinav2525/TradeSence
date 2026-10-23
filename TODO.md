@@ -18,7 +18,7 @@ every page with Report Cards (0034–0037), sector tags (0038, 0039), Money flow
 switch and Top volume's "Unusually busy" (0040), sector share of trading over a year (0041),
 compact spacing (0020), and the small follow-ups from those reviews (24 Oct). The nightly job
 ran every weekday 16–23 Oct; the site on :3000 was down 19–24 Oct after being stopped, so
-auto-start (Ops) matters more. Open owner calls: green/red on the share card (0041), the
+auto-start (Ops) matters more. Owner settled the share card's colours (neutral, 0041); open: the
 server move. Next candidate: foreign investor flows ("Who moved the money", 1).
 
 ---
