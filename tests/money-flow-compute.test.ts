@@ -74,11 +74,13 @@ describe("computeMoneyFlow", () => {
     await db.insert(schema.symbolChanges).values({ oldSymbol: "OLDR1", newSymbol: "R1", changedOn: "2027-01-01" });
     const it = ["R1", "S2", "S3", "S4", "S5"];
     for (const s of it) await db.insert(schema.dailyPrices).values(days.map((d) => price(d, s === "R1" && d < "2027-01-01" ? "OLDR1" : s, 1e7)));
-    // a small sector (2 stocks) that trades 3e7 a day; NEWL lists in 2027 (a new listing)
+    // a small sector (2 stocks) that trades 3e7 a day
     for (const s of ["T1", "T2"]) await db.insert(schema.dailyPrices).values(days.map((d) => price(d, s, 3e7)));
+    // NEWL, an IT stock that lists at the start of the latest 3 months: a new listing
+    await db.insert(schema.dailyPrices).values(days.slice(-63).map((d) => price(d, "NEWL", 1e7)));
     await db.insert(schema.corporateActions).values({ symbol: "R1", exDate: "2026-12-01", subject: "Demerger", series: "EQ", kind: "demerger", factor: 1 });
     await db.insert(schema.indexConstituents).values([
-      ...it.map((symbol) => ({ indexKey: "total-market", symbol, industry: "Information Technology", fetchedOn: days.at(-1)! })),
+      ...[...it, "NEWL"].map((symbol) => ({ indexKey: "total-market", symbol, industry: "Information Technology", fetchedOn: days.at(-1)! })),
       ...["T1", "T2"].map((symbol) => ({ indexKey: "total-market", symbol, industry: "Textiles", fetchedOn: days.at(-1)! })),
     ]);
     await computeMoneyFlow();
@@ -86,19 +88,22 @@ describe("computeMoneyFlow", () => {
     expect(r.shareRows).toBe(1);
     const [row] = await db.select().from(schema.sectorShareYear);
     const nowFrom = days.at(-63)!;
-    expect(row).toMatchObject({ sector: "Information Technology", stocks: 5, nowFrom, nowTo: days.at(-1), agoFrom: `2026${nowFrom.slice(4)}`, agoTo: `2026${days.at(-1)!.slice(4)}` });
+    expect(row).toMatchObject({ sector: "Information Technology", stocks: 6, nowFrom, nowTo: days.at(-1), agoFrom: `2026${nowFrom.slice(4)}`, agoTo: `2026${days.at(-1)!.slice(4)}` });
     const agoSessions = days.filter((d) => d >= row!.agoFrom && d <= row!.agoTo).length;
     expect(row!.agoTurnover).toBeCloseTo(5 * agoSessions * 1e7, 0); // OLDR1's rupees are in R1's year-ago block
     expect(row!.agoTotal).toBeCloseTo(11 * agoSessions * 1e7, 0); // Textiles count in the total
-    expect(row!.nowTotal).toBeCloseTo(11 * 63 * 1e7, 0);
-    expect(row!.newListingTurnover).toBe(0);
+    expect(row!.nowTurnover).toBeCloseTo(6 * 63 * 1e7, 0);
+    expect(row!.nowTotal).toBeCloseTo(12 * 63 * 1e7, 0);
+    expect(row!.newListingTurnover).toBeCloseTo(63 * 1e7, 0); // NEWL's rupees, a sixth of the sector's
     expect(row!.demerged).toEqual([{ symbol: "R1", exDate: "2026-12-01" }]); // filed under today's symbol, while it traded as OLDR1
     const weeks = await db.select().from(schema.sectorFlowWeeks);
     expect(weeks).toHaveLength(52);
     const w0 = weeks.find((w) => w.weekEnd === days.at(-1))!;
-    expect(w0.turnover).toBeCloseTo(5 * 5 * 1e7, 0);
-    expect(w0.totalTurnover).toBeCloseTo(11 * 5 * 1e7, 0);
-    expect(w0.newListingTurnover).toBe(0);
+    expect(w0.turnover).toBeCloseTo(6 * 5 * 1e7, 0);
+    expect(w0.totalTurnover).toBeCloseTo(12 * 5 * 1e7, 0);
+    expect(w0.newListingTurnover).toBeCloseTo(5 * 1e7, 0);
+    // a week before NEWL listed has no new-listing rupees
+    expect(weeks.find((w) => w.weekEnd < days.at(-63)!)!.newListingTurnover).toBe(0);
   });
 
   test("share over a year: without a year of history the table is empty and no week has a new-listing figure", async () => {

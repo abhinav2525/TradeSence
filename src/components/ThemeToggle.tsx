@@ -32,7 +32,7 @@ export default function ThemeToggle({
       title="Switch theme (t)"
       className={cn(
         "inline-flex items-center gap-2 rounded-md text-body-sm font-medium text-foreground-2 transition-colors hover:bg-raised hover:text-foreground",
-        compact ? "size-9 justify-center" : "h-9 px-2.5",
+        compact ? "size-9 shrink-0 justify-center" : "h-9 px-2.5",
         className,
       )}
     >

@@ -130,10 +130,34 @@ small sectors sit outside the rows, every shown sector can move the same way, so
 have called a growing sector a loss. It now names a gain only if it gained and a loss only if
 it lost (test in `glossary-live`).
 
-Left as small follow-ups: `sector_share_year` is not in the nightly statistics-refresh list
-(`NIGHTLY_ANALYZE`; tiny table, no visible effect); no end-to-end test with a non-zero
-new-listing share; green and red mark a share gain or loss, though elsewhere in the app those
-colours mean price direction (an owner design call).
+Three follow-ups were settled on 24 Oct 2026:
+- **The change column is no longer green or red (owner's decision).** As built, a sector whose
+  slice of trading grew showed its change in green, and one that shrank in red.
+  - *Problem:* everywhere else in the app, green and red mean one thing: a price (or a
+    breadth reading) going up or down. Here they meant something different, and a reader who
+    has learned "green = up, good" would read a bigger slice of trading as good news. It
+    isn't. A sector can take a bigger slice because its stocks are falling and being sold hard.
+  - *Options:* (1) keep green and red for the sign; (2) neutral text, with the + / − sign
+    carrying the direction; (3) a new colour pair just for shares.
+  - *Decision:* (2), neutral text. A change that rounds to 0.0 stays muted. The design system
+    already says each colour means one thing and direction is never shown by colour alone,
+    so the sign was always there; only the colour goes. (3) would add a colour to learn for
+    one card.
+  - *Revisit if* a share gain ever gets a tested meaning (e.g. a study shows it comes before
+    something), which it doesn't today.
+  - A test checks the card never uses the up/down colours.
+- **The nightly statistics refresh missed the new table.** Postgres keeps a short summary of
+  each table (how many rows, what the values look like) to plan its reads, like a librarian's
+  card index. `sector_share_year` wasn't on the nightly refresh list. Checking for it turned up
+  two more tables rewritten every night and also missing: today's index lists
+  (`index_constituents`) and the ETF list (`fund_symbols`, whose summary said 4 rows when it
+  held 358). All three are on the list now. A test now places every table either on the list
+  or on a short "left to Postgres" list (`NOT_ANALYZED`: membership, corporate actions,
+  renames), so a new table can't be forgotten again.
+- **The end-to-end test now includes a real new listing.** The test's comment promised one
+  but never added it. A sixth IT stock now lists in the latest three months: the sector's
+  new-listing rupees are a sixth of its total, in the yearly figure and in the weekly line.
+  Emptying the new-listing rule on purpose makes the test fail, so it can't pass by accident.
 
 ## Revisit when
 

@@ -40,8 +40,8 @@ hydration, every component re-rendering); a second stylesheet (two sources of tr
 | `--spacing-cards` (`gap-cards`) | 12px | 16px | `gap-4` between cards and tiles |
 | `--spacing-gutter` (`lg:px-gutter`) | 20px | 32px | `lg:px-8` in `AppShell` |
 | `--spacing-row-head` (`h-row-head`) | 28px | 36px (amended while planning: `h-9`, what the tables use) | sticky table headers |
-| `--spacing-cell-y` (`py-cell`) | 4px (amended while building: 5px gave 31px rows) | 10px | table cell `py-2.5` / `py-2` |
-| `--chart-scale` | 0.7 | 1 | each chart's fixed height, as `h-[calc(Npx*var(--chart-scale))]` |
+| `--spacing-cell` (`py-cell`; set from `--density-cell-y`, renamed while building) | 4px (amended while building: 5px gave 31px rows) | 10px | table cell `py-2.5` / `py-2` |
+| `--density-chart` (renamed while building) | 0.7 | 1 | each chart's fixed height, as `h-[calc(Npx*var(--density-chart))]` |
 
 **Side inset (default chosen, owner can overrule):** the brief's "16 header / 12 body" is applied as vertical
 padding with one shared side inset (16px compact), so header, body, table first column and
@@ -78,7 +78,7 @@ any new layout beyond the hero row.
 
 ## Tests (written first)
 
-- `globals.css`: every density variable (`--spacing-card*`, `--spacing-cards`, `--spacing-gutter`, `--spacing-row-head`, `--spacing-cell-y`, `--chart-scale`, the four type sizes) is set in both the compact and comfortable blocks; the new sizes exist
+- `globals.css`: every density variable (built as `--density-*`, read by `--spacing-*` and the type sizes: card insets, cards gap, gutter, row head, cell padding, chart scale, the four type sizes) is set in both the compact and comfortable blocks; the new sizes exist
   in `@theme`; `text-body`/`text-body-sm` are registered with tailwind-merge (`cn("text-body-sm
   text-foreground")` keeps both).
 - `PREPAINT_SCRIPT` sets `compact` with nothing stored, `comfortable` when stored, and survives

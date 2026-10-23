@@ -13,14 +13,13 @@ Goals each item serves: (a) trading/decision aid, (b) research & learning, (c) n
 product, (n) helping a beginner judge a stock. Within each section, highest priority first.
 Why each finished item was built the way it was: `docs/decisions/`.
 
-**Where we left off (4 Oct 2026, evening).** Shipped today: database check-up and backups
-(0021), delivery % collected and studied (research 0003: no buy/sell signal), the crash-table
-wording fix (0023), and the **Unusual activity** page (`/activity`, 0024): ~47 stocks a day
-whose session was far outside their own normal, whole market or NIFTY 50, plus a card on
-NIFTY 50 Report Cards. Next candidates: nightly warnings to the owner (Telegram or email,
-owner to pick), website auto-restart after a reboot, Report Cards for every stock (would let
-every `/activity` row link somewhere), the breadth-thrust study (Signals). Check Monday's
-(5 Oct) nightly run: it now also rebuilds `unusual_days`, runs the audit and backs up.
+**Where we left off (24 Oct 2026).** Since 4 Oct: Nifty Bank and Nifty Financial Services on
+every page with Report Cards (0034–0037), sector tags (0038, 0039), Money flow's loudest-stock
+switch and Top volume's "Unusually busy" (0040), sector share of trading over a year (0041),
+compact spacing (0020), and the small follow-ups from those reviews (24 Oct). The nightly job
+ran every weekday 16–23 Oct; the site on :3000 was down 19–24 Oct after being stopped, so
+auto-start (Ops) matters more. Owner settled the share card's colours (neutral, 0041); open: the
+server move. Next candidate: foreign investor flows ("Who moved the money", 1).
 
 ---
 
@@ -235,9 +234,8 @@ Prerequisites first, or whole-market numbers will be wrong:
   for history.
 
 ## Nice-to-haves (old item 8) — c
-- [ ] Density follow-ups (decision 0020 review): holding `d` (or `t`) flips on every key repeat
-  (`if (e.repeat) return;` in Hotkeys); the phone top bar's two icon toggles need `shrink-0`;
-  the spec's token table still says `--spacing-cell-y` / `--chart-scale` (code: `--density-*`).
+- [x] Density follow-ups (decision 0020 review, fixed 24 Oct): a held `d` or `t` flips once; the
+  phone top bar's icon toggles keep their size; the spec names the real variables.
 - [ ] Page cross-fades: React's `<ViewTransition>` never started here (decision 0015). Retry when Next.js documents it working for pages that render their own sidebar, or move `SiteNav` into the layout first.
 - [ ] Motion polish (decision 0015 review): the pill should re-measure when option labels change width; `−₹` figures can't count; hover on the breadth histogram eases 300 ms; rename `.fade-in` (clashes with tw-animate-css); the pill's 8 px radius has no token; behaviour tests for no-JS and reduced motion.
 - [ ] Learn pages: small diagrams for SMA vs EMA and for a drawdown (decision 0012).

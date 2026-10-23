@@ -11,9 +11,13 @@ export const NIGHTLY_ANALYZE = [
   "daily_prices", "daily_delivery", "index_prices", "ingest_log",
   // derived, replaced in full nightly
   "daily_indicators", "unusual_days", "volume_leaders", "money_flow", "sector_flow_weeks", "short_sessions",
+  "sector_share_year", "index_constituents",
   // upserted nightly
-  "breadth_daily",
+  "breadth_daily", "fund_symbols",
 ] as const;
+
+/** Left to Postgres's own upkeep: loaded by hand, or small and changed by a few rows a night. */
+export const NOT_ANALYZED = ["index_members", "corporate_actions", "symbol_changes"] as const;
 
 export async function analyzeTables(sql: Sql): Promise<void> {
   await sql`analyze ${sql([...NIGHTLY_ANALYZE])}`;

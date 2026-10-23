@@ -12,12 +12,16 @@ const COLS = "grid-cols-[minmax(0,1fr)_4.5rem_5.5rem] sm:grid-cols-[minmax(0,14r
 const colHead = "text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground";
 const span = (from: string, to: string) => `${formatDayMonth(from)}–${formatDate(to)}`;
 
-/** The change as shown (1 decimal); colour only for its sign, and none when it rounds to 0.0. */
+/**
+ * The change as shown (1 decimal), in neutral text: green and red mean price direction
+ * everywhere else, and a bigger slice of trading is neither good nor bad (owner, decision 0041).
+ * The + / − sign carries the direction; a change that rounds to 0.0 is muted.
+ */
 function Change({ pts }: { pts: number | null }) {
   if (pts === null) return <span className="text-muted-foreground">—</span>;
   const shown = Number(pts.toFixed(1));
   return (
-    <span className={cn("font-semibold tabular-nums", shown > 0 ? "text-up" : shown < 0 ? "text-down" : "text-muted-foreground")}>
+    <span className={cn("font-semibold tabular-nums", shown !== 0 ? "text-foreground" : "text-muted-foreground")}>
       {signed(pts, 1)} pts
     </span>
   );

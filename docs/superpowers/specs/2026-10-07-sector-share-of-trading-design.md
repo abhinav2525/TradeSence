@@ -72,7 +72,7 @@ gain).
 - `src/query/money-flow.ts`: `shareHistory()` reads it for all sectors in one query.
 - `src/app/money-flow/page.tsx`: a new card under the bars, *above* the picked sector's stock list. The card
   shows on every period tab, because it doesn't depend on the period. No new search params.
-- **Rows:** sector · share now · a year ago · change (`text-up`/`text-down` only for the sign, no
+- **Rows:** sector · share now · a year ago · change (`text-up`/`text-down` only for the sign; changed after shipping to neutral text, owner 24 Oct, decision 0041; no
   "good/bad" colouring beyond that) · a 52-point sparkline (reuse the pattern of `WashoutSpark`; tokens only,
   `useChartAnimation`).
 - `FlowHistoryChart`: when a sector is picked, add its weekly share as a second panel or a second axis, chosen

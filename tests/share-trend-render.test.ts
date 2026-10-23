@@ -36,6 +36,13 @@ describe("ShareTrendCard", () => {
     expect(t.indexOf("Consumer Durables")).toBeLessThan(t.indexOf("Auto")); // largest gain first
   });
 
+  test("a share gain or loss is never green or red: those mean price direction (owner, 24 Oct)", () => {
+    const html = bare(renderToString(createElement(ShareTrendCard, { trend: shareChange([row("Consumer Durables", 52, 36), row("Auto", 72, 92)]), blocks, lines: new Map(), hrefFor: (s) => s })));
+    expect(html).not.toMatch(/\btext-(up|down)\b/);
+    expect(html).toMatch(/text-foreground[^"]*">\+1\.6 pts/);
+    expect(html).toMatch(/text-foreground[^"]*">−2\.0 pts/);
+  });
+
   test("a change that rounds to 0.0 isn't coloured", () => {
     const html = bare(renderToString(createElement(ShareTrendCard, { trend: shareChange([row("Textiles", 49.02, 49)]), blocks, lines: new Map(), hrefFor: (s) => s })));
     expect(html).toMatch(/text-muted-foreground[^"]*">\+?0\.0 pts/);

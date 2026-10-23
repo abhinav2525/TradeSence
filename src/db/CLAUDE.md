@@ -18,7 +18,7 @@ are generated from it into `drizzle/` (`drizzle.config.ts`).
 - The test guard in `url.ts` is load-bearing (root CLAUDE.md, "Test isolation"); never weaken it to a default. Covered by `tests/db-url-guard.test.ts`.
 - `daily_prices` holds raw, unadjusted prices and the whole market; adjustment and universe filtering happen at query/compute time.
 - Derived tables (`daily_indicators`, `unusual_days`, `volume_leaders`, `money_flow`, `sector_flow_weeks`, `short_sessions`, `sector_share_year`) are always recomputable; never hand-fix a row, fix the input and recompute.
-- Key each derived table by how its page reads it (decision 0029); the nightly job runs `ANALYZE` on every table it rebuilds, since a full replace leaves planner statistics stale.
+- Key each derived table by how its page reads it (decision 0029); the nightly job runs `ANALYZE` on every table it rebuilds, since a full replace leaves planner statistics stale. A new table goes in `NIGHTLY_ANALYZE` or `NOT_ANALYZED` (`maintenance.ts`); `tests/maintenance.test.ts` fails otherwise.
 - `daily_delivery` is its own table, not columns on `daily_prices` (a separate file that can fail alone); delivery % is not stored, it is deliverable ÷ traded.
 - `corporate_actions.factor` is null only for `kind = 'unparsed'`, and is 1 for `demerger` (the real factor is derived at compute time).
 - Prices are `doublePrecision`, not `numeric`: they feed averages, not ledgers.
